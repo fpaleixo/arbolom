@@ -66,7 +66,7 @@ def getRegulatorsOf(compound, implicants):
   return all_regulators
 
 
-#TODO: check correctness; clean up prints; optimize other corruptions with new functions
+#TODO: return with the right format(tuple with first position as the changed compounds, second position the updated dictionary); check correctness(done?); clean up prints; optimize other corruptions with new functions
 def edgeAdd(func_dict, chance):
   #For each compound, make a loop with
   #each other compound that is not its regulator,
@@ -104,17 +104,19 @@ def edgeAdd(func_dict, chance):
         if(roll <=0.5):
           or_clause = False
 
-        if(or_clause):
-          print("adding "+e+ " as new prime implicant")
+        if(or_clause or not c_implicants):
+          print("Adding "+e+ " as new prime implicant")
           c_implicants.append(e)
 
         else:
-          print("adding "+e+ " to existing prime implicant(s)")
+          print("Adding "+e+ " to existing prime implicant(s)")
+          has_been_added = False
           for implicant in range (0, len(c_implicants)):
             roll = random.random()
-            if(roll <=0.5):
+            if(roll <=0.5 or (not has_been_added and implicant==len(c_implicants)-1)):
               print("adding it to implicant "+c_implicants[implicant])
               c_implicants[implicant]+='&'+e
+              has_been_added = True
 
         print("Updated implicants: " + str(c_implicants))
 
