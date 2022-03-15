@@ -66,7 +66,6 @@ def getRegulatorsOf(compound, implicants):
   return all_regulators
 
 
-#TODO: return with the right format(tuple with first position as the changed compounds, second position the updated dictionary); check correctness(done?); clean up prints; optimize other corruptions with new functions
 def edgeAdd(func_dict, chance):
   #For each compound, make a loop with
   #each other compound that is not its regulator,
@@ -96,7 +95,7 @@ def edgeAdd(func_dict, chance):
 
         roll = random.random()
         if(roll <=0.5): #Roll to see if e is activator or inhibitor
-          print(e + " is going to be an inhibitor")
+          #print(e + " is going to be an inhibitor")
           e = '!'+e
 
         or_clause = True  
@@ -105,38 +104,41 @@ def edgeAdd(func_dict, chance):
           or_clause = False
 
         if(or_clause or not c_implicants):
-          print("Adding "+e+ " as new prime implicant")
+          #print("Adding "+e+ " as new prime implicant")
           c_implicants.append(e)
 
         else:
-          print("Adding "+e+ " to existing prime implicant(s)")
+          #print("Adding "+e+ " to existing prime implicant(s)")
           has_been_added = False
           for implicant in range (0, len(c_implicants)):
             roll = random.random()
             if(roll <=0.5 or (not has_been_added and implicant==len(c_implicants)-1)):
-              print("adding it to implicant "+c_implicants[implicant])
+              #print("Adding it to implicant "+c_implicants[implicant])
               c_implicants[implicant]+='&'+e
               has_been_added = True
 
         print("Updated implicants: " + str(c_implicants))
+    if(c_implicants):
+      final_dict[c] = c_implicants
 
-  print(all_compounds)
+  print(str(final_dict))
 
-  return 0
+  return final_dict
 
 #Receives a list of implicants as input. Returns a list of prime implicants.
 def primesOnly(implicants):
-  original = implicants.copy()
+  original = [i for i in implicants if(i != '')]
+  orig_len = len(original)
   copy = [set(i.strip("()").split('&')) for i in implicants] 
-  #print("Processed input" + str(copy))
+  print("Processed input" + str(copy))
 
   output = []
   changed_input = []
 
-  for i in range(0, len(implicants)):
+  for i in range(0, orig_len):
     if(copy[i]==''): continue #if i has already been marked as a non-prime, go to the next implicant
 
-    for j in range(i+1, len(implicants)):
+    for j in range(i+1, orig_len):
       if(copy[j]==''): continue #if j has already been marked as a non-prime, go to the next implicant
 
       if copy[i].issubset(copy[j]): #if j absorbs i, then j is not a prime implicant
@@ -160,13 +162,7 @@ def edgeRemove(implicants, chance):
   output = implicants.copy()
   changed_input = []
 
-  #print(implicants)
-  all_literals = [i.strip("()").split('&') for i in implicants]
-  #print(all_literals)
-  flatten_literals = [item for sublist in all_literals for item in sublist]
-  #print(flatten_literals)
-  literals = list(dict.fromkeys(flatten_literals))
-  #print(literals)
+  literals = getAllLiterals(implicants)
 
   for l in literals:
     roll = random.random()
@@ -195,13 +191,7 @@ def edgeFlip(implicants, chance):
   output = implicants.copy()
   changed_input = []
 
-  #print(implicants)
-  all_literals = [i.strip("()").split('&') for i in implicants]
-  #print(all_literals)
-  flatten_literals = [item for sublist in all_literals for item in sublist]
-  #print(flatten_literals)
-  literals = list(dict.fromkeys(flatten_literals))
-  #print(literals)
+  literals = getAllLiterals(implicants)
 
   for l in literals:
     roll = random.random()
@@ -244,11 +234,11 @@ for filename in glob.glob(os.path.join(path, '8.bnet')):
       # else:
       #   print("No edges removed")
 
-      # flipped_implicants = edgeFlip(implicants, 0.1)
-      # if(len(flipped_implicants[0]) > 0):
-      #   print(">Flipped literals "+str(flipped_implicants[0])+". New implicants: "+str(flipped_implicants[1]))
-      # else:
-      #   print("No signs flipped")
+      flipped_implicants = edgeFlip(implicants, 0.3)
+      if(len(flipped_implicants[0]) > 0):
+        print(">Flipped literals "+str(flipped_implicants[0])+". New implicants: "+str(flipped_implicants[1]))
+      else:
+        print("No signs flipped")
     
     print("(READ END) Reached EOF")
     added_edges = edgeAdd(func_dict, 0.2)
