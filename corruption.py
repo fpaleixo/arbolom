@@ -5,7 +5,7 @@ import random
 
 path= './simple_models/'
 
-#Auxiliary functions
+#-----Auxiliary functions-----
 
 #Takes a list of implicants as input, and outputs a  
 #list containing all the literals in said implicant list (ex: v1 and !v1 are both present)
@@ -66,13 +66,80 @@ def getRegulatorsOf(compound, implicants):
   return all_regulators
 
 
+#Receives a list of implicants as input. Returns a list of prime implicants.
+def primesOnly(implicants):
+  original = [i for i in implicants if(i != '')]
+  orig_len = len(original)
+  copy = [set(i.strip("()").split('&')) for i in implicants] 
+  print("Processed input" + str(copy))
+
+  output = []
+  changed_input = []
+
+  for i in range(0, orig_len):
+    if(copy[i]==''): continue #if i has already been marked as a non-prime, go to the next implicant
+
+    for j in range(i+1, orig_len):
+      if(copy[j]==''): continue #if j has already been marked as a non-prime, go to the next implicant
+
+      if copy[i].issubset(copy[j]): #if j absorbs i, then j is not a prime implicant
+        changed_input.append(original[j])
+        copy[j] = ''
+      elif copy[j].issubset(copy[i]): #if j is absorbed by i, then i is not a prime implicant
+        changed_input.append(original[i])
+        copy[i] = ''
+        break; #leave inner loop if i has absorbed another implicant
+    
+    if(copy[i] != ''): #if i has not absorbed any other implicant, it is a prime so add it to output
+      output.append(original[i]) 
+
+  return (changed_input, output)
+
+
+
+#-----Model corruption operations-----
+
+#Inputs: Receives a list of implicants as input, and the chance to change that list of implicants (0.0-1.0).
+#Purpose: Changes the regulatory function of a compound by creating a new one using the same literals.
+#TO-DO: guarantee that each clause gets at least one value 
+def funcChange(implicants, chance):
+
+  output = None
+  changed = False
+  literals = getAllLiterals(implicants)
+
+  roll = random.random()
+  if(len(literals) > 1 and roll <=0.5):
+    changed = True
+
+    num_implicants = random.randint(0, 2*len(literals))
+    if(num_implicants > len(literals)+1):
+      num_implicants /=2
+
+    output = [None]*num_implicants
+
+    for l in literals:
+      has_been_used = False
+
+      for i in range(0, num_implicants):
+        roll = random.random()
+        if(roll <=0.5 or (i==num_implicants-1 and not has_been_used)):
+          has_been_used = True
+          if(output[i] == None):
+            output[i] = l
+          else:
+            output[i] + "&"+l
+          
+
+  return (changed, output)
+
+#For each compound, make a loop with
+#each other compound that is not its regulator,
+#then roll the dice (given chance) and see if it is added as regulator (50% chance of being activator / inhibitor) or not
+#if it is added as a regulator, then roll the dice to see if it is added as an OR clause or 
+#added to one of the existing AND clauses (50%)
+#if it is added to one of the existing AND clauses, for each clause there's a 50% chance it will be included there
 def edgeAdd(func_dict, chance):
-  #For each compound, make a loop with
-  #each other compound that is not its regulator,
-  #then roll the dice (given chance) and see if it is added as regulator (50% chance of being activator / inhibitor) or not
-  #if it is added as a regulator, then roll the dice to see if it is added as an OR clause or 
-  #added to one of the existing AND clauses (50%)
-  #if it is added to one of the existing AND clauses, for each clause there's a 50% chance it will be included there
 
   all_compounds = getAllCompounds(func_dict)
 
@@ -124,37 +191,7 @@ def edgeAdd(func_dict, chance):
   print(str(final_dict))
 
   return final_dict
-
-#Receives a list of implicants as input. Returns a list of prime implicants.
-def primesOnly(implicants):
-  original = [i for i in implicants if(i != '')]
-  orig_len = len(original)
-  copy = [set(i.strip("()").split('&')) for i in implicants] 
-  print("Processed input" + str(copy))
-
-  output = []
-  changed_input = []
-
-  for i in range(0, orig_len):
-    if(copy[i]==''): continue #if i has already been marked as a non-prime, go to the next implicant
-
-    for j in range(i+1, orig_len):
-      if(copy[j]==''): continue #if j has already been marked as a non-prime, go to the next implicant
-
-      if copy[i].issubset(copy[j]): #if j absorbs i, then j is not a prime implicant
-        changed_input.append(original[j])
-        copy[j] = ''
-      elif copy[j].issubset(copy[i]): #if j is absorbed by i, then i is not a prime implicant
-        changed_input.append(original[i])
-        copy[i] = ''
-        break; #leave inner loop if i has absorbed another implicant
-    
-    if(copy[i] != ''): #if i has not absorbed any other implicant, it is a prime so add it to output
-      output.append(original[i]) 
-
-  return (changed_input, output)
         
-
 #Receives a list of implicants as input, and the chance of removing an edge (regulator).
 #A (repeated) literal in an implicant represents a signed edge (regulator). For all literals, roll the die 
 #and see if the respective edge is removed or not.
@@ -234,13 +271,19 @@ for filename in glob.glob(os.path.join(path, '8.bnet')):
       # else:
       #   print("No edges removed")
 
-      flipped_implicants = edgeFlip(implicants, 0.3)
-      if(len(flipped_implicants[0]) > 0):
-        print(">Flipped literals "+str(flipped_implicants[0])+". New implicants: "+str(flipped_implicants[1]))
+      change = funcChange(implicants, 0.5)
+      if(change[0]):
+        print(">Changed "+full[0]+" to " + str(change[1]))
       else:
-        print("No signs flipped")
+        print(">No change")
+
+    #   flipped_implicants = edgeFlip(implicants, 0.3)
+    #   if(len(flipped_implicants[0]) > 0):
+    #     print(">Flipped literals "+str(flipped_implicants[0])+". New implicants: "+str(flipped_implicants[1]))
+    #   else:
+    #     print("No signs flipped")
     
-    print("(READ END) Reached EOF")
-    added_edges = edgeAdd(func_dict, 0.2)
+    # print("(READ END) Reached EOF")
+    # added_edges = edgeAdd(func_dict, 0.2)
 
     
