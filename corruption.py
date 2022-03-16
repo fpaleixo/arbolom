@@ -1,8 +1,11 @@
-import os
-import sys
-import glob
-import random
+import os, sys, logging, glob, random
+#TO-DO: change prints to logs; change comments to better explain inputs and purpose of each function; 
+#make it so that corruption.py can be called from the cmd line
 
+#Config
+logging.basicConfig(stream = sys.stderr, level = logging.DEBUG)
+logging.debug('A debug message!')
+logging.info('We processed %d records', 123)
 path= './simple_models/'
 
 #-----Auxiliary functions-----
@@ -101,7 +104,6 @@ def primesOnly(implicants):
 
 #Inputs: Receives a list of implicants as input, and the chance to change that list of implicants (0.0-1.0).
 #Purpose: Changes the regulatory function of a compound by creating a new one using the same literals.
-#TO-DO: guarantee that each clause gets at least one value 
 def funcChange(implicants, chance):
 
   output = None
@@ -114,23 +116,34 @@ def funcChange(implicants, chance):
 
     num_implicants = random.randint(0, 2*len(literals))
     if(num_implicants > len(literals)+1):
-      num_implicants /=2
+      num_implicants = round(num_implicants /2)+1
+
+    print("<DBG:FC> Number of max implicants set: "+ str(num_implicants))
 
     output = [None]*num_implicants
+    filled_clauses = {}
 
     for l in literals:
+      print("<DBG:FC> Looking at literal "+l)
       has_been_used = False
 
       for i in range(0, num_implicants):
         roll = random.random()
-        if(roll <=0.5 or (i==num_implicants-1 and not has_been_used)):
+
+        if(roll <=0.5 
+           or (i==num_implicants-1 and not has_been_used) #Literal has not been used yet and we're on the last possible implicant that it can be used in
+           or (l==literals[-1] and i not in filled_clauses)): #We're on the last literal and there is a clause that does not have any literals in it yet
+          print("<DBG:FC> Adding it to clause "+ str(i+1))
           has_been_used = True
+          filled_clauses[i] = True
+
           if(output[i] == None):
             output[i] = l
           else:
-            output[i] + "&"+l
-          
+            output[i] += "&"+l
+          print("<DBG:FC> Updated function: "+ str(output))
 
+    output = primesOnly(output)[1]
   return (changed, output)
 
 #For each compound, make a loop with
