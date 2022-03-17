@@ -1,40 +1,45 @@
 import os, sys, logging, glob, random
-#TO-DO: change prints to logs; change comments to better explain inputs and purpose of each function; 
-#make it so that corruption.py can be called from the cmd line
+#TO-DO: 
+#add acquirable seed; testing
 
 #Config
-logging.basicConfig(stream = sys.stderr, level = logging.DEBUG)
-logging.debug('A debug message!')
-logging.info('We processed %d records', 123)
+global_logger = logging.getLogger("global")
+global_logger.setLevel(logging.DEBUG)
 path= './simple_models/'
 
 #-----Auxiliary functions-----
 
-#Takes a list of implicants as input, and outputs a  
-#list containing all the literals in said implicant list (ex: v1 and !v1 are both present)
+#Inputs: A list of implicants
+#Purpose: Outputs a list containing all the literals in said implicant list (ex: v1 and !v1 are both present)
 def getAllLiterals(implicants):
+  logger = logging.getLogger("all_literals")
+  logger.setLevel(logging.INFO)
 
-  #print(implicants)
+  logger.debug(implicants)
   all_literals = [i.strip("()").split('&') for i in implicants]
-  #print(all_literals)
+  
+  logger.debug(all_literals)
   flatten_literals = [item for sublist in all_literals for item in sublist]
-  #print(flatten_literals)
-  literals = list(dict.fromkeys(flatten_literals))
-  #print(literals)
 
+  logger.debug(flatten_literals)
+  literals = list(dict.fromkeys(flatten_literals))
+  
+  logger.debug(literals)
   return literals
 
 
-#Takes a dictionary containing all regulatory functions and returns a list with  
-#all the compounds in them (ex: if both v1 and !v1 exist, only v1 is present)
+#Inputs: A dictionary containing all the regulatory functions and an optional argument to add the compound in the key
+#Purpose: Outputs all the compounds in a regulatory function (ex: if both v1 and !v1 exist, only v1 is present)
 def getAllCompounds(func_dict, add_self=True):
+  logger = logging.getLogger("all_compounds")
+  logger.setLevel(logging.INFO)
 
   implicant_list = list(func_dict.values())
   all_implicants = []
 
   for i in implicant_list:
       all_implicants += i
-  #print(all_implicants)
+  logger.debug(all_implicants)
 
   all_literals = getAllLiterals(all_implicants)
 
@@ -53,11 +58,13 @@ def getAllCompounds(func_dict, add_self=True):
   return sorted(all_compounds)
 
 
-#Returns a list with all the compounds that are regulators of the given input compound,
-#for a given list of implicants
+#Inputs: Takes a compound and the corresponding list of implicants
+#Purpose: Returns a list with all the compounds that are regulators of the given input compound
 def getRegulatorsOf(compound, implicants):
+  logger = logging.getLogger("regulators_of")
+  logger.setLevel(logging.INFO)
 
-  print("Obtained implicants of "+compound+":" +str(implicants))
+  logger.debug("Obtained implicants of "+compound+":" +str(implicants))
 
   if not implicants: #If the compound has no implicants
     return []
@@ -69,12 +76,16 @@ def getRegulatorsOf(compound, implicants):
   return all_regulators
 
 
-#Receives a list of implicants as input. Returns a list of prime implicants.
+#Inputs: Receives a list of implicants
+#Purpose:  Returns a list of its prime implicants
 def primesOnly(implicants):
+  logger = logging.getLogger("primes_only")
+  logger.setLevel(logging.INFO)
+
   original = [i for i in implicants if(i != '')]
   orig_len = len(original)
   copy = [set(i.strip("()").split('&')) for i in implicants] 
-  print("Processed input" + str(copy))
+  logger.debug("Processed input" + str(copy))
 
   output = []
   changed_input = []
@@ -99,12 +110,37 @@ def primesOnly(implicants):
   return (changed_input, output)
 
 
+#Input: A list of prime implicants, a list of literals that should be present in the prime implicants
+#Purpose: If there are literals missing from the list of prime implicants, add a new implicant with them
+def checkLiterals(implicants, literals):
+  logger = logging.getLogger("check_literals")
+  logger.setLevel(logging.DEBUG)
+  output = implicants.copy()
+
+  imp_literals = getAllLiterals(implicants)
+  missing_literals_implicant = None
+
+  logger.debug("Received implicants: " + str(implicants))
+  for l in literals:
+    if l not in imp_literals:
+      logger.debug("Found literal not in primes: " + l)
+      if not missing_literals_implicant:
+        missing_literals_implicant = l
+      else:
+        missing_literals_implicant += '&' + l
+  
+  if(missing_literals_implicant):
+    output.append(missing_literals_implicant)
+  return output
+
 
 #-----Model corruption operations-----
 
 #Inputs: Receives a list of implicants as input, and the chance to change that list of implicants (0.0-1.0).
 #Purpose: Changes the regulatory function of a compound by creating a new one using the same literals.
 def funcChange(implicants, chance):
+  logger = logging.getLogger("func_change")
+  logger.setLevel(logging.DEBUG)
 
   output = None
   changed = False
@@ -114,17 +150,18 @@ def funcChange(implicants, chance):
   if(len(literals) > 1 and roll <=0.5):
     changed = True
 
-    num_implicants = random.randint(0, 2*len(literals))
+    num_implicants = random.randint(1, 2*len(literals))
     if(num_implicants > len(literals)+1):
+      logger.debug("Max implicants initial: " + str(num_implicants))
       num_implicants = round(num_implicants /2)+1
 
-    print("<DBG:FC> Number of max implicants set: "+ str(num_implicants))
+    logger.debug("Number of max implicants set: "+ str(num_implicants))
 
     output = [None]*num_implicants
     filled_clauses = {}
 
     for l in literals:
-      print("<DBG:FC> Looking at literal "+l)
+      logger.debug("Looking at literal "+l)
       has_been_used = False
 
       for i in range(0, num_implicants):
@@ -133,7 +170,7 @@ def funcChange(implicants, chance):
         if(roll <=0.5 
            or (i==num_implicants-1 and not has_been_used) #Literal has not been used yet and we're on the last possible implicant that it can be used in
            or (l==literals[-1] and i not in filled_clauses)): #We're on the last literal and there is a clause that does not have any literals in it yet
-          print("<DBG:FC> Adding it to clause "+ str(i+1))
+          logger.debug("Adding it to clause "+ str(i+1))
           has_been_used = True
           filled_clauses[i] = True
 
@@ -141,20 +178,28 @@ def funcChange(implicants, chance):
             output[i] = l
           else:
             output[i] += "&"+l
-          print("<DBG:FC> Updated function: "+ str(output))
+          logger.debug("Updated implicants: "+ str(output))
 
-    output = primesOnly(output)[1]
+    output = checkLiterals(primesOnly(output)[1], literals)
+
   return (changed, output)
 
-#For each compound, make a loop with
+
+#Inputs: A dictionary containing all the regulatory functions and the chance 
+#that a new regulator will be added to the regulatory function of a compound
+#Purpose: Add more regulators to the regulatory function of a compound
+#Detail: For each compound, make a loop with
 #each other compound that is not its regulator,
 #then roll the dice (given chance) and see if it is added as regulator (50% chance of being activator / inhibitor) or not
 #if it is added as a regulator, then roll the dice to see if it is added as an OR clause or 
 #added to one of the existing AND clauses (50%)
 #if it is added to one of the existing AND clauses, for each clause there's a 50% chance it will be included there
 def edgeAdd(func_dict, chance):
+  logger = logging.getLogger("edge_add")
+  logger.setLevel(logging.DEBUG)
 
   all_compounds = getAllCompounds(func_dict)
+  changed = False
 
   final_dict = {}
 
@@ -162,7 +207,7 @@ def edgeAdd(func_dict, chance):
     c_implicants = func_dict.get(c,[])
     c_regulators = getRegulatorsOf(c,c_implicants)
     
-    #print("Regulators of "+c+" are: "+str(c_regulators))
+    logger.debug("Regulators of "+c+" are: "+str(c_regulators))
 
     s = set(c_regulators)
     #Edges to be added need to come from compounds that are not regulators of c already
@@ -170,12 +215,13 @@ def edgeAdd(func_dict, chance):
 
     for e in potential_edges:
       roll = random.random()
-      if(roll <= chance):
-        print("Adding "+e+" as regulator of "+ c)
+      if(roll <= chance/len(potential_edges)):
+        logger.debug("Adding "+e+" as regulator of "+ c)
+        changed = True
 
         roll = random.random()
         if(roll <=0.5): #Roll to see if e is activator or inhibitor
-          #print(e + " is going to be an inhibitor")
+          logger.debug(e + " is going to be an inhibitor")
           e = '!'+e
 
         or_clause = True  
@@ -184,31 +230,34 @@ def edgeAdd(func_dict, chance):
           or_clause = False
 
         if(or_clause or not c_implicants):
-          #print("Adding "+e+ " as new prime implicant")
+          logger.debug("Adding "+e+ " as new prime implicant")
           c_implicants.append(e)
 
         else:
-          #print("Adding "+e+ " to existing prime implicant(s)")
+          logger.debug("Adding "+e+" to existing prime implicant(s)")
           has_been_added = False
           for implicant in range (0, len(c_implicants)):
             roll = random.random()
             if(roll <=0.5 or (not has_been_added and implicant==len(c_implicants)-1)):
-              #print("Adding it to implicant "+c_implicants[implicant])
+              logger.debug("Adding it to implicant "+c_implicants[implicant])
               c_implicants[implicant]+='&'+e
               has_been_added = True
 
-        print("Updated implicants: " + str(c_implicants))
+        logger.debug("Updated implicants: " + str(c_implicants))
     if(c_implicants):
       final_dict[c] = c_implicants
 
-  print(str(final_dict))
+  logger.debug("Final dict: " + str(final_dict))
 
-  return final_dict
-        
-#Receives a list of implicants as input, and the chance of removing an edge (regulator).
-#A (repeated) literal in an implicant represents a signed edge (regulator). For all literals, roll the die 
-#and see if the respective edge is removed or not.
+  return (changed, final_dict)
+
+
+#Inputs: A list of implicants, and the chance of removing an edge (regulator).
+#Purpose: For all literals in a regulatory function, roll the die and see if the respective edge is removed or not.
 def edgeRemove(implicants, chance):
+  logger = logging.getLogger("edge_remove")
+  logger.setLevel(logging.INFO)
+
   output = implicants.copy()
   changed_input = []
 
@@ -216,9 +265,9 @@ def edgeRemove(implicants, chance):
 
   for l in literals:
     roll = random.random()
-    #print("Rolled: " + str(roll))
+    logger.debug("Rolled: " + str(roll))
     if(roll <= chance):
-      #print("Removing regulator "+l)
+      logger.debug("Removing regulator "+l)
       changed_input.append(l)
 
       for i in range(0, len(implicants)): #For each implicant
@@ -234,10 +283,13 @@ def edgeRemove(implicants, chance):
   return (changed_input, output)
 
 
-#Receives a list of implicants as input, and the chance of changing an edge's sign.
-#A (repeated) literal in an implicant represents a signed edge. For all literals, roll the die 
+#Inputs: A list of implicants, and the chance of changing an edge's sign
+#Purpose: A (repeated) literal in an implicant represents a signed edge. For all literals, roll the die 
 #and see if the sign of the respective edge changes or not.
 def edgeFlip(implicants, chance):
+  logger = logging.getLogger("edge_flip")
+  logger.setLevel(logging.INFO)
+
   output = implicants.copy()
   changed_input = []
 
@@ -245,58 +297,62 @@ def edgeFlip(implicants, chance):
 
   for l in literals:
     roll = random.random()
-    #print("Rolled: " + str(roll))
+    logger.debug("Rolled: " + str(roll))
     if(roll <= chance):
-      #print("Changing sign of "+l)
+      logger.debug("Changing sign of "+l)
       changed_input.append(l)
       negated = l.count('!')
-      #print(negated)
+      logger.debug(negated)
 
       if(negated%2 != 0): #if the literal is negated
         output = [i.replace(l, l.replace('!','')) for i in output]
       else:
         output = [i.replace(l, "!"+l) for i in output]
-        #print("Check it out: " + str(output))
+        logger.debug("Check it out: " + str(output))
 
   return (changed_input, output)
-        
 
 
+#-----Main-----
 for filename in glob.glob(os.path.join(path, '8.bnet')):
   with open(os.path.join(os.getcwd(), filename), 'r') as f:
-    print("(FILE) Reading file: " + filename)
+    global_logger.info("Reading file: " + filename)
 
     lines = [line.strip() for line in f.readlines()]
     func_dict = {}
     
     for regfun in lines:
       full = [c.strip() for c in regfun.split(',')]
-      print("(READ) Read function: "+str(full))
+      global_logger.info("Read function: "+str(full))
 
       implicants = [i.replace(" ", "").strip("()") for i in full[1].split('|')]
-      print("(I) Implicants of "+full[0]+": "+str(implicants))
+      global_logger.debug("Implicants of "+full[0]+": "+str(implicants))
 
       func_dict[full[0]] = implicants  #each compound is a key; the value is the corresponding list of prime implicants
 
       # removed_edges = edgeRemove(implicants, 0.5)
       # if(len(removed_edges[0]) > 0):
-      #   print(">Removed edges from "+str(removed_edges[0])+" to "+ full[0] + ". New implicants: "+str(removed_edges[1]))
+      #   global_logger.info("Removed edges from "+str(removed_edges[0])+" to "+ full[0] + ". New implicants: "+str(removed_edges[1]))
       # else:
-      #   print("No edges removed")
+      #   global_logger.info("No edges removed")
 
-      change = funcChange(implicants, 0.5)
-      if(change[0]):
-        print(">Changed "+full[0]+" to " + str(change[1]))
-      else:
-        print(">No change")
+      # change = funcChange(implicants, 0.8)
+      # if(change[0]):
+      #   global_logger.info("Changed reg func of "+full[0]+" to " + str(change[1]))
+      # else:
+      #   global_logger.info("No change")
 
-    #   flipped_implicants = edgeFlip(implicants, 0.3)
-    #   if(len(flipped_implicants[0]) > 0):
-    #     print(">Flipped literals "+str(flipped_implicants[0])+". New implicants: "+str(flipped_implicants[1]))
-    #   else:
-    #     print("No signs flipped")
+      # flipped_implicants = edgeFlip(implicants, 0.3)
+      # if(len(flipped_implicants[0]) > 0):
+      #   global_logger.info("Flipped literals "+str(flipped_implicants[0])+". New implicants: "+str(flipped_implicants[1]))
+      # else:
+      #   global_logger.info("No signs flipped")
     
-    # print("(READ END) Reached EOF")
-    # added_edges = edgeAdd(func_dict, 0.2)
+    global_logger.info("(READ END) Reached EOF")
+    added_edges = edgeAdd(func_dict, 0.2)
+    if(added_edges[0]):
+      global_logger.info("Added regulators to " + full[0] + ". New functions: "+str(added_edges[1]))
+    else:
+      global_logger.info("No changes")
 
     
