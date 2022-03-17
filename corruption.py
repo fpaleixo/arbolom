@@ -1,11 +1,17 @@
 import os, sys, logging, glob, random
-#TO-DO: 
-#add acquirable seed; testing
+#TO-DO: testing
 
-#Config
+#-----Configs-----
 global_logger = logging.getLogger("global")
 global_logger.setLevel(logging.DEBUG)
+
+seed = random.randrange(sys.maxsize)
+rng = random.Random(seed)
+global_logger.info("Seed: "+ str(seed))
+
 path= './simple_models/'
+
+
 
 #-----Auxiliary functions-----
 
@@ -134,6 +140,7 @@ def checkLiterals(implicants, literals):
   return output
 
 
+
 #-----Model corruption operations-----
 
 #Inputs: Receives a list of implicants as input, and the chance to change that list of implicants (0.0-1.0).
@@ -146,11 +153,11 @@ def funcChange(implicants, chance):
   changed = False
   literals = getAllLiterals(implicants)
 
-  roll = random.random()
+  roll = rng.random()
   if(len(literals) > 1 and roll <=0.5):
     changed = True
 
-    num_implicants = random.randint(1, 2*len(literals))
+    num_implicants = rng.randint(1, 2*len(literals))
     if(num_implicants > len(literals)+1):
       logger.debug("Max implicants initial: " + str(num_implicants))
       num_implicants = round(num_implicants /2)+1
@@ -165,7 +172,7 @@ def funcChange(implicants, chance):
       has_been_used = False
 
       for i in range(0, num_implicants):
-        roll = random.random()
+        roll = rng.random()
 
         if(roll <=0.5 
            or (i==num_implicants-1 and not has_been_used) #Literal has not been used yet and we're on the last possible implicant that it can be used in
@@ -214,18 +221,18 @@ def edgeAdd(func_dict, chance):
     potential_edges = [compound for compound in all_compounds if compound not in c_regulators]
 
     for e in potential_edges:
-      roll = random.random()
+      roll = rng.random()
       if(roll <= chance/len(potential_edges)):
         logger.debug("Adding "+e+" as regulator of "+ c)
         changed = True
 
-        roll = random.random()
+        roll = rng.random()
         if(roll <=0.5): #Roll to see if e is activator or inhibitor
           logger.debug(e + " is going to be an inhibitor")
           e = '!'+e
 
         or_clause = True  
-        roll = random.random()
+        roll = rng.random()
         if(roll <=0.5):
           or_clause = False
 
@@ -237,7 +244,7 @@ def edgeAdd(func_dict, chance):
           logger.debug("Adding "+e+" to existing prime implicant(s)")
           has_been_added = False
           for implicant in range (0, len(c_implicants)):
-            roll = random.random()
+            roll = rng.random()
             if(roll <=0.5 or (not has_been_added and implicant==len(c_implicants)-1)):
               logger.debug("Adding it to implicant "+c_implicants[implicant])
               c_implicants[implicant]+='&'+e
@@ -264,7 +271,7 @@ def edgeRemove(implicants, chance):
   literals = getAllLiterals(implicants)
 
   for l in literals:
-    roll = random.random()
+    roll = rng.random()
     logger.debug("Rolled: " + str(roll))
     if(roll <= chance):
       logger.debug("Removing regulator "+l)
@@ -296,7 +303,7 @@ def edgeFlip(implicants, chance):
   literals = getAllLiterals(implicants)
 
   for l in literals:
-    roll = random.random()
+    roll = rng.random()
     logger.debug("Rolled: " + str(roll))
     if(roll <= chance):
       logger.debug("Changing sign of "+l)
@@ -311,6 +318,7 @@ def edgeFlip(implicants, chance):
         logger.debug("Check it out: " + str(output))
 
   return (changed_input, output)
+
 
 
 #-----Main-----
