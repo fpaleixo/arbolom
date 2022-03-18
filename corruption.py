@@ -1,15 +1,36 @@
 import os, sys, logging, glob, random
-#TO-DO: testing
+#TO-DO: testing, output corrupted model to file, ensure multiple operations work simultaneously
+#Input files MUST be in the BCF format and follow the conventions of the .bnet files in the simple_models folder
+#(results may be unpredictable otherwise)
 
 #-----Configs-----
+
+#Original model paths
+folder= './simple_models/'
+filename = '10.bnet'
+
+#Operations (set desired operations to True)
+f_toggle = False #Function Change
+e_toggle = True #Edge Sign Flip
+r_toggle = True #Edge Remove
+a_toggle = False #Edge Add
+
+#Chances (probability that corruptions will occur (when set to True), 0 being 0% probability and 1 being 100%)
+f_chance = 0.2
+e_chance = 0.2
+r_chance = 0.2
+a_chance = 0.2
+
+#Global logger (change logging.(LEVEL) to desired (LEVEL) )
+logging.basicConfig()
 global_logger = logging.getLogger("global")
 global_logger.setLevel(logging.DEBUG)
 
+#Random seed (seed can be manually fixed to replicate results)
 seed = random.randrange(sys.maxsize)
 rng = random.Random(seed)
 global_logger.info("Seed: "+ str(seed))
 
-path= './simple_models/'
 
 
 
@@ -105,6 +126,7 @@ def primesOnly(implicants):
       if copy[i].issubset(copy[j]): #if j absorbs i, then j is not a prime implicant
         changed_input.append(original[j])
         copy[j] = ''
+
       elif copy[j].issubset(copy[i]): #if j is absorbed by i, then i is not a prime implicant
         changed_input.append(original[i])
         copy[i] = ''
@@ -130,15 +152,42 @@ def checkLiterals(implicants, literals):
   for l in literals:
     if l not in imp_literals:
       logger.debug("Found literal not in primes: " + l)
+
       if not missing_literals_implicant:
         missing_literals_implicant = l
+
       else:
         missing_literals_implicant += '&' + l
   
   if(missing_literals_implicant):
     output.append(missing_literals_implicant)
+
   return output
 
+
+def saveToFile(dict, path=folder, file=filename):
+  f = open(os.path.join(path, file.replace(".bnet", '') + "-corrupted.bnet"), 'w')
+
+  for function in dict.items():
+    implicants = ''
+
+    for i in function[1]:
+      is_conjunction = '&' in i 
+
+      if i == function[1][-1]: #If it is the last prime implicant
+        if is_conjunction:
+          implicants += "(" + i + ")" 
+        else:
+          implicants += i
+
+      else:
+        if is_conjunction:
+          implicants += "(" + i + ") | "
+
+        else:
+          implicants += i + " | "
+
+    f.write(function[0] + ", " + implicants + '\n')
 
 
 #-----Model corruption operations-----
@@ -183,8 +232,10 @@ def funcChange(implicants, chance):
 
           if(output[i] == None):
             output[i] = l
+
           else:
             output[i] += "&"+l
+
           logger.debug("Updated implicants: "+ str(output))
 
     output = checkLiterals(primesOnly(output)[1], literals)
@@ -203,10 +254,10 @@ def funcChange(implicants, chance):
 #if it is added to one of the existing AND clauses, for each clause there's a 50% chance it will be included there
 def edgeAdd(func_dict, chance):
   logger = logging.getLogger("edge_add")
-  logger.setLevel(logging.DEBUG)
+  logger.setLevel(logging.INFO)
 
   all_compounds = getAllCompounds(func_dict)
-  changed = False
+  changed = set()
 
   final_dict = {}
 
@@ -224,7 +275,7 @@ def edgeAdd(func_dict, chance):
       roll = rng.random()
       if(roll <= chance/len(potential_edges)):
         logger.debug("Adding "+e+" as regulator of "+ c)
-        changed = True
+        changed.add(c)
 
         roll = rng.random()
         if(roll <=0.5): #Roll to see if e is activator or inhibitor
@@ -243,14 +294,17 @@ def edgeAdd(func_dict, chance):
         else:
           logger.debug("Adding "+e+" to existing prime implicant(s)")
           has_been_added = False
+
           for implicant in range (0, len(c_implicants)):
             roll = rng.random()
+
             if(roll <=0.5 or (not has_been_added and implicant==len(c_implicants)-1)):
               logger.debug("Adding it to implicant "+c_implicants[implicant])
               c_implicants[implicant]+='&'+e
               has_been_added = True
 
         logger.debug("Updated implicants: " + str(c_implicants))
+
     if(c_implicants):
       final_dict[c] = c_implicants
 
@@ -273,6 +327,7 @@ def edgeRemove(implicants, chance):
   for l in literals:
     roll = rng.random()
     logger.debug("Rolled: " + str(roll))
+
     if(roll <= chance):
       logger.debug("Removing regulator "+l)
       changed_input.append(l)
@@ -282,8 +337,10 @@ def edgeRemove(implicants, chance):
         replaced = output[i].replace("&"+l, '') #Start by seeing if literal to remove is the last term of a conjunction
         if(replaced == output[i]):
           replaced = output[i].replace(l+"&", '') #If it wasn't, then check to see if it is the first term of a conjunction
+
           if(replaced == output[i]):
             replaced = output[i].replace(l, '') #If it is neither, then the literal occurs alone and can be removed without leaving behind a trailing &
+        
         output[i] = replaced
 
   output = primesOnly(output)[1]
@@ -305,6 +362,7 @@ def edgeFlip(implicants, chance):
   for l in literals:
     roll = rng.random()
     logger.debug("Rolled: " + str(roll))
+
     if(roll <= chance):
       logger.debug("Changing sign of "+l)
       changed_input.append(l)
@@ -313,6 +371,7 @@ def edgeFlip(implicants, chance):
 
       if(negated%2 != 0): #if the literal is negated
         output = [i.replace(l, l.replace('!','')) for i in output]
+
       else:
         output = [i.replace(l, "!"+l) for i in output]
         logger.debug("Check it out: " + str(output))
@@ -322,12 +381,13 @@ def edgeFlip(implicants, chance):
 
 
 #-----Main-----
-for filename in glob.glob(os.path.join(path, '8.bnet')):
+for filename in glob.glob(os.path.join(path, filename)):
   with open(os.path.join(os.getcwd(), filename), 'r') as f:
     global_logger.info("Reading file: " + filename)
 
     lines = [line.strip() for line in f.readlines()]
     func_dict = {}
+    final_dict = {}
     
     for regfun in lines:
       full = [c.strip() for c in regfun.split(',')]
@@ -338,29 +398,49 @@ for filename in glob.glob(os.path.join(path, '8.bnet')):
 
       func_dict[full[0]] = implicants  #each compound is a key; the value is the corresponding list of prime implicants
 
-      # removed_edges = edgeRemove(implicants, 0.5)
-      # if(len(removed_edges[0]) > 0):
-      #   global_logger.info("Removed edges from "+str(removed_edges[0])+" to "+ full[0] + ". New implicants: "+str(removed_edges[1]))
-      # else:
-      #   global_logger.info("No edges removed")
+      if(f_toggle):
+        change = funcChange(implicants, f_chance)
 
-      # change = funcChange(implicants, 0.8)
-      # if(change[0]):
-      #   global_logger.info("Changed reg func of "+full[0]+" to " + str(change[1]))
-      # else:
-      #   global_logger.info("No change")
+        if(change[0]):
+          global_logger.info("("+full[0]+") " + "Changed reg func to " + str(change[1]))
+          implicants = change[1]
 
-      # flipped_implicants = edgeFlip(implicants, 0.3)
-      # if(len(flipped_implicants[0]) > 0):
-      #   global_logger.info("Flipped literals "+str(flipped_implicants[0])+". New implicants: "+str(flipped_implicants[1]))
-      # else:
-      #   global_logger.info("No signs flipped")
+        else:
+          global_logger.info("("+full[0]+") " + "No changes")
+
+      if(e_toggle):
+        flipped_implicants = edgeFlip(implicants, e_chance)
+
+        if(len(flipped_implicants[0]) > 0):
+          global_logger.info("("+full[0]+") " + "Flipped literals "+str(flipped_implicants[0])+". New implicants: "+str(flipped_implicants[1]))
+          implicants = flipped_implicants[1]
+
+        else:
+          global_logger.info("("+full[0]+") " + "No signs flipped")
+
+      if(r_toggle):
+        removed_edges = edgeRemove(implicants, r_chance)
+
+        if(len(removed_edges[0]) > 0):
+          global_logger.info("("+full[0]+") " + "Removed edges from "+str(removed_edges[0])+". New implicants: "+str(removed_edges[1]))
+          implicants = removed_edges[1]
+
+        else:
+          global_logger.info("("+full[0]+") " + "No edges removed")
+
+      final_dict[full[0]] = implicants #Update final corrupted model
     
-    global_logger.info("(READ END) Reached EOF")
-    added_edges = edgeAdd(func_dict, 0.2)
-    if(added_edges[0]):
-      global_logger.info("Added regulators to " + full[0] + ". New functions: "+str(added_edges[1]))
-    else:
-      global_logger.info("No changes")
+    if(a_toggle):
+      global_logger.info("Reached EOF")
+      added_edges = edgeAdd(final_dict, a_chance)
+
+      if(added_edges[0]):
+        global_logger.info("Added new regulators to compound(s) "+ str(added_edges[0]) +". New functions: "+str(added_edges[1]))
+        final_dict = added_edges[1]
+        
+      else:
+        global_logger.info("No changes")
+
+    saveToFile(final_dict)
 
     
