@@ -1,18 +1,26 @@
-import os, sys, logging, glob, random
-#TO-DO: testing, output corrupted model to file, ensure multiple operations work simultaneously
-#Input files MUST be in the BCF format and follow the conventions of the .bnet files in the simple_models folder
-#(results may be unpredictable otherwise)
+import os, sys, argparse, logging, glob, random
+
+#Usage: !python corruption.py -op (OPERATIONS) -(O)p (PROBABILITY)
+#Variables: 
+#OPERATIONS - A string with one (or more) specific characters, denoting which corruptions to apply. These characters are 'f','e','r' and 'a'. 'fera' would be the full string, representing that (f)unction change, (e)dge flip, edge (r)emove and edge (a)dd will all be applied.
+#O - A character that can take one of four possible values: 'f','e','r' and 'a' (followed by 'p'). -fp would change the probability of function change to occur, -ep of edge removal, etc. The argument that uses this O variable is an optional one.
+#PROBABILITY - A float from 0.0 to 1.0 denoting the probability of a given corruption to occur. For example, -ap 0.5 would change the add edge operation's probability to 50%
+
+#Attention: Input files must be in the BCF format and follow the conventions of the .bnet files in the simple_models folder (results will be unpredictable otherwise)
 
 #-----Configs-----
 
+#Command-line usage
+cmd_enabled = True
+
 #Original model paths
 folder= './simple_models/'
-filename = '10.bnet'
+filename = '6.bnet'
 
 #Operations (set desired operations to True)
 f_toggle = False #Function Change
-e_toggle = True #Edge Sign Flip
-r_toggle = True #Edge Remove
+e_toggle = False #Edge Sign Flip
+r_toggle = False #Edge Remove
 a_toggle = False #Edge Add
 
 #Chances (probability that corruptions will occur (when set to True), 0 being 0% probability and 1 being 100%)
@@ -20,6 +28,18 @@ f_chance = 0.2
 e_chance = 0.2
 r_chance = 0.2
 a_chance = 0.2
+
+#Parser (will only be used if command-line usage is enabled above)
+parser = None
+args = None
+if(cmd_enabled):
+  parser = argparse.ArgumentParser()
+  parser.add_argument("-op", "--operations", help="Corruptions to apply")
+  parser.add_argument("-fp", "--f_probability", help="Probability of applying function change", type=float)
+  parser.add_argument("-ep", "--e_probability", help="Probability of applying edge flip", type=float)
+  parser.add_argument("-rp", "--r_probability", help="Probability of applying edge remove", type=float)
+  parser.add_argument("-ap", "--a_probability", help="Probability of applying edge add", type=float)
+  args = parser.parse_args()
 
 #Global logger (change logging.(LEVEL) to desired (LEVEL) )
 logging.basicConfig()
@@ -30,7 +50,6 @@ global_logger.setLevel(logging.DEBUG)
 seed = random.randrange(sys.maxsize)
 rng = random.Random(seed)
 global_logger.info("Seed: "+ str(seed))
-
 
 
 
@@ -142,7 +161,7 @@ def primesOnly(implicants):
 #Purpose: If there are literals missing from the list of prime implicants, add a new implicant with them
 def checkLiterals(implicants, literals):
   logger = logging.getLogger("check_literals")
-  logger.setLevel(logging.DEBUG)
+  logger.setLevel(logging.INFO)
   output = implicants.copy()
 
   imp_literals = getAllLiterals(implicants)
@@ -165,8 +184,67 @@ def checkLiterals(implicants, literals):
   return output
 
 
+#Purpose: Parses the arguments for which operations are to be applied and their probabilities
+def parseArgs():
+  logger = logging.getLogger("parser")
+  logger.setLevel(logging.DEBUG)
+
+  operations = args.operations
+  f_p = args.f_probability
+  e_p = args.e_probability
+  r_p = args.r_probability
+  a_p = args.a_probability
+
+  global f_toggle, e_toggle, r_toggle, a_toggle, f_chance, e_chance, r_chance, a_chance
+
+  if 'f' in operations:
+    f_toggle = True
+    if f_p:
+      f_chance = f_p
+  
+  if 'e' in operations:
+    e_toggle = True
+    if e_p:
+      e_chance = e_p
+
+  if 'r' in operations:
+    r_toggle = True
+    if r_p:
+      r_chance = r_p
+
+  if 'a' in operations:
+    a_toggle = True
+    if a_p:
+      a_chance = a_p
+
+  logger.debug("Obtained operations: " + operations)
+
+  logger.debug("Corruption F: "+ str(f_toggle) + " with chance " + str(f_chance))
+  logger.debug("Corruption E: "+ str(e_toggle) + " with chance " + str(e_chance))
+  logger.debug("Corruption R: "+ str(r_toggle) + " with chance " + str(r_chance))
+  logger.debug("Corruption A: "+ str(a_toggle) + " with chance " + str(a_chance))
+  
+  return
+
+#Input: Desired path
+#Purpose: Returns given path if it doesn't exist yet, otherwise creates a
+#new path with (1) or (2) or ... (n), depending on how many files have already been created with that path name 
+def uniquify(path):
+    filename, extension = os.path.splitext(path)
+    counter = 1
+
+    while os.path.exists(path):
+        path = filename + " (" + str(counter) + ")" + extension
+        counter += 1
+
+    return path
+
+
+#Input: dict is a dictionary with all the regulatory functions, path is the folder where the file will be stored and file is the file name
+#Purpose: Stores the contents of the dictionary into a file using the .bnet format
 def saveToFile(dict, path=folder, file=filename):
-  f = open(os.path.join(path, file.replace(".bnet", '') + "-corrupted.bnet"), 'w')
+  current_path = uniquify(os.path.join(path, file.replace(".bnet", '') + "-corrupted.bnet"))
+  f = open(current_path, 'w')
 
   for function in dict.items():
     implicants = ''
@@ -190,13 +268,14 @@ def saveToFile(dict, path=folder, file=filename):
     f.write(function[0] + ", " + implicants + '\n')
 
 
+
 #-----Model corruption operations-----
 
 #Inputs: Receives a list of implicants as input, and the chance to change that list of implicants (0.0-1.0).
 #Purpose: Changes the regulatory function of a compound by creating a new one using the same literals.
 def funcChange(implicants, chance):
   logger = logging.getLogger("func_change")
-  logger.setLevel(logging.DEBUG)
+  logger.setLevel(logging.INFO)
 
   output = None
   changed = False
@@ -381,7 +460,11 @@ def edgeFlip(implicants, chance):
 
 
 #-----Main-----
-for filename in glob.glob(os.path.join(path, filename)):
+
+if(cmd_enabled):
+  parseArgs()
+
+for filename in glob.glob(os.path.join(folder, filename)):
   with open(os.path.join(os.getcwd(), filename), 'r') as f:
     global_logger.info("Reading file: " + filename)
 
@@ -406,7 +489,7 @@ for filename in glob.glob(os.path.join(path, filename)):
           implicants = change[1]
 
         else:
-          global_logger.info("("+full[0]+") " + "No changes")
+          global_logger.info("("+full[0]+") " + "No changes to reg func")
 
       if(e_toggle):
         flipped_implicants = edgeFlip(implicants, e_chance)
@@ -439,7 +522,7 @@ for filename in glob.glob(os.path.join(path, filename)):
         final_dict = added_edges[1]
         
       else:
-        global_logger.info("No changes")
+        global_logger.info("No edges added")
 
     saveToFile(final_dict)
 
