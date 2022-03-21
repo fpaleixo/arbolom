@@ -6,9 +6,11 @@ The ARBoLoM tool aims to automate the revision of Boolean logical models, with f
 
 [![Task 1 - Create simple models](https://img.shields.io/badge/Task_1-Create_simple_models-green?style=for-the-badge&logo=Adobe+Acrobat+Reader)](https://github.com/fpaleixo/arbolom/tree/main/simple_models)
 
-[![Task 2 - Script for model corruption](https://img.shields.io/badge/Task_2-Script_for_model_corruption-yellow?style=for-the-badge&logo=python)](https://github.com/fpaleixo/arbolom/blob/main/corruption.py)
+[![Task 2 - Script for model corruption](https://img.shields.io/badge/Task_2-Script_for_model_corruption-green?style=for-the-badge&logo=python)](https://github.com/fpaleixo/arbolom/blob/main/corruption.py)
 
-![Task 3 - Script for model conversion](https://img.shields.io/badge/Task_3-Script_for_model_conversion-red?style=for-the-badge&logo=python)
+![Task 3 - Script for model conversion](https://img.shields.io/badge/Task_3-Script_for_model_conversion-yellow?style=for-the-badge&logo=python)
+
+![Task 4 - Encodings to create observations](https://img.shields.io/badge/Task_4-Encodings_to_create_observations-red?style=for-the-badge&logo=dev.to)
 
 ...
 
