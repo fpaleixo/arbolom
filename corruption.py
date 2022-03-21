@@ -1,4 +1,5 @@
 import os, sys, argparse, logging, glob, random
+from common import *
 
 #Usage: !python corruption.py -op (OPERATIONS) -(O)p (PROBABILITY)
 #Variables: 
@@ -33,7 +34,8 @@ a_chance = 0.2
 parser = None
 args = None
 if(cmd_enabled):
-  parser = argparse.ArgumentParser()
+  parser = argparse.ArgumentParser(description="Corrupt a Boolean logical model written in the BCF format.")
+  parser.add_argument("-f", "--file_to_corrupt", help="Path to file to be corrupted.")
   parser.add_argument("-op", "--operations", help="Corruptions to apply")
   parser.add_argument("-fp", "--f_probability", help="Probability of applying function change", type=float)
   parser.add_argument("-ep", "--e_probability", help="Probability of applying edge flip", type=float)
@@ -54,73 +56,6 @@ global_logger.info("Seed: "+ str(seed))
 
 
 #-----Auxiliary functions-----
-
-#Inputs: A list of implicants
-#Purpose: Outputs a list containing all the literals in said implicant list (ex: v1 and !v1 are both present)
-def getAllLiterals(implicants):
-  logger = logging.getLogger("all_literals")
-  logger.setLevel(logging.INFO)
-
-  logger.debug(implicants)
-  all_literals = [i.strip("()").split('&') for i in implicants]
-  
-  logger.debug(all_literals)
-  flatten_literals = [item for sublist in all_literals for item in sublist]
-
-  logger.debug(flatten_literals)
-  literals = list(dict.fromkeys(flatten_literals))
-  
-  logger.debug(literals)
-  return literals
-
-
-#Inputs: A dictionary containing all the regulatory functions and an optional argument to add the compound in the key
-#Purpose: Outputs all the compounds in a regulatory function (ex: if both v1 and !v1 exist, only v1 is present)
-def getAllCompounds(func_dict, add_self=True):
-  logger = logging.getLogger("all_compounds")
-  logger.setLevel(logging.INFO)
-
-  implicant_list = list(func_dict.values())
-  all_implicants = []
-
-  for i in implicant_list:
-      all_implicants += i
-  logger.debug(all_implicants)
-
-  all_literals = getAllLiterals(all_implicants)
-
-  #Adds the compounds in the keys to the list of compounds. Sometimes this is undesirable, 
-  #e.g. when we just want the regulators of a compound (if the compound does not regulate itself, 
-  #we would be incorrectly adding it to the list without this flag)
-  if(add_self): 
-    for k in func_dict.keys():
-      all_literals.append(k)
-
-  all_compounds = set()
-
-  for l in all_literals:
-    all_compounds.add(l.replace('!',""))
-
-  return sorted(all_compounds)
-
-
-#Inputs: Takes a compound and the corresponding list of implicants
-#Purpose: Returns a list with all the compounds that are regulators of the given input compound
-def getRegulatorsOf(compound, implicants):
-  logger = logging.getLogger("regulators_of")
-  logger.setLevel(logging.INFO)
-
-  logger.debug("Obtained implicants of "+compound+":" +str(implicants))
-
-  if not implicants: #If the compound has no implicants
-    return []
-
-  current_dict = {compound : implicants}
-
-  all_regulators = getAllCompounds(current_dict, False)
-
-  return all_regulators
-
 
 #Inputs: Receives a list of implicants
 #Purpose:  Returns a list of its prime implicants
@@ -189,13 +124,21 @@ def parseArgs():
   logger = logging.getLogger("parser")
   logger.setLevel(logging.DEBUG)
 
+  filepath = args.file_to_corrupt
   operations = args.operations
   f_p = args.f_probability
   e_p = args.e_probability
   r_p = args.r_probability
   a_p = args.a_probability
 
-  global f_toggle, e_toggle, r_toggle, a_toggle, f_chance, e_chance, r_chance, a_chance
+  global folder, filename, f_toggle, e_toggle, r_toggle, a_toggle, f_chance, e_chance, r_chance, a_chance
+
+  if filepath:
+    filename=os.path.basename(filepath)
+    folder=os.path.dirname(filepath)
+
+  logger.debug("Filename is: "+ filename)
+  logger.debug("Folder is: "+ folder)
 
   if 'f' in operations:
     f_toggle = True
@@ -242,8 +185,17 @@ def uniquify(path):
 
 #Input: dict is a dictionary with all the regulatory functions, path is the folder where the file will be stored and file is the file name
 #Purpose: Stores the contents of the dictionary into a file using the .bnet format
-def saveToFile(dict, path=folder, file=filename):
-  current_path = uniquify(os.path.join(path, file.replace(".bnet", '') + "-corrupted.bnet"))
+def saveToFile(dict, name=False, path=False,):
+
+  if not path:
+    path = folder
+
+  if not name:
+    name = filename
+
+  print("PATH IS: "+path)
+  print("NAME IS: "+name)
+  current_path = uniquify(os.path.join(path, name.replace(".bnet", '') + "-corrupted.bnet"))
   f = open(current_path, 'w')
 
   for function in dict.items():
@@ -464,8 +416,8 @@ def edgeFlip(implicants, chance):
 if(cmd_enabled):
   parseArgs()
 
-for filename in glob.glob(os.path.join(folder, filename)):
-  with open(os.path.join(os.getcwd(), filename), 'r') as f:
+for fname in glob.glob(os.path.join(folder, filename)):
+  with open(os.path.join(os.getcwd(), fname), 'r') as f:
     global_logger.info("Reading file: " + filename)
 
     lines = [line.strip() for line in f.readlines()]
@@ -513,8 +465,8 @@ for filename in glob.glob(os.path.join(folder, filename)):
 
       final_dict[full[0]] = implicants #Update final corrupted model
     
+    global_logger.info("Reached EOF")
     if(a_toggle):
-      global_logger.info("Reached EOF")
       added_edges = edgeAdd(final_dict, a_chance)
 
       if(added_edges[0]):
