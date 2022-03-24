@@ -1,5 +1,5 @@
-exp(e1).
-obs_exp(e1,v1,0).
-obs_exp(e1,v2,0).
-obs_exp(e1,v3,0).
-obs_exp(e1,v4,0).
+experiment(1).
+observation(1,v1,0).
+observation(1,v2,0).
+observation(1,v3,0).
+observation(1,v4,0).

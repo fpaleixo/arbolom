@@ -1,9 +1,9 @@
-exp(e1).
-obs_exp(e1,v1,0).
-obs_exp(e1,v2,1).
-obs_exp(e1,v3,1).
+experiment(1).
+observation(1,v1,0).
+observation(1,v2,1).
+observation(1,v3,1).
 
-exp(e2).
-obs_exp(e2,v1,1).
-obs_exp(e2,v2,0).
-obs_exp(e2,v3,0).
+experiment(2).
+observation(2,v1,1).
+observation(2,v2,0).
+observation(2,v3,0).

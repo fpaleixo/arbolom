@@ -34,5 +34,5 @@ implicant_inactive(E,T,N,I_NO) :- function(N,I), term(N,I_NO,R), edge(R,N,1), ob
 
 %Display
 #show observation/4.
-%#show active/3.
+#show experiment/1.
 %#show implicant_inactive/4.
