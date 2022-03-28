@@ -1,4 +1,4 @@
-import os, argparse, logging, glob, clingo, re
+import os, argparse, logging, clingo, re
 from clingo.application import ApplicationOptions
 from common import uniquify
 
