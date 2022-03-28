@@ -11,6 +11,12 @@ observation(1,2,v3,0).
 observation(1,3,v1,1).
 observation(1,3,v2,0).
 observation(1,3,v3,0).
+observation(1,4,v1,0).
+observation(1,4,v2,1).
+observation(1,4,v3,0).
+observation(1,5,v1,1).
+observation(1,5,v2,0).
+observation(1,5,v3,0).
 
 experiment(2).
 observation(2,0,v1,1).
@@ -25,4 +31,10 @@ observation(2,2,v3,0).
 observation(2,3,v1,1).
 observation(2,3,v2,0).
 observation(2,3,v3,0).
+observation(2,4,v1,0).
+observation(2,4,v2,1).
+observation(2,4,v3,0).
+observation(2,5,v1,1).
+observation(2,5,v2,0).
+observation(2,5,v3,0).
 

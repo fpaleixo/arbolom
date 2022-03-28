@@ -69,4 +69,17 @@ def getRegulatorsOf(compound, implicants):
   return all_regulators
 
 
+#Input: Desired path
+#Purpose: Returns given path if it doesn't exist yet, otherwise creates a
+#new path with (1) or (2) or ... (n), depending on how many files have already been created with that path name 
+def uniquify(path):
+    filename, extension = os.path.splitext(path)
+    counter = 1
+
+    while os.path.exists(path):
+        path = filename + " (" + str(counter) + ")" + extension
+        counter += 1
+
+    return path
+
 

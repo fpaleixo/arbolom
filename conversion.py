@@ -1,7 +1,7 @@
 import os, argparse, logging, glob
 from common import *
 
-#Usage: !python conversion.py -f (FILENAME)
+#Usage: $python conversion.py -f (FILENAME)
 #Variables: 
 #FILENAME - Path of file containing Boolean model in the BCF format to convert to ASP.
 
@@ -34,7 +34,7 @@ global_logger.setLevel(logging.DEBUG)
 
 #-----Auxiliary functions-----
 
-#Purpose: Parses the arguments for which operations are to be applied and their probabilities
+#Purpose: Parses the argument regarding which file to convert.
 def parseArgs():
   logger = logging.getLogger("parser")
   logger.setLevel(logging.DEBUG)

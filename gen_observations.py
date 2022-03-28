@@ -1,44 +1,107 @@
-import os, glob, clingo, re
+import os, argparse, logging, glob, clingo, re
 from clingo.application import ApplicationOptions
+from common import uniquify
 
-#TODO - test correctness, support cmd line paths, get uniquify on the common.py
+#TODO - test correctness
+
+#Usage: $python gen_observations.py -f (FILENAME) -async -e (NUMBER OF EXPERIMENTS) -t (TIME STEPS) -as (NUMBER OF ANSWER SETS)
+#Optional flags:
+#-async: Produces observations using the asynchronous mode.
+#Variables:
+#FILENAME - Path of file containing Boolean model in the BCF format written in lp.
+#NUMBER OF EXPERIMENTS - The number of experiments (sets of observations) to generate.
+#TIME STEPS - The number of time steps to consider in each experiment
+#NUMBER OF ANSWER SETS - The number of answer sets to obtain.
+
+#Attention: Input file must be in the BCF format and follow the conventions of the .lp files in the lp_models folder (results will be unpredictable otherwise)
 
 #-----Configs-----
-generate_sync = False
 
-observation_number = "2"
+#Command-line usage
+cmd_enabled = True
+
+#Model path
+model_path = "./lp_models/1.lp"
+
+#Sync/async flag 
+generate_sync = True
+
+#Generation settings
+experiments_number = "2"
 time_steps = "5"
 models_to_obtain = "1"
 
-model_path = "./lp_models/1.lp"
-
+#Encoding paths
 sync_path = "./encodings/sync_observations.lp"
 async_path = "./encodings/async_observations.lp"
 
+#Save folder paths
 save_sync = "./lp_models/obsv/tseries/sync"
 save_async = "./lp_models/obsv/tseries/async"
+
+#Parser (will only be used if command-line usage is enabled above)
+parser = None
+args = None
+if(cmd_enabled):
+  parser = argparse.ArgumentParser(description="Generate observations for a Boolean logical model in the BCF written in lp.")
+  parser.add_argument("-f", "--model_to_observe", help="Path to model to generate observations for.")
+  parser.add_argument("-async", "--asynchronous", action='store_true', help="Flag to generate asynchronous observations (default is synchronous).")
+  parser.add_argument("-e", "--experiments_number", help="Number of experiments (sets of observations) to generate (default is " + experiments_number + ").")
+  parser.add_argument("-t", "--time_steps", help="Number of time steps to consider in each experiment (default is " + time_steps + ").")
+  parser.add_argument("-as", "--models_to_obtain", help="Number of answer sets to obtain (default is " + models_to_obtain + ").")
+  args = parser.parse_args()
+
+#Global logger (change logging.(LEVEL) to desired (LEVEL) )
+logging.basicConfig()
+global_logger = logging.getLogger("global")
+global_logger.setLevel(logging.DEBUG)
+
 
 
 #-----Auxiliary Functions-----
 
-#Input: Desired path
-#Purpose: Returns given path if it doesn't exist yet, otherwise creates a
-#new path with (1) or (2) or ... (n), depending on how many files have already been created with that path name 
-def uniquify(path):
-    filename, extension = os.path.splitext(path)
-    counter = 1
+#Purpose: Parses the argument regarding which file to generate observations for.
+def parseArgs():
+  logger = logging.getLogger("parser")
+  logger.setLevel(logging.DEBUG)
 
-    while os.path.exists(path):
-        path = filename + " (" + str(counter) + ")" + extension
-        counter += 1
+  global model_path, generate_sync, experiments_number, time_steps, models_to_obtain
 
-    return path
+  model_path = args.model_to_observe
+  logger.debug("Obtained file: " + model_path)
+
+  asynch = args.asynchronous
+  experiments = args.experiments_number
+  time = args.time_steps
+  models = args.models_to_obtain
+
+  if asynch:
+    generate_sync = False
+    logger.debug("Mode changed from synchronous to asynchronous.")
+  
+  if experiments:
+    experiments_number = experiments
+    logger.debug("Overriding experiment number:  " + experiments_number)
+
+  if time:
+    time_steps = time
+    logger.debug("Overriding time steps:  " + time_steps)
+
+  if models:
+    models_to_obtain = models
+    logger.debug("Overriding answer sets to obtain:  " + models_to_obtain)
+
+  return
 
 
+#Input: Model outputted from clingo
+#Purpose: Prints the obtained model after solving
 def on_model(m):
     print (m)
 
 
+#Inputs: Obtained atoms from the solved model by clingo
+#Purpose: Saves generated observations to file
 def saveObsToFile(atoms):
     experiments_observations = {}
     current_answer_set = 0
@@ -86,9 +149,12 @@ def saveObsToFile(atoms):
       current_path = uniquify(origin_path)
 
 
-#-----Main-----
 
-ctl = clingo.Control(arguments=["-c e=" + observation_number, "-c t=" + time_steps, " " + models_to_obtain])
+#-----Main-----
+if(cmd_enabled):
+  parseArgs()
+
+ctl = clingo.Control(arguments=["-c e=" + experiments_number, "-c t=" + time_steps, " " + models_to_obtain])
 
 ctl.load(model_path)
 

@@ -1,8 +1,9 @@
 import os, sys, argparse, logging, glob, random
 from common import *
 
-#Usage: !python corruption.py -op (OPERATIONS) -(O)p (PROBABILITY)
+#Usage: $python corruption.py -f (FILENAME) -op (OPERATIONS) -(O)p (PROBABILITY)
 #Variables: 
+#FILENAME - Path of file to corrupt.
 #OPERATIONS - A string with one (or more) specific characters, denoting which corruptions to apply. These characters are 'f','e','r' and 'a'. 'fera' would be the full string, representing that (f)unction change, (e)dge flip, edge (r)emove and edge (a)dd will all be applied.
 #O - A character that can take one of four possible values: 'f','e','r' and 'a' (followed by 'p'). -fp would change the probability of function change to occur, -ep of edge removal, etc. The argument that uses this O variable is an optional one.
 #PROBABILITY - A float from 0.0 to 1.0 denoting the probability of a given corruption to occur. For example, -ap 0.5 would change the add edge operation's probability to 50%
@@ -168,19 +169,6 @@ def parseArgs():
   logger.debug("Corruption A: "+ str(a_toggle) + " with chance " + str(a_chance))
   
   return
-
-#Input: Desired path
-#Purpose: Returns given path if it doesn't exist yet, otherwise creates a
-#new path with (1) or (2) or ... (n), depending on how many files have already been created with that path name 
-def uniquify(path):
-    filename, extension = os.path.splitext(path)
-    counter = 1
-
-    while os.path.exists(path):
-        path = filename + " (" + str(counter) + ")" + extension
-        counter += 1
-
-    return path
 
 
 #Input: dict is a dictionary with all the regulatory functions, path is the folder where the file will be stored and file is the file name
