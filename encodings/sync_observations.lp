@@ -1,6 +1,6 @@
 #const e=1. %e is no. of experiments
 #const t=3. %t is max time steps
-%TODO print clingo errors to console
+
 
 %Generate
 experiment(1..e).
