@@ -122,6 +122,7 @@ def saveLPToFile(dict, name=False, path=write_folder):
   for function in dict.items():
     addEdgesToLP(f,function)
     addFunctionToLP(f,function)
+  f.close()
 
 
 

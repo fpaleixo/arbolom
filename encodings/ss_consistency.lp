@@ -16,10 +16,13 @@ active(E,N) :- function(N,I), not implicant_inactive(E,N,I_NO), experiment(E), t
 
 %For a given node N with I implicants, if there exists a regulator in implicant number I_NO
 %which is an inactive activator (outputs 1 when active) in an obervation E, then implicant 
-%I_NO evaluates to 0 for that observation E
+%I_NO evaluates to 0 for that observation E, and so is inactive
 implicant_inactive(E,N,I_NO) :- function(N,I), term(N,I_NO,R), edge(R,N,0), observation(E,R,0).
 
 %For a given node N with I implicants, if there exists a regulator in implicant number I_NO
 %which is an active inhibitor (outputs 1 when inactive) in an obervation E at time step T, then implicant 
-%I_NO evaluates to 0 for that observation E
+%I_NO evaluates to 0 for that observation E, and so is inactive
 implicant_inactive(E,N,I_NO) :- function(N,I), term(N,I_NO,R), edge(R,N,1), observation(E,R,1).
+
+#show inconsistent/2.
+#show node/1.

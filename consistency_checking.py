@@ -10,7 +10,7 @@ from common import uniquify
 cmd_enabled = False
 
 #Model path
-model_path = "./lp_models/1.lp"
+model_path = "./lp_models/1-corrupted.lp"
 
 #Observations path
 obsv_path = "./lp_models/obsv/sstate/1-obs.lp" 
@@ -86,14 +86,11 @@ def parseArgs():
   return
 
 
-#Input: Model outputted from clingo
-#Purpose: Prints the obtained model after solving
-def on_model(m):
-  print (m)
-
-
 def isConsistent(atoms):
-  print("TODO")
+  if not atoms:
+    print("Model is not consistent.")
+  else: 
+    print("Model is consistent.")
 
 
 
