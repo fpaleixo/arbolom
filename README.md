@@ -10,7 +10,9 @@ The ARBoLoM tool aims to automate the revision of Boolean logical models, with f
 
 ![Task 3 - Script for model conversion](https://img.shields.io/badge/Task_3-Script_for_model_conversion-green?style=for-the-badge&logo=python)
 
-![Task 4 - Encodings to create observations](https://img.shields.io/badge/Task_4-Encodings_to_create_observations-yellow?style=for-the-badge&logo=dev.to)
+![Task 4 - Encodings to create observations](https://img.shields.io/badge/Task_4-Encodings_to_create_observations-green?style=for-the-badge&logo=dev.to)
+
+![Task 5 - Encodings for model consistency](https://img.shields.io/badge/Task_4-Encodings_for_model_consistency-yellow?style=for-the-badge&logo=dev.to)
 
 ...
 
@@ -23,6 +25,8 @@ Task 2: Week 1-2
 Task 3: Week 2-3
 
 Task 4: Week 3-4
+
+Task 5: Week 4-ongoing
 
 ##
 
