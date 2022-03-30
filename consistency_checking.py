@@ -2,12 +2,25 @@ import os, argparse, logging, glob, clingo, re
 from clingo.application import ApplicationOptions
 from common import uniquify
 
-#TODO - stable state encoding
+#TODO - sync encoding, async encoding, check stable correctness, check sync, check async correctness
+
+#Usage: $python consistency_checking.py -f (FILENAME) -o (OBSERVATIONS) -stable -sync -async 
+#Optional flags:
+#-stable -> Performs consistency checking using stable state observations.
+#-sync -> Performs consistency checking using synchronous observations.
+#-async -> Performs consistency checking using asynchronous observations.
+#Variables:
+#FILENAME -> Path of file containing Boolean model in the BCF format written in lp.
+#OBSERVATIONS -> Path of file containing observations written in lp. 
+
+#Attention: File FILENAME must be in the BCF format and follow the conventions of the .lp files in the lp_models folder (results will be unpredictable otherwise).
+#Observations should also follow the conventions of the files in the obsv folder, inside lp_models.
+
 
 #-----Configs-----
 
 #Command-line usage
-cmd_enabled = False
+cmd_enabled = True
 
 #Model path
 model_path = "./lp_models/1-corrupted.lp"
@@ -87,8 +100,9 @@ def parseArgs():
 
 
 def isConsistent(atoms):
-  if not atoms:
-    print("Model is not consistent.")
+  if atoms:
+    print("Model is not consistent. Inconsistent (experiment, node): ")
+    print(atoms)
   else: 
     print("Model is consistent.")
 

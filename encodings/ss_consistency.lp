@@ -1,6 +1,3 @@
-%There can be no inconsistent nodes
-:- inconsistent(E,N), node(N), experiment(E).
-
 %If node  N is active but there is an observation stating it should be inactive, then the model is inconsistent
 inconsistent(E,N) :- active(E,N), not input_node(N), observation(E,N,0).
 
@@ -25,4 +22,3 @@ implicant_inactive(E,N,I_NO) :- function(N,I), term(N,I_NO,R), edge(R,N,0), obse
 implicant_inactive(E,N,I_NO) :- function(N,I), term(N,I_NO,R), edge(R,N,1), observation(E,R,1).
 
 #show inconsistent/2.
-#show node/1.
