@@ -1,15 +1,6 @@
-%If node  N is active but there is an observation stating it should be inactive, then the model is inconsistent
-inconsistent(E,N) :- active(E,N), not input_node(N), observation(E,N,0).
-
-%If compound N is inactive but there is an observation stating it should be active, then the model is inconsistent
-inconsistent(E,N) :- not active(E,N), not input_node(N), observation(E,N,1).
-
+%Define
 %A node with no regulatory function is an input node (can take any value)
 input_node(N) :- node(N), not function(N,_).
-
-%For a given node N with I implicants, if for experiment E there exists
-%some implicant I_NO which is not inactive, then N has at least one active implicant and so is active
-active(E,N) :- function(N,I), not implicant_inactive(E,N,I_NO), experiment(E), term(N,I_NO,_).
 
 %For a given node N with I implicants, if there exists a regulator in implicant number I_NO
 %which is an inactive activator (outputs 1 when active) in an obervation E, then implicant 
@@ -21,4 +12,28 @@ implicant_inactive(E,N,I_NO) :- function(N,I), term(N,I_NO,R), edge(R,N,0), obse
 %I_NO evaluates to 0 for that observation E, and so is inactive
 implicant_inactive(E,N,I_NO) :- function(N,I), term(N,I_NO,R), edge(R,N,1), observation(E,R,1).
 
-#show inconsistent/2.
+%For a given node N with I implicants, if for experiment E there exists
+%some implicant which is not inactive, then N has at least one active implicant and so is active
+active(E,N) :- function(N,I), not implicant_inactive(E,N,I_NO), experiment(E), term(N,I_NO,_).
+
+%If node N is active and there is no observation for it, fill in the missing observation
+observation(E,N,1) :- active(E,N), not observation(E,N,_), not input_node(N).
+
+%If node N is inactive and there is no observation for it, fill in the missing observation
+observation(E,N,0) :- not active(E,N),  not observation(E,N,_), experiment(E), node(N), not input_node(N).
+
+%If node  N is active but there is an observation stating it should be inactive, then the model is inconsistent
+inconsistent(E,N,1) :- active(E,N), observation(E,N,0).
+
+%If compound N is inactive but there is an observation stating it should be active, then the model is inconsistent
+inconsistent(E,N,0) :- not active(E,N), observation(E,N,1).
+
+
+%Test
+%Input nodes can never be inconsistent, since they can take any value
+:- inconsistent(_,N,_), input_node(N).
+
+
+%Display
+%#show implicant_inactive/3.
+#show inconsistent/3.
