@@ -1,6 +1,18 @@
 # ARBoLoM (**A**SP-based **R**evision of **B**oolean **L**ogical **M**odels)
 The ARBoLoM tool aims to automate the revision of Boolean logical models, with fully Answer Set Programming-based consistency checking and repair algorithms. 
 
+## Installation (2 alternatives)
+
+### Using Google Colab
+All scripts can be tested with no installation by using Google Colab. Just download the repository and change the working directory to the arbolom folder.
+
+### Using a local installation
+For a local installation, Python 3.6 or above is required, alongside the [clingo package](https://pypi.org/project/clingo/). Detailed instructions can be found in the [potassco website](https://potassco.org/clingo/).
+
+## Running the Scripts
+
+Instructions and examples on how to run each script can be found in the [notebook](https://github.com/fpaleixo/arbolom/blob/main/ARBoLoM.ipynb) file.
+
 
 ## Task Progress
 
