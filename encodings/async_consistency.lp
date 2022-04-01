@@ -29,23 +29,20 @@ observation(E,T,N,1) :- active(E,T,N), not input_node(N), not observation(E,T,N,
 observation(E,T,N,0) :- not active(E,T,N), not input_node(N), not observation(E,T,N,_), time(T), experiment(E), node(N).
 
 %If node  N is active but there is an observation stating it should be inactive, then the model is inconsistent
-inconsistent(E,T,N,1) :- active(E,T,N), observation(E,T,N,0), T > 0.
+inconsistent(E,T,N,1) :- changed_node(E,T-1,N), active(E,T,N), observation(E,T,N,0), T > 0.
 
 %If compound N is inactive but there is an observation stating it should be active, then the model is inconsistent
-inconsistent(E,T,N,0) :- not active(E,T,N), observation(E,T,N,1), T > 0.
+inconsistent(E,T,N,0) :- changed_node(E,T-1,N), not active(E,T,N), observation(E,T,N,1), T > 0.
+
+%In asynchronous mode, only one node state may change at each time step (without counting input nodes)
+inconsistent(E,T,N,multiple) :- 2{changed_node(E,T,N)}, experiment(E), time(T), node(N).
 
 
 %Test
 %Input nodes can never be inconsistent, since they can take any value
 :- inconsistent(_,_,N,_), input_node(N).
 
-%In asynchronous mode, only one node state may change at each time step (without counting input nodes)
-%TODO FIX THIS
-%balls(N) :- 2{changed_node(E,T,N) : time(T), experiment(E)}, node(N).
-
-1{changed_node(E,T,N) : time(T), experiment(E)}1 :- node(N), not input_node(N).
 
 %Display
-#show balls/1.
-#show changed_node/3.
+%#show changed_node/3.
 #show inconsistent/4.
