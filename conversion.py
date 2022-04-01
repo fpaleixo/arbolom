@@ -1,9 +1,12 @@
 import os, argparse, logging, glob
 from common import *
 
-#Usage: $python conversion.py -f (FILENAME)
+#Usage: $python conversion.py -f (FILENAME) -s (SAVE_DIRECTORY)
+#Optional flags:
+#-s -> Path of directory to save converted file (default is ./lp_models/corrupted/(name_of_file))
 #Variables: 
-#FILENAME - Path of file containing Boolean model in the BCF format to convert to ASP.
+#FILENAME -> Path of file containing Boolean model in the BCF format to convert to ASP.
+#SAVE_DIRECTORY -> Path of directory to save converted model to.
 
 #Attention: Input files must be in the BCF format and follow the conventions of the .bnet files in the simple_models folder (results will be unpredictable otherwise)
 
@@ -14,7 +17,7 @@ cmd_enabled = True
 
 #Original model paths
 read_folder= './simple_models/'
-write_folder= './lp_models'
+write_folder= './lp_models/corrupted'
 filename = '5.bnet'
 
 #Parser (will only be used if command-line usage is enabled above)
@@ -23,6 +26,7 @@ args = None
 if(cmd_enabled):
   parser = argparse.ArgumentParser(description="Convert a Boolean logical model written in the BCF format to a logic program.")
   parser.add_argument("-f", "--file_to_convert", help="Path to file to be converted.")
+  parser.add_argument("-s", "--save_directory", help="Path of directory to save converted model to.")
   args = parser.parse_args()
 
 #Global logger (change logging.(LEVEL) to desired (LEVEL) )
@@ -39,12 +43,15 @@ def parseArgs():
   logger = logging.getLogger("parser")
   logger.setLevel(logging.DEBUG)
 
-  global read_folder, filename
+  global read_folder, write_folder, filename
 
   filepath = args.file_to_convert
 
   filename = os.path.basename(filepath)
   read_folder = os.path.dirname(filepath)
+
+  if(args.save_directory):
+    write_folder = args.save_directory
 
   logger.debug("Obtained file: " + filepath)
   logger.debug("Name: " + filename)
@@ -109,7 +116,13 @@ def saveLPToFile(dict, name=False, path=write_folder):
 
   logger.debug("Filename: " + str(name))
   logger.debug("Path: " + str(write_folder))
-  current_path = os.path.join(path, name.replace(".bnet", '.lp'))
+
+  current_path = None
+  if 'corrupted' in name and not args.save_directory:
+    base_filename = name.split('-')[0] 
+    current_path = os.path.join(path, base_filename, name.replace(".bnet", '.lp'))
+  else:
+    current_path = os.path.join(path, name.replace(".bnet", '.lp'))
   f = open(current_path, 'w')
 
   logger.debug("Saving to: " + str(current_path))

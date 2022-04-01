@@ -4,12 +4,12 @@ from common import uniquify
 
 #Usage: $python gen_observations.py -f (FILENAME) -async -e (NUMBER OF EXPERIMENTS) -t (TIME STEPS) -as (NUMBER OF ANSWER SETS)
 #Optional flags:
-#-async: Produces observations using the asynchronous mode.
+#-async ->  Produces observations using the asynchronous mode.
 #Variables:
-#FILENAME - Path of file containing Boolean model in the BCF format written in lp.
-#NUMBER OF EXPERIMENTS - The number of experiments (sets of observations) to generate.
-#TIME STEPS - The number of time steps to consider in each experiment.
-#NUMBER OF ANSWER SETS - The number of answer sets to obtain.
+#FILENAME ->  Path of file containing Boolean model in the BCF format written in lp.
+#NUMBER OF EXPERIMENTS ->  The number of experiments (sets of observations) to generate.
+#TIME STEPS ->  The number of time steps to consider in each experiment.
+#NUMBER OF ANSWER SETS ->  The number of answer sets to obtain.
 
 #Attention: Input file must be in the BCF format and follow the conventions of the .lp files in the lp_models folder (results will be unpredictable otherwise)
 

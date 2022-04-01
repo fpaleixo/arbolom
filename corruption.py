@@ -3,10 +3,10 @@ from common import *
 
 #Usage: $python corruption.py -f (FILENAME) -op (OPERATIONS) -(O)p (PROBABILITY)
 #Variables: 
-#FILENAME - Path of file to corrupt.
-#OPERATIONS - A string with one (or more) specific characters, denoting which corruptions to apply. These characters are 'f','e','r' and 'a'. 'fera' would be the full string, representing that (f)unction change, (e)dge flip, edge (r)emove and edge (a)dd will all be applied.
-#O - A character that can take one of four possible values: 'f','e','r' and 'a' (followed by 'p'). -fp would change the probability of function change to occur, -ep of edge removal, etc. The argument that uses this O variable is an optional one.
-#PROBABILITY - A float from 0.0 to 1.0 denoting the probability of a given corruption to occur. For example, -ap 0.5 would change the add edge operation's probability to 50%
+#FILENAME -> Path of file inside simple models folder to corrupt.
+#OPERATIONS -> A string with one (or more) specific characters, denoting which corruptions to apply. These characters are 'f','e','r' and 'a'. 'fera' would be the full string, representing that (f)unction change, (e)dge flip, edge (r)emove and edge (a)dd will all be applied.
+#O -> A character that can take one of four possible values: 'f','e','r' and 'a' (followed by 'p'). -fp would change the probability of function change to occur, -ep of edge removal, etc. The argument that uses this O variable is an optional one.
+#PROBABILITY -> A float from 0.0 to 1.0 denoting the probability of a given corruption to occur. For example, -ap 0.5 would change the add edge operation's probability to 50%
 
 #Attention: Input files must be in the BCF format and follow the conventions of the .bnet files in the simple_models folder (results will be unpredictable otherwise)
 
@@ -173,7 +173,7 @@ def parseArgs():
 
 #Input: dict is a dictionary with all the regulatory functions, path is the folder where the file will be stored and file is the file name
 #Purpose: Stores the contents of the dictionary into a file using the .bnet format
-def saveToFile(dict, name=False, path=False,):
+def saveToFile(dict, name=False, path=False, ops=''):
 
   if not path:
     path = folder
@@ -183,7 +183,8 @@ def saveToFile(dict, name=False, path=False,):
 
   print("PATH IS: "+path)
   print("NAME IS: "+name)
-  current_path = uniquify(os.path.join(path, name.replace(".bnet", '') + "-corrupted.bnet"))
+  current_path = uniquify(os.path.join(path, "corrupted", name.replace(".bnet", ''),
+  name.replace(".bnet", '') + "-corrupted" + "-" + ops + ".bnet"))
   f = open(current_path, 'w')
 
   for function in dict.items():
@@ -215,14 +216,15 @@ def saveToFile(dict, name=False, path=False,):
 #Purpose: Changes the regulatory function of a compound by creating a new one using the same literals.
 def funcChange(implicants, chance):
   logger = logging.getLogger("func_change")
-  logger.setLevel(logging.INFO)
+  logger.setLevel(logging.DEBUG)
 
   output = None
   changed = False
   literals = getAllLiterals(implicants)
 
+  logger.debug("Length of literals: "+ str(len(literals)))
   roll = rng.random()
-  if(len(literals) > 1 and roll <=0.5):
+  if(len(literals) > 1 and roll <= chance):
     changed = True
 
     num_implicants = rng.randint(1, 2*len(literals))
@@ -411,6 +413,11 @@ for fname in glob.glob(os.path.join(folder, filename)):
     lines = [line.strip() for line in f.readlines()]
     func_dict = {}
     final_dict = {}
+
+    f_effect = False
+    e_effect = False
+    r_effect = False
+    a_effect = False
     
     for regfun in lines:
       full = [c.strip() for c in regfun.split(',')]
@@ -427,6 +434,7 @@ for fname in glob.glob(os.path.join(folder, filename)):
         if(change[0]):
           global_logger.info("("+full[0]+") " + "Changed reg func to " + str(change[1]))
           implicants = change[1]
+          f_effect = True
 
         else:
           global_logger.info("("+full[0]+") " + "No changes to reg func")
@@ -437,6 +445,7 @@ for fname in glob.glob(os.path.join(folder, filename)):
         if(len(flipped_implicants[0]) > 0):
           global_logger.info("("+full[0]+") " + "Flipped literals "+str(flipped_implicants[0])+". New implicants: "+str(flipped_implicants[1]))
           implicants = flipped_implicants[1]
+          e_effect = True
 
         else:
           global_logger.info("("+full[0]+") " + "No signs flipped")
@@ -447,6 +456,7 @@ for fname in glob.glob(os.path.join(folder, filename)):
         if(len(removed_edges[0]) > 0):
           global_logger.info("("+full[0]+") " + "Removed edges from "+str(removed_edges[0])+". New implicants: "+str(removed_edges[1]))
           implicants = removed_edges[1]
+          r_effect = True
 
         else:
           global_logger.info("("+full[0]+") " + "No edges removed")
@@ -460,10 +470,22 @@ for fname in glob.glob(os.path.join(folder, filename)):
       if(added_edges[0]):
         global_logger.info("Added new regulators to compound(s) "+ str(added_edges[0]) +". New functions: "+str(added_edges[1]))
         final_dict = added_edges[1]
+        a_effect = True
         
       else:
         global_logger.info("No edges added")
 
-    saveToFile(final_dict)
+    #Operations that changed the model
+    ops = ''
+    if(f_effect):
+      ops += 'f'
+    if(e_effect):
+      ops += 'e'
+    if(r_effect):
+      ops += 'r'
+    if(a_effect):
+      ops += 'a'  
+
+    saveToFile(final_dict, ops=ops)
 
     
