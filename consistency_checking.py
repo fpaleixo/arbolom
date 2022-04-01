@@ -2,7 +2,7 @@ import os, argparse, logging, glob, clingo, re
 from clingo.application import ApplicationOptions
 from common import uniquify
 
-#TODO - async encoding, check stable correctness, check sync, check async correctness (especially w missing values)
+#TODO - check stable correctness, check sync, check async correctness (especially w missing values)
 
 #Usage: $python consistency_checking.py -f (FILENAME) -o (OBSERVATIONS) -stable -sync -async 
 #Optional flags:
@@ -103,8 +103,10 @@ def isConsistent(atoms):
   if atoms[0]:
     if toggle_stable_state:
       print("Model is not consistent. Inconsistent (experiment, node, value): ")
-    else:
+    elif toggle_sync:
       print("Model is not consistent. Inconsistent (experiment, timestep, node, value): ")
+    else:
+      print("Model is not consistent. Inconsistent (experiment, timestep, node, value/other node updated at the same time): ")
     print(atoms)
   else: 
     print("Model is consistent.")

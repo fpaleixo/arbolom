@@ -35,7 +35,7 @@ inconsistent(E,T,N,1) :- changed_node(E,T-1,N), active(E,T,N), observation(E,T,N
 inconsistent(E,T,N,0) :- changed_node(E,T-1,N), not active(E,T,N), observation(E,T,N,1), T > 0.
 
 %In asynchronous mode, only one node state may change at each time step (without counting input nodes)
-inconsistent(E,T,N,multiple) :- 2{changed_node(E,T,N)}, experiment(E), time(T), node(N).
+inconsistent(E,T,N1,N2) :- changed_node(E,T,N1), changed_node(E,T,N2), N1 != N2.
 
 
 %Test
@@ -44,5 +44,4 @@ inconsistent(E,T,N,multiple) :- 2{changed_node(E,T,N)}, experiment(E), time(T), 
 
 
 %Display
-%#show changed_node/3.
 #show inconsistent/4.
