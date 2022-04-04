@@ -99,7 +99,9 @@ def parseArgs():
 
 
 def isConsistent(atoms):
-  if atoms[0]:
+  if not atoms:
+    print("No answers sets could be found	\u2755 there must be something wrong with the encoding...")
+  elif atoms[0]:
     if toggle_stable_state:
       print("Model is not consistent \u274C Inconsistent (experiment, node, value): ")
     elif toggle_sync:
