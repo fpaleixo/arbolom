@@ -63,7 +63,7 @@ def parseArgs():
 #-----ASP Predicates-related operations-----
 
 #Inputs: file is the file to write in, compounds is a list of strings representing the compounds.
-#Purpose: Adds compounds to LP
+#Purpose: Adds nodes representing compounds to LP
 def addNodesToLP(file, compounds):
   file.write("%Compounds\n")
   for c in compounds:
@@ -71,35 +71,38 @@ def addNodesToLP(file, compounds):
   file.write("\n")
 
 
-#Inputs: file is the file to write in, compounds is a list of strings representing the compounds.
-#Purpose: Adds regulators of each compound to LP
+#Inputs: file is the file to write in, item is a tuple where the first element is the compound of the regulatory function, and the second element is a list of its implicants.
+#Purpose: Adds the edges representing the regulators of each node to LP
 def addEdgesToLP(file, item):
-  file.write("%Regulators of " + item[0] + "\n")
-  all_literals = getAllLiterals(item[1])
+  print(str(item[1]))
+  if item[1][0]: #if there exist any regulators
+    file.write("%Regulators of " + item[0] + "\n")
+    all_literals = getAllLiterals(item[1])
 
-  for l in all_literals:
-    if(l[0]=='!'):
-      file.write("edge(" + l[1:] + ", " + item[0] + ", " + "1).\n")
+    for l in all_literals:
+      if(l[0]=='!'):
+        file.write("edge(" + l[1:] + ", " + item[0] + ", " + "1).\n")
 
-    else:
-      file.write("edge(" + l + ", " + item[0] + ", " + "0).\n")
-  file.write("\n")
+      else:
+        file.write("edge(" + l + ", " + item[0] + ", " + "0).\n")
+    file.write("\n")
 
 
 #Inputs: file is the file to write in, item is a tuple where the first element is the compound of the regulatory function, and the second element is a list of its implicants.
 #Purpose: Adds regulators of each compound to LP
 def addFunctionToLP(file, item):
-  file.write("%Regulatory function of " + item[0] + "\n")
-  num_terms = len(item[1])
-  file.write("function(" + item[0] + ", " + str(num_terms) + ").\n") 
+  if item[1][0]: #if there exist any regulators
+    file.write("%Regulatory function of " + item[0] + "\n")
+    num_terms = len(item[1])
+    file.write("function(" + item[0] + ", " + str(num_terms) + ").\n") 
 
-  for idx, i in enumerate(item[1]):
-    regulators = getRegulatorsOf(item[0],[i])
-    
-    for r in regulators:
-      file.write("term(" + item[0] + ", " + str(idx+1) + ", " + r + ").\n") #should we store the sign on the edges or on the function itself?
+    for idx, i in enumerate(item[1]):
+      regulators = getRegulatorsOf(item[0],[i])
+      
+      for r in regulators:
+        file.write("term(" + item[0] + ", " + str(idx+1) + ", " + r + ").\n") #should we store the sign on the edges or on the function itself?
 
-  file.write("\n")
+    file.write("\n")
 
 
 

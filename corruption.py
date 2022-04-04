@@ -216,7 +216,7 @@ def saveToFile(dict, name=False, path=False, ops=''):
 #Purpose: Changes the regulatory function of a compound by creating a new one using the same literals.
 def funcChange(implicants, chance):
   logger = logging.getLogger("func_change")
-  logger.setLevel(logging.DEBUG)
+  logger.setLevel(logging.INFO)
 
   output = None
   changed = False
@@ -326,8 +326,7 @@ def edgeAdd(func_dict, chance):
 
         logger.debug("Updated implicants: " + str(c_implicants))
 
-    if(c_implicants):
-      final_dict[c] = c_implicants
+    final_dict[c] = c_implicants
 
   logger.debug("Final dict: " + str(final_dict))
 
