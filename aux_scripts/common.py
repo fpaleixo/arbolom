@@ -48,7 +48,6 @@ def getAllCompounds(func_dict, add_self=True):
   for l in all_literals:
     all_compounds.add(l.replace('!',""))
 
-  print("afjodjfaoadj : " + str(all_compounds))
   if all_compounds:
     all_compounds = sorted(all_compounds)
     if '' in all_compounds:

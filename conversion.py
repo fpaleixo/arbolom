@@ -32,7 +32,7 @@ if(cmd_enabled):
 #Global logger (change logging.(LEVEL) to desired (LEVEL) )
 logging.basicConfig()
 global_logger = logging.getLogger("global")
-global_logger.setLevel(logging.DEBUG)
+global_logger.setLevel(logging.INFO)
 
 
 
@@ -41,7 +41,7 @@ global_logger.setLevel(logging.DEBUG)
 #Purpose: Parses the argument regarding which file to convert.
 def parseArgs():
   logger = logging.getLogger("parser")
-  logger.setLevel(logging.DEBUG)
+  logger.setLevel(logging.INFO)
 
   global read_folder, write_folder, filename
 
@@ -53,7 +53,7 @@ def parseArgs():
   if(args.save_directory):
     write_folder = args.save_directory
 
-  logger.debug("Obtained file: " + filepath)
+  logger.info("Obtained file: " + filepath)
   logger.debug("Name: " + filename)
   logger.debug("Directory: " + read_folder)
   return
@@ -111,7 +111,7 @@ def addFunctionToLP(file, item):
 #Purpose: Saves a Boolean logical model to an LP file
 def saveLPToFile(dict, name=False, path=write_folder):
   logger = logging.getLogger("saveLP")
-  logger.setLevel(logging.DEBUG)
+  logger.setLevel(logging.INFO)
 
   if not name:
     name = filename
@@ -127,7 +127,7 @@ def saveLPToFile(dict, name=False, path=write_folder):
     current_path = os.path.join(path, name.replace(".bnet", '.lp'))
   f = open(current_path, 'w')
 
-  logger.debug("Saving to: " + str(current_path))
+  logger.info("Saved to: " + str(current_path))
   
   all_compounds = getAllCompounds(dict, True)
   logger.debug("All compounds: " + str(all_compounds))
@@ -151,14 +151,14 @@ if(cmd_enabled):
 
 for fname in glob.glob(os.path.join(read_folder, filename)):
   with open(os.path.join(os.getcwd(), fname), 'r') as f:
-    global_logger.info("Reading file: " + filename)
+    global_logger.debug("Reading file: " + filename)
 
     lines = [line.strip() for line in f.readlines()]
     func_dict = {}
     
     for regfun in lines:
       full = [c.strip() for c in regfun.split(',')]
-      global_logger.info("Read function: "+str(full))
+      global_logger.debug("Read function: "+str(full))
 
       implicants = [i.replace(" ", "").strip("()") for i in full[1].split('|')]
       global_logger.debug("Implicants of "+full[0]+": "+str(implicants))

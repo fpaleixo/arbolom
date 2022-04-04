@@ -101,14 +101,14 @@ def parseArgs():
 def isConsistent(atoms):
   if atoms[0]:
     if toggle_stable_state:
-      print("Model is not consistent. Inconsistent (experiment, node, value): ")
+      print("Model is not consistent \u274C Inconsistent (experiment, node, value): ")
     elif toggle_sync:
-      print("Model is not consistent. Inconsistent (experiment, timestep, node, value): ")
+      print("Model is not consistent \u274C Inconsistent (experiment, timestep, node, value): ")
     else:
-      print("Model is not consistent. Inconsistent (experiment, timestep, node, value/other node updated at the same time): ")
+      print("Model is not consistent \u274C Inconsistent (experiment, timestep, node, value/other node updated at the same time): ")
     print(atoms)
   else: 
-    print("Model is consistent.")
+    print("Model is consistent \u2714\uFE0F")
 
 
 
