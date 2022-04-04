@@ -1,6 +1,5 @@
 import os, argparse, logging, clingo, re
-from clingo.application import ApplicationOptions
-from common import uniquify
+from aux_scripts.common import uniquify
 
 #Usage: $python gen_observations.py -f (FILENAME) -async -e (NUMBER OF EXPERIMENTS) -t (TIME STEPS) -as (NUMBER OF ANSWER SETS)
 #Optional flags:

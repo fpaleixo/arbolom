@@ -1,6 +1,5 @@
-import os, argparse, logging, glob, clingo, re
-from clingo.application import ApplicationOptions
-from common import uniquify
+import argparse, logging, clingo
+from aux_scripts.common import uniquify
 
 #TODO - check stable correctness, check sync, check async correctness (especially w missing values)
 

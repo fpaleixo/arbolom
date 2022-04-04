@@ -1,5 +1,5 @@
 import os, argparse, logging, glob
-from common import *
+from aux_scripts.common import *
 
 #Usage: $python conversion.py -f (FILENAME) -s (SAVE_DIRECTORY)
 #Optional flags:
@@ -74,7 +74,6 @@ def addNodesToLP(file, compounds):
 #Inputs: file is the file to write in, item is a tuple where the first element is the compound of the regulatory function, and the second element is a list of its implicants.
 #Purpose: Adds the edges representing the regulators of each node to LP
 def addEdgesToLP(file, item):
-  print(str(item[1]))
   if item[1][0]: #if there exist any regulators
     file.write("%Regulators of " + item[0] + "\n")
     all_literals = getAllLiterals(item[1])
@@ -133,7 +132,10 @@ def saveLPToFile(dict, name=False, path=write_folder):
   all_compounds = getAllCompounds(dict, True)
   logger.debug("All compounds: " + str(all_compounds))
 
-  addNodesToLP(f, all_compounds)
+  if len(all_compounds) == len(list(dict.keys())):
+    addNodesToLP(f, list(dict.keys())) #If all compounds are present in the map keys then the original order is preserved for convenience
+  else: 
+    addNodesToLP(f, all_compounds)  
 
   for function in dict.items():
     addEdgesToLP(f,function)

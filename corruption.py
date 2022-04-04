@@ -1,5 +1,5 @@
 import os, sys, argparse, logging, glob, random
-from common import *
+from aux_scripts.common import *
 
 #Usage: $python corruption.py -f (FILENAME) -op (OPERATIONS) -(O)p (PROBABILITY)
 #Variables: 
@@ -280,7 +280,7 @@ def edgeAdd(func_dict, chance):
   all_compounds = getAllCompounds(func_dict)
   changed = set()
 
-  final_dict = {}
+  final_dict = dict.fromkeys(func_dict.keys(),[]) #original keys are copied to preserve key ordering
 
   for c in all_compounds:
     c_implicants = func_dict.get(c,[])
