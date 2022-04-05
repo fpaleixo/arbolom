@@ -160,4 +160,5 @@ with ctl.solve(yield_=True) as handle:
         for model in handle:
             atoms += (str(model).split(" "))
 
+print("Clingo finished solving \u2714\uFE0F")
 saveObsToFile(atoms)
