@@ -160,5 +160,4 @@ with ctl.solve(yield_=True) as handle:
         for model in handle:
             atoms += (str(model).split(" "))
 
-print(atoms)
 saveObsToFile(atoms)

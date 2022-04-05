@@ -1,8 +1,6 @@
 import argparse, logging, clingo
 from aux_scripts.common import uniquify
 
-#TODO - check stable correctness, check sync, check async correctness (especially w missing values)
-
 #Usage: $python consistency_checking.py -f (FILENAME) -o (OBSERVATIONS) -stable -sync -async 
 #Optional flags:
 #-stable -> Performs consistency checking using stable state observations.
