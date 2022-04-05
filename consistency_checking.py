@@ -134,7 +134,6 @@ ctl.ground([("base", [])])
 atoms = []
 with ctl.solve(yield_=True) as handle:
   for model in handle:
-    print(model)
     atoms += (str(model).split(" "))
 
 isConsistent(atoms)
