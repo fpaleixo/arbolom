@@ -91,12 +91,6 @@ def parseArgs():
   return
 
 
-#Input: Model outputted from clingo
-#Purpose: Prints the obtained model after solving
-def on_model(m):
-    print (m)
-
-
 #Inputs: Obtained atoms from the solved model by clingo
 #Purpose: Saves generated observations to file
 def saveObsToFile(atoms):
@@ -164,7 +158,6 @@ ctl.ground([("base", [])])
 atoms = []
 with ctl.solve(yield_=True) as handle:
         for model in handle:
-            print(model)
             atoms += (str(model).split(" "))
 
 print(atoms)
