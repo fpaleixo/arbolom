@@ -3,7 +3,7 @@
 input_node(N) :- node(N), not function(N,_).
 
 %Input nodes can take any value
-0 {active(E,N)} 1 :- input_node(N), experiment(E).
+0 {active(E,N)} 1 :- experiment(E), input_node(N).
 
 %Input observations are converted to curated observations
 curated_observation(E,N,0) :- observation(E,N,0).
@@ -37,8 +37,9 @@ inconsistent(E,N,0) :- not active(E,N), curated_observation(E,N,1).
 
 
 %Test
-%Input nodes can never be inconsistent, since they can take any value
-:- inconsistent(_,N,_), input_node(N).
+%Input nodes need to take values consistent with the observations (when they exist)
+:- curated_observation(E,N,0), active(E,N), input_node(N).
+:- curated_observation(E,N,1), not active(E,N), input_node(N).
 
 
 %Display
