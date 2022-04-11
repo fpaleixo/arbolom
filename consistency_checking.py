@@ -31,9 +31,9 @@ toggle_sync = False
 toggle_async = False
 
 #Encoding paths
-ss_path = "./encodings/ss_consistency.lp"
-sync_path = "./encodings/sync_consistency.lp"
-async_path = "./encodings/async_consistency.lp"
+ss_path = "./encodings/consistency/ss_consistency.lp"
+sync_path = "./encodings/consistency/sync_consistency.lp"
+async_path = "./encodings/consistency/async_consistency.lp"
 
 #Parser (will only be used if command-line usage is enabled above)
 parser = None

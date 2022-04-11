@@ -1,0 +1,1 @@
+%Encoding used to calculate ancestors of monotone Boolean functions

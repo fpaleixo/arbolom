@@ -29,8 +29,8 @@ time_steps = "5"
 models_to_obtain = "1"
 
 #Encoding paths
-sync_path = "./encodings/sync_observations.lp"
-async_path = "./encodings/async_observations.lp"
+sync_path = "./encodings/observations/sync_observations.lp"
+async_path = "./encodings/observations/async_observations.lp"
 
 #Save folder paths
 save_sync = "./lp_models/obsv/tseries/sync"
