@@ -1,24 +1,29 @@
-%Encoding used to calculate ancestors of monotone Boolean functions
+% Encoding used to calculate ancestors of monotone Boolean functions
+
+%TODO - prevent generation of repeated clauses
 
 %Define
 %Variables of function F
 variable(F,N) :- term(F,_,N), function(F,_).
 
 %Total number of variables of function F
-total_variables(F,T) :- T = #count{variable(F,N): term(F,_,N)}, function(F,_).
+total_variables(F,T) :- T = #count{1,N : variable(F,N)}, function(F,_).
 
-%Generate levels and clauses
-level(F,1..T) :- total_variables(F,T).
-clause(F,L,1..T) :- total_variables(F,T), level(F,L).
+%Place all variables in all possible combinations
+{generated_term(F,1..T,N,1..T)} :- total_variables(F,T), variable(F,N).
 
-%At the maximum level (T) of generated terms, all variables will belong to a single clause  
-generated_term(F,T,N,1) :- total_variables(F,T), variable(F,N).
+%Clauses occupied by generated terms
+clause(F,L,C) :- generated_term(F,L,N,C).
 
-%At the first level of generated terms, compounds will occupy clauses from 1 to T 
-1{generated_term(F,1,N,1..T)}1 :- total_variables(F,T), variable(F,N).
+%Total number T of terms on clause C of level L
+terms_per_clause(F,L,C,T) :- T = #count{N : generated_term(F,L,N,C)}, function(F,_), clause(F,L,C).
 
-%At level n, clauses can have up to n variables 
-{generated_term(F,2..T-1,N,1..T)} :- total_compounds(F,T), variable(F,N).
+%Count total generated terms
+generated_term_count(S) :- S = #count{1,F,L,T,C: generated_term(F,L,T,C)}.
+
+%We want to generate all possible terms
+#maximize{S:generated_term_count(S)}.
+
 
 %*
 %Rule 1
@@ -35,12 +40,13 @@ term(n,t,r,l):- function(n,t,l), term(n,t,r).
 
 *%
 %Test
-%In the first level of generated terms, a clause C can only be occupied by one and only one term
-:- generated_term(F,1,N1,C), generated_term(F,1,N2,C), N1 != N2.
 
-test(O) :- #count{N,C : generated_term(F,L,N,C)} = O, level(F,L), function(F,_).
+%Number of terms per clause must to be equal to the level
+:- terms_per_clause(_,L,_,T), T != L.
 
-#show variable/2.
-#show total_variables/2.
 #show generated_term/4.
-#show test/1.
+%*
+#show generated_term_count/1.
+#show total_variables/2.
+#show terms_per_clause/4.
+*%

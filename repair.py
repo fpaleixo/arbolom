@@ -36,7 +36,7 @@ def printAncestors(atoms):
 
 
 #-----Main-----
-ctl = clingo.Control()
+ctl = clingo.Control(arguments=[])
 
 ctl.load(model_path)
 ctl.load(ancestors_path)
@@ -45,6 +45,6 @@ ctl.ground([("base", [])])
 atoms = []
 with ctl.solve(yield_=True) as handle:
   for model in handle:
-    atoms += (str(model).split(" "))
+    atoms = (str(model).split(" "))
 
 printAncestors(atoms)

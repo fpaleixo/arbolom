@@ -1,3 +1,5 @@
+%Encoding to determine a model's consistency using asynchronous observations
+
 %Define
 %Time must occur in some rule head
 time(T) :- observation(_,T,_,_).

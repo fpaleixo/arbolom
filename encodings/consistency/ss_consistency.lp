@@ -1,3 +1,5 @@
+%Encoding to determine a model's consistency using stable state observations
+
 %Define
 %A node with no regulatory function is an input node
 input_node(N) :- node(N), not function(N,_).
