@@ -14,6 +14,7 @@ edge(v4, v3, 1).
 %Regulatory function of v3
 function(v3, 2).
 term(v3, 1, v1).
+term(v3, 1, v2).
 term(v3, 2, v2).
 term(v3, 2, v4).
 %term(v3, 3, v5).
