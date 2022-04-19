@@ -1,0 +1,10 @@
+inconsistent(1,1,v2,0).
+inconsistent(1,2,v2,0).
+inconsistent(1,3,v2,0).
+inconsistent(1,4,v2,0).
+inconsistent(1,5,v2,0).
+inconsistent(2,1,v2,0).
+inconsistent(2,2,v2,0).
+inconsistent(2,3,v2,0).
+inconsistent(2,4,v2,0).
+inconsistent(2,5,v2,0).

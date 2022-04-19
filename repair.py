@@ -7,7 +7,7 @@ from aux_scripts.common import uniquify
 model_path = "./lp_models/test.lp"
 
 #Paths of encondings for repairs
-ancestors_path = "./encodings/repairs/ancestors.lp"
+repairs_path = "./encodings/repairs/all_candidates.lp"
 
 #Mode flags 
 toggle_stable_state = True
@@ -39,7 +39,7 @@ def printAncestors(atoms):
 ctl = clingo.Control(arguments=[])
 
 ctl.load(model_path)
-ctl.load(ancestors_path)
+ctl.load(repairs_path)
 
 ctl.ground([("base", [])])
 atoms = []

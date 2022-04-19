@@ -40,17 +40,21 @@ terms_per_clause(F,L,C,T) :- T = #count{N : generated_term(F,L,N,C)}, function(F
 %the generated clause C2 does not contain the original clause C1
 original_not_absorbed(F,C1,L,C2) :- term(F,C1,N), not generated_term(F,L,N,C2), clause(F,L,C2).
 
-%If for a generated clause C2 there is no compound N in a clause C1 of the original function, then the original
+%TODO fix this, it can be that the generated compound exists in a clause of the original function, and the clause is not contained because it is in a conjunction
+%TODO with some other compound that is not contained -- be contained  a conjunction If for a generated clause C2 there is no compound N in a clause C1 of the original function, then the original
 %clause C1 does not contain the generated clause C2
 generated_not_absorbed(F,C1,L,C2) :- generated_term(F,L,N,C2), not term(F,C1,N), term(_,C1,_).
 
-%Labelling generated clauses C2 that contain or are contained by an existing clause C1
-contained_or_contains(F,L,C2):- clause(F,L,C2), term(F,C1,_), not generated_not_absorbed(F,C1,L,C2).
-contained_or_contains(F,L,C2):- clause(F,L,C2), term(F,C1,_), not original_not_absorbed(F,C1,L,C2).
+%Labelling generated clauses C2 that contain an existing clause C1
+contains(F,L,C2) :- clause(F,L,C2), term(F,C1,_), not original_not_absorbed(F,C1,L,C2).
+
+%Labelling generated clauses C2 that are contained by an existing clause C1
+%(Also doubles as Rule 2 a) )
+contained(F,L,C2) :- clause(F,L,C2), term(F,C1,_), not generated_not_absorbed(F,C1,L,C2).
 
 %Chosen clauses by Rule 1 cannot contain any or be contained by any original clause, and need to be as large as possible
 %(i.e. there cannot be chosen clauses of a higher level)
-rule1_clause(F,L,C2) :- clause(F,L,C2), not contained_or_contains(F,L,C2), not rule1_clause(F,L+1,_).
+rule1_clause(F,L,C2) :- clause(F,L,C2), not contained(F,L,C2), not contains(F,L,C2), not rule1_clause(F,L+1,_).
 
 %--Rule 2--
 

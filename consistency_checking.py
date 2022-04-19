@@ -1,4 +1,4 @@
-import argparse, logging, clingo
+import os, argparse, logging, clingo
 from aux_scripts.common import uniquify
 
 #Usage: $python consistency_checking.py -f (FILENAME) -o (OBSERVATIONS) -stable -sync -async 
@@ -20,10 +20,13 @@ from aux_scripts.common import uniquify
 cmd_enabled = True
 
 #Model path
-model_path = "./lp_models/1-corrupted.lp"
+model_path = "lp_models/corrupted/1/1-corrupted-era.lp"
 
 #Observations path
 obsv_path = "./lp_models/obsv/sstate/1-obs.lp" 
+
+#Inconsistencies save path
+incst_path = "lp_models/corrupted" 
 
 #Mode flags 
 toggle_stable_state = True
@@ -56,6 +59,51 @@ global_logger.setLevel(logging.DEBUG)
 
 #-----Auxiliary Functions-----
 
+def saveInconsistenciesToFile(atoms):
+  logger = logging.getLogger("saveIncst")
+  logger.setLevel(logging.DEBUG)
+
+  global incst_path
+
+  filename = os.path.basename(model_path)
+  foldername = filename.split('-')[0]
+
+  logger.debug("Filename: " + str(filename))
+  logger.debug("Foldername: " + str(foldername))
+
+  incst_path = os.path.join(incst_path, foldername)
+
+  if not os.path.exists(incst_path):
+    os.makedirs(incst_path)
+    logger.info("Created directory: " + str(incst_path))
+
+  incst_path = os.path.join(incst_path,"inconsistencies")
+
+  if not os.path.exists(incst_path):
+    os.makedirs(incst_path)
+    logger.info("Created directory: " + str(incst_path))
+
+  if toggle_stable_state:
+    filename = filename.replace(".lp", "-stable_inconsistency.lp")
+  elif toggle_sync:
+    filename = filename.replace(".lp", "-sync_inconsistency.lp")
+  else:
+    filename = filename.replace(".lp", "-async_inconsistency.lp")
+
+  incst_path = os.path.join(incst_path,filename)
+
+  logger.debug("Full path: " + str(incst_path))
+
+  f = open(incst_path, 'w')
+
+  for a in atoms:
+    if "inconsistent" in a:
+      f.write(a+".")
+      f.write('\n')
+  f.close()
+  logger.info("Saved to: " + str(incst_path))
+
+
 #Purpose: Parses the argument regarding which file to generate observations for.
 def parseArgs():
   logger = logging.getLogger("parser")
@@ -65,7 +113,7 @@ def parseArgs():
 
   model_path = args.model_to_check
 
-  logger.debug("Obtained file: " + model_path)
+  logger.debug("Obtained model: " + model_path)
 
   obsv = args.observations_to_use
   stable = args.stable_state
@@ -74,24 +122,25 @@ def parseArgs():
 
   if obsv:
     obsv_path = obsv
+    logger.debug("Obtained observations: " + obsv_path)
 
   if stable:
     toggle_stable_state = True
     toggle_sync = False
     toggle_async = False
-    logger.debug("Mode used: stable state.")
+    logger.debug("Mode used: Stable State \U0001f6d1")
 
   elif synchronous:
     toggle_stable_state = False
     toggle_sync = True
     toggle_async = False
-    logger.debug("Mode used: synchronous.")
+    logger.debug("Mode used: Synchronous \U0001f550")
 
   elif asynchronous:
     toggle_stable_state = False
     toggle_sync = False
     toggle_async = True
-    logger.debug("Mode used: asynchronous.")
+    logger.debug("Mode used: Asynchronous \U0001f331")
 
   return
 
@@ -107,6 +156,7 @@ def isConsistent(atoms):
     else:
       print("Model is not consistent \u274C Inconsistent (experiment, timestep, node, value/other node updated at the same time): ")
     print(atoms)
+    saveInconsistenciesToFile(atoms)
   else: 
     print("Model is consistent \u2714\uFE0F")
 
