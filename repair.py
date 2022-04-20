@@ -60,7 +60,7 @@ def printRepairs(atoms):
           clause_map[clause].append(variable)
       
       else:
-        repairs += a
+        repairs.append(a)
     
     if func_map:
         print("Generated terms found \u2714\uFE0F  They are:")
@@ -75,7 +75,7 @@ def printRepairs(atoms):
             print()
 
     if repairs:
-      print("Repairs found \u2714\uFE0F  They are:")
+      print("Other atoms found \u2714\uFE0F  They are:")
       print(str(repairs))
   else: 
     print("No repairs could be found \u274C")
