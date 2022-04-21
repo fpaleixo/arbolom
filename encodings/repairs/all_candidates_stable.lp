@@ -11,7 +11,7 @@ factorial(N+1, F*(N+1)) :- factorial(N,F), N < TARGET, get_factorial(TARGET).
 variable(F,N) :- term(F,_,N), inconsistent(E,F,_).
 
 %Total number of variables of function F
-total_variables(F,T) :- T = #count{N : variable(F,N)}, function(F,_).
+total_variables(F,T) :- T = #count{N : variable(F,N)}, inconsistent(E,F,_).
 
 %Levels represent the number of terms held by each clause, e.g. in level 1 each clause will only have 1 term,
 %in level L there will be a single clause for all L terms
@@ -47,10 +47,15 @@ terms_per_clause(F,L,C,T) :- T = #count{N : generated_term(F,L,N,C)}, function(F
 %and therefore cannot be in the same function as C1.)
 not_contained_in(F,L1,C1,L2,C2) :- clause(F,L1,C1), clause(F,L2,C2), generated_term(F,L1,N,C1), not generated_term(F,L2,N,C2), L2 > L1.
 
+%function_candidate(F,ID,CLAUSE_NUMBER,L,C)
+%F - function that needs to be changed
+%ID - unique ID of this function candidate
+%CLAUSE_NUMBER - number of total clauses in this candidate
+%L - level of the generated clause that is a part of this candidate
+%C - number of the generated clause that is a part of this candidate
+function_candidate(F,0,1..MAX_CLAUSES,0,0) :-  total_variables(F,T), factorial(T,FACT_T), factorial(T/2, FACT_TDIV1), factorial(T-T/2, FACT_TDIV2), MAX_CLAUSES = FACT_T/FACT_TDIV1/FACT_TDIV2.
 
-function_candidate(F,T,0) :- inconsistent(E,F,_)
-
-:- clause(F,L1,C1), clause(F,L2,C2), not_contained_in(F,L1,C1,L2,C2).
+%:- clause(F,L1,C1), clause(F,L2,C2), not_contained_in(F,L1,C1,L2,C2).
 
 %Test
 %--Generate all possible term combinations--
@@ -64,9 +69,14 @@ function_candidate(F,T,0) :- inconsistent(E,F,_)
 :- clause(F,L,C1), clause(F,L,C2), C1 != C2, 
     REPETITIONS = #count{N : generated_term(F,L,N,C1), generated_term(F,L,N,C2)}, REPETITIONS = L.
 
+%Clauses in a function cannot contain any other clause in that function
+:- function_candidate(F,ID,CLAUSE_NUMBER,L1,C1), function_candidate(F,ID,CLAUSE_NUMBER,L2,C2), 
+    L1 != 0, L2 > L1, not not_contained_in(F,L1,C1,L2,C2).
 
 %Display
-#show not_contained_in/5.
+#show total_variables/2.
+#show function_candidate/5.
+%#show not_contained_in/5.
 #show generated_term/4.
 
 %Scratch
