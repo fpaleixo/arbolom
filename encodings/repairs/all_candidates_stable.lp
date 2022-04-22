@@ -41,6 +41,7 @@ clause(F,L,C) :- generated_term(F,L,N,C).
 %Total number T of terms on clause C of level L -- this is probably very inefficient, since generated_term comes from a choice rule...
 terms_per_clause(F,L,C,T) :- T = #count{N : generated_term(F,L,N,C)}, function(F,_), clause(F,L,C).
 
+%--Generate all possible functions--
 %Clause C1 of level L1 is not contained in clause C2 of level L2 (necessary because
 %we're only interested in generating function candidates in the BCF form, which is the disjunction
 %of prime implicants. If a clause C1 is contained inside of another clause C2, then C2 is not a prime implicant,
@@ -53,9 +54,22 @@ not_contained_in(F,L1,C1,L2,C2) :- clause(F,L1,C1), clause(F,L2,C2), generated_t
 %CLAUSE_NUMBER - number of total clauses in this candidate
 %L - level of the generated clause that is a part of this candidate
 %C - number of the generated clause that is a part of this candidate
-function_candidate(F,0,1..MAX_CLAUSES,0,0) :-  total_variables(F,T), factorial(T,FACT_T), factorial(T/2, FACT_TDIV1), factorial(T-T/2, FACT_TDIV2), MAX_CLAUSES = FACT_T/FACT_TDIV1/FACT_TDIV2.
+%function_candidate(F,0,1..MAX_CLAUSES,0,0) :-  total_variables(F,T), factorial(T,FACT_T), factorial(T/2, FACT_TDIV1), factorial(T-T/2, FACT_TDIV2), MAX_CLAUSES = FACT_T/FACT_TDIV1/FACT_TDIV2.
+function_clauses(F,1..MAX_CLAUSES) :- total_variables(F,T), factorial(T,FACT_T), factorial(T/2, FACT_TDIV1), factorial(T-T/2, FACT_TDIV2), MAX_CLAUSES = FACT_T/FACT_TDIV1/FACT_TDIV2.
 
-%:- clause(F,L1,C1), clause(F,L2,C2), not_contained_in(F,L1,C1,L2,C2).
+function_candidate(F,ID,1,L,C) :- function_clauses(F,1), clause(F,L,C), ids(F,ID), ids(F,ID2), ID > ID2.
+
+ids(F,ID+1) :- function_candidate(F,ID,_,_,_).
+
+%If a function candidate still does not have the required amount of clauses, add a generated clause to it
+function_candidate(F,ID,CLAUSE_NUMBER,L2,C2) :- function_candidate(F,ID,CLAUSE_NUMBER,L1,C1), 
+    #count{1 : function_candidate(F,ID,_,_,_)} < CLAUSE_NUMBER, clause(F,L2,C2), ID > 0.
+
+%If two function candidates with the same number of clauses have at least one clause that is present in
+%one candidate but not in the other, then they are distinct
+distinct_candidates(F,ID1,ID2) :- function_candidate(F,ID1,CLAUSE_NUMBER,L,C), function_candidate(F,ID2,CLAUSE_NUMBER,_,_),
+  not function_candidate(F,ID2,CLAUSE_NUMBER,L,C), ID1 != ID2.
+
 
 %Test
 %--Generate all possible term combinations--
@@ -69,11 +83,19 @@ function_candidate(F,0,1..MAX_CLAUSES,0,0) :-  total_variables(F,T), factorial(T
 :- clause(F,L,C1), clause(F,L,C2), C1 != C2, 
     REPETITIONS = #count{N : generated_term(F,L,N,C1), generated_term(F,L,N,C2)}, REPETITIONS = L.
 
-%Clauses in a function cannot contain any other clause in that function
+%--Generate all possible functions--
+%Clauses in a function cannot contain any other clause in that function (BCF)
 :- function_candidate(F,ID,CLAUSE_NUMBER,L1,C1), function_candidate(F,ID,CLAUSE_NUMBER,L2,C2), 
-    L1 != 0, L2 > L1, not not_contained_in(F,L1,C1,L2,C2).
+    ID > 0, not not_contained_in(F,L1,C1,L2,C2).
+
+%Function candidates must be distinct
+:- function_candidate(F,ID1,CLAUSE_NUMBER,_,_), function_candidate(F,ID2,CLAUSE_NUMBER,_,_), ID1 != ID2, 
+not distinct_candidates(F,ID1,ID2).
+
+
 
 %Display
+#show function_clauses/2.
 #show total_variables/2.
 #show function_candidate/5.
 %#show not_contained_in/5.
