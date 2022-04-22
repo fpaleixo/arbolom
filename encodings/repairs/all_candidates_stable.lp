@@ -1,5 +1,6 @@
 %Repair strategy: For each inconsistent node, generate all possible function candidates.
 %Reject candidates which are not able to replicate expected behavior.
+#const max_candidates = 10.
 
 %Define
 %--Generate all possible term combinations--
@@ -42,11 +43,18 @@ clause(F,L,C) :- generated_term(F,L,N,C).
 terms_per_clause(F,L,C,T) :- T = #count{N : generated_term(F,L,N,C)}, function(F,_), clause(F,L,C).
 
 %--Generate all possible functions--
+%IDs of each candidate
+{id(F,1..max_candidates) : inconsistent(_,F,_)}.
+
 %Clause C1 of level L1 is not contained in clause C2 of level L2 (necessary because
 %we're only interested in generating function candidates in the BCF form, which is the disjunction
 %of prime implicants. If a clause C1 is contained inside of another clause C2, then C2 is not a prime implicant,
 %and therefore cannot be in the same function as C1.)
 not_contained_in(F,L1,C1,L2,C2) :- clause(F,L1,C1), clause(F,L2,C2), generated_term(F,L1,N,C1), not generated_term(F,L2,N,C2), L2 > L1.
+
+%How many clauses there will be in a given candidate (used to ensure we are generating all candidates with
+%1,2,...,MAX clauses possible)
+function_clauses(F,1..MAX_CLAUSES) :- total_variables(F,T), factorial(T,FACT_T), factorial(T/2, FACT_TDIV1), factorial(T-T/2, FACT_TDIV2), MAX_CLAUSES = FACT_T/FACT_TDIV1/FACT_TDIV2.
 
 %function_candidate(F,ID,CLAUSE_NUMBER,L,C)
 %F - function that needs to be changed
@@ -54,18 +62,9 @@ not_contained_in(F,L1,C1,L2,C2) :- clause(F,L1,C1), clause(F,L2,C2), generated_t
 %CLAUSE_NUMBER - number of total clauses in this candidate
 %L - level of the generated clause that is a part of this candidate
 %C - number of the generated clause that is a part of this candidate
-%function_candidate(F,0,1..MAX_CLAUSES,0,0) :-  total_variables(F,T), factorial(T,FACT_T), factorial(T/2, FACT_TDIV1), factorial(T-T/2, FACT_TDIV2), MAX_CLAUSES = FACT_T/FACT_TDIV1/FACT_TDIV2.
-function_clauses(F,1..MAX_CLAUSES) :- total_variables(F,T), factorial(T,FACT_T), factorial(T/2, FACT_TDIV1), factorial(T-T/2, FACT_TDIV2), MAX_CLAUSES = FACT_T/FACT_TDIV1/FACT_TDIV2.
+{function_candidate(F,ID,CLAUSE_NUMBER,L,C) : function_clauses(F, CLAUSE_NUMBER), clause(F,L,C), id(F,ID)}.
 
-function_candidate(F,ID,1,L,C) :- function_clauses(F,1), clause(F,L,C), ids(F,ID), ids(F,ID2), ID > ID2.
-
-ids(F,ID+1) :- function_candidate(F,ID,_,_,_).
-
-%If a function candidate still does not have the required amount of clauses, add a generated clause to it
-function_candidate(F,ID,CLAUSE_NUMBER,L2,C2) :- function_candidate(F,ID,CLAUSE_NUMBER,L1,C1), 
-    #count{1 : function_candidate(F,ID,_,_,_)} < CLAUSE_NUMBER, clause(F,L2,C2), ID > 0.
-
-%If two function candidates with the same number of clauses have at least one clause that is present in
+%If two distinct function candidates with the same number of clauses have at least one clause that is present in
 %one candidate but not in the other, then they are distinct
 distinct_candidates(F,ID1,ID2) :- function_candidate(F,ID1,CLAUSE_NUMBER,L,C), function_candidate(F,ID2,CLAUSE_NUMBER,_,_),
   not function_candidate(F,ID2,CLAUSE_NUMBER,L,C), ID1 != ID2.
@@ -84,14 +83,16 @@ distinct_candidates(F,ID1,ID2) :- function_candidate(F,ID1,CLAUSE_NUMBER,L,C), f
     REPETITIONS = #count{N : generated_term(F,L,N,C1), generated_term(F,L,N,C2)}, REPETITIONS = L.
 
 %--Generate all possible functions--
+%Functions must contain as many clauses as their CLAUSE_NUMBER
+:- function_candidate(F,ID,CLAUSE_NUMBER,_,_), #count{1,L,C : function_candidate(F,ID,CLAUSE_NUMBER,L,C)} != CLAUSE_NUMBER.
+
 %Clauses in a function cannot contain any other clause in that function (BCF)
-:- function_candidate(F,ID,CLAUSE_NUMBER,L1,C1), function_candidate(F,ID,CLAUSE_NUMBER,L2,C2), 
-    ID > 0, not not_contained_in(F,L1,C1,L2,C2).
+:- function_candidate(F,ID,CLAUSE_NUMBER,L1,C1), function_candidate(F,ID,CLAUSE_NUMBER,L2,C2), not not_contained_in(F,L1,C1,L2,C2), L1 != L2.
+:- function_candidate(F,ID,CLAUSE_NUMBER,L1,C1), function_candidate(F,ID,CLAUSE_NUMBER,L2,C2), not not_contained_in(F,L1,C1,L2,C2), C1 != C2.
 
 %Function candidates must be distinct
 :- function_candidate(F,ID1,CLAUSE_NUMBER,_,_), function_candidate(F,ID2,CLAUSE_NUMBER,_,_), ID1 != ID2, 
-not distinct_candidates(F,ID1,ID2).
-
+    not distinct_candidates(F,ID1,ID2).
 
 
 %Display
@@ -100,6 +101,10 @@ not distinct_candidates(F,ID1,ID2).
 #show function_candidate/5.
 %#show not_contained_in/5.
 #show generated_term/4.
+
+
+%Optimize
+#maximize{1,F,ID : function_candidate(F,ID,CLAUSE_NUMBER,L,C)}.
 
 %Scratch
 %If reported inconsistent value was 0 but should have been 1 for experiment E, then N
