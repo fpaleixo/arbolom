@@ -1,6 +1,6 @@
 %Repair strategy: For each inconsistent node, generate all possible function candidates.
 %Reject candidates which are not able to replicate expected behavior.
-#const max_candidates = 10.
+#const max_candidates = 5.
 
 %Define
 %--Generate all possible term combinations--
