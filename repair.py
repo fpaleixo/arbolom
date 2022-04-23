@@ -106,7 +106,7 @@ def printMaps(term_map, func_map):
             print("Clause number: " + clause_number)
             id_map = clause_number_map[clause_number]
             for id in id_map.keys():
-              print(id + ":",  end=" : ")
+              print(id + ":",  end=" ")
               levels_clauses = id_map[id]
               for lc in levels_clauses:
                 current_level = lc[0]
@@ -114,7 +114,10 @@ def printMaps(term_map, func_map):
                 func_clause = term_map[func][current_level][current_clause]
                 if lc != levels_clauses[-1]:
                   print(str(func_clause), end=" | ")
-                print(str(func_clause))
+                else:
+                  print(str(func_clause))
+      else:
+        print("--No function candidates found \u274C --")
 
 #Inputs: atoms is the list of atoms given to printRepairs.
 #Purpose: Organizes term and function atoms into maps and prints them to output (other atoms are simply printed with as they are).

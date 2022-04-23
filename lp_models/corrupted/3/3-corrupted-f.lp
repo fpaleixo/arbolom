@@ -30,4 +30,3 @@ function(v3, 3).
 term(v3, 1, v4).
 term(v3, 2, v2).
 term(v3, 3, v1).
-

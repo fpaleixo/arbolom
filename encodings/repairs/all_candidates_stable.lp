@@ -1,6 +1,6 @@
 %Repair strategy: For each inconsistent node, generate all possible function candidates.
 %Reject candidates which are not able to replicate expected behavior.
-#const max_candidates = 5.
+#const max_candidates = 18.
 
 %Define
 %--Generate all possible term combinations--
@@ -44,7 +44,7 @@ terms_per_clause(F,L,C,T) :- T = #count{N : generated_term(F,L,N,C)}, function(F
 
 %--Generate all possible functions--
 %IDs of each candidate
-{id(F,1..max_candidates) : inconsistent(_,F,_)}.
+id(F,1..max_candidates) :- inconsistent(_,F,_).
 
 %Clause C1 of level L1 is not contained in clause C2 of level L2 (necessary because
 %we're only interested in generating function candidates in the BCF form, which is the disjunction
@@ -67,7 +67,7 @@ function_clauses(F,1..MAX_CLAUSES) :- total_variables(F,T), factorial(T,FACT_T),
 %If two distinct function candidates with the same number of clauses have at least one clause that is present in
 %one candidate but not in the other, then they are distinct
 distinct_candidates(F,ID1,ID2) :- function_candidate(F,ID1,CLAUSE_NUMBER,L,C), function_candidate(F,ID2,CLAUSE_NUMBER,_,_),
-  not function_candidate(F,ID2,CLAUSE_NUMBER,L,C), ID1 != ID2.
+  not function_candidate(F,ID2,CLAUSE_NUMBER,L,C), ID1 < ID2.
 
 
 %Test
@@ -87,34 +87,24 @@ distinct_candidates(F,ID1,ID2) :- function_candidate(F,ID1,CLAUSE_NUMBER,L,C), f
 :- function_candidate(F,ID,CLAUSE_NUMBER,_,_), #count{1,L,C : function_candidate(F,ID,CLAUSE_NUMBER,L,C)} != CLAUSE_NUMBER.
 
 %Clauses in a function cannot contain any other clause in that function (BCF)
-:- function_candidate(F,ID,CLAUSE_NUMBER,L1,C1), function_candidate(F,ID,CLAUSE_NUMBER,L2,C2), not not_contained_in(F,L1,C1,L2,C2), L1 != L2.
-:- function_candidate(F,ID,CLAUSE_NUMBER,L1,C1), function_candidate(F,ID,CLAUSE_NUMBER,L2,C2), not not_contained_in(F,L1,C1,L2,C2), C1 != C2.
+:- function_candidate(F,ID,CLAUSE_NUMBER,L1,C1), function_candidate(F,ID,CLAUSE_NUMBER,L2,C2), not not_contained_in(F,L1,C1,L2,C2), L2 > L1.
 
 %Function candidates must be distinct
-:- function_candidate(F,ID1,CLAUSE_NUMBER,_,_), function_candidate(F,ID2,CLAUSE_NUMBER,_,_), ID1 != ID2, 
+:- function_candidate(F,ID1,CLAUSE_NUMBER,_,_), function_candidate(F,ID2,CLAUSE_NUMBER,_,_), ID1 < ID2, 
     not distinct_candidates(F,ID1,ID2).
+
+%IDs must be unique
+:- function_candidate(F,ID,CLAUSE_NUMBER1,_,_), function_candidate(F,ID,CLAUSE_NUMBER2,_,_), CLAUSE_NUMBER1 != CLAUSE_NUMBER2.
 
 
 %Display
 #show function_clauses/2.
 #show total_variables/2.
 #show function_candidate/5.
+%#show distinct_candidates/3.
 %#show not_contained_in/5.
 #show generated_term/4.
 
 
 %Optimize
 #maximize{1,F,ID : function_candidate(F,ID,CLAUSE_NUMBER,L,C)}.
-
-%Scratch
-%If reported inconsistent value was 0 but should have been 1 for experiment E, then N
-%needs to be changed to a more general function
-%generalize(E,N) :- inconsistent(E,N,0).
-
-%If reported inconsistent value was 1 but should have been 0 for experiment E, then N
-%needs to be changed to a more specific function
-%specify(E,N) :- inconsistent(E,N,1).
-
-%If reported inconsistent value was 1 for some experiment(s) and 0 for other(s), then N
-%needs to be changed to a function that isn't more general or more specific
-%sidestep(N) :- generalize(_,N), specify(_,N).
