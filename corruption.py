@@ -10,6 +10,7 @@ from aux_scripts.common import *
 
 #Attention: Input files must be in the BCF format and follow the conventions of the .bnet files in the simple_models folder (results will be unpredictable otherwise)
 
+
 #-----Configs-----
 
 #Command-line usage
@@ -58,8 +59,8 @@ global_logger.info("Seed: "+ str(seed))
 
 #-----Auxiliary functions-----
 
-#Inputs: Receives a list of implicants
-#Purpose:  Returns a list of its prime implicants
+#Inputs: Receives a list of implicants.
+#Purpose:  Returns a list of its prime implicants.
 def primesOnly(implicants):
   logger = logging.getLogger("primes_only")
   logger.setLevel(logging.INFO)
@@ -93,8 +94,8 @@ def primesOnly(implicants):
   return (changed_input, output)
 
 
-#Input: A list of prime implicants, a list of literals that should be present in the prime implicants
-#Purpose: If there are literals missing from the list of prime implicants, add a new implicant with them
+#Input: A list of prime implicants, a list of literals that should be present in the prime implicants.
+#Purpose: If there are literals missing from the list of prime implicants, add a new implicant with them.
 def checkLiterals(implicants, literals):
   logger = logging.getLogger("check_literals")
   logger.setLevel(logging.INFO)
@@ -120,7 +121,7 @@ def checkLiterals(implicants, literals):
   return output
 
 
-#Purpose: Parses the arguments for which operations are to be applied and their probabilities
+#Purpose: Parses the arguments for which operations are to be applied and their probabilities.
 def parseArgs():
   logger = logging.getLogger("parser")
   logger.setLevel(logging.DEBUG)
@@ -171,8 +172,8 @@ def parseArgs():
   return
 
 
-#Input: dict is a dictionary with all the regulatory functions, path is the folder where the file will be stored and file is the file name
-#Purpose: Stores the contents of the dictionary into a file using the .bnet format
+#Input: dict is a dictionary with all the regulatory functions, path is the folder where the file will be stored and file is the file name.
+#Purpose: Stores the contents of the dictionary into a file using the .bnet format.
 def saveToFile(dict, name=False, path=False, ops=''):
 
   if not path:
@@ -265,14 +266,14 @@ def funcChange(implicants, chance):
 
 
 #Inputs: A dictionary containing all the regulatory functions and the chance 
-#that a new regulator will be added to the regulatory function of a compound
-#Purpose: Add more regulators to the regulatory function of a compound
+#that a new regulator will be added to the regulatory function of a compound.
+#Purpose: Add more regulators to the regulatory function of a compound.
 #Detail: For each compound, make a loop with
 #each other compound that is not its regulator,
 #then roll the dice (given chance) and see if it is added as regulator (50% chance of being activator / inhibitor) or not
 #if it is added as a regulator, then roll the dice to see if it is added as an OR clause or 
 #added to one of the existing AND clauses (50%)
-#if it is added to one of the existing AND clauses, for each clause there's a 50% chance it will be included there
+#if it is added to one of the existing AND clauses, for each clause there's a 50% chance it will be included there.
 def edgeAdd(func_dict, chance):
   logger = logging.getLogger("edge_add")
   logger.setLevel(logging.INFO)
@@ -367,7 +368,7 @@ def edgeRemove(implicants, chance):
   return (changed_input, output)
 
 
-#Inputs: A list of implicants, and the chance of changing an edge's sign
+#Inputs: A list of implicants, and the chance of changing an edge's sign.
 #Purpose: A (repeated) literal in an implicant represents a signed edge. For all literals, roll the die 
 #and see if the sign of the respective edge changes or not.
 def edgeFlip(implicants, chance):

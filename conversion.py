@@ -10,6 +10,7 @@ from aux_scripts.common import *
 
 #Attention: Input files must be in the BCF format and follow the conventions of the .bnet files in the simple_models folder (results will be unpredictable otherwise)
 
+
 #-----Configs-----
 
 #Command-line usage
@@ -63,7 +64,7 @@ def parseArgs():
 #-----ASP Predicates-related operations-----
 
 #Inputs: file is the file to write in, compounds is a list of strings representing the compounds.
-#Purpose: Adds nodes representing compounds to LP
+#Purpose: Adds nodes representing compounds to LP.
 def addNodesToLP(file, compounds):
   file.write("%Compounds\n")
   for c in compounds:
@@ -72,7 +73,7 @@ def addNodesToLP(file, compounds):
 
 
 #Inputs: file is the file to write in, item is a tuple where the first element is the compound of the regulatory function, and the second element is a list of its implicants.
-#Purpose: Adds the edges representing the regulators of each node to LP
+#Purpose: Adds the edges representing the regulators of each node to LP.
 def addEdgesToLP(file, item):
   if item[1][0]: #if there exist any regulators
     file.write("%Regulators of " + item[0] + "\n")
@@ -88,7 +89,7 @@ def addEdgesToLP(file, item):
 
 
 #Inputs: file is the file to write in, item is a tuple where the first element is the compound of the regulatory function, and the second element is a list of its implicants.
-#Purpose: Adds regulators of each compound to LP
+#Purpose: Adds regulators of each compound to LP.
 def addFunctionToLP(file, item):
   if item[1][0]: #if there exist any regulators
     file.write("%Regulatory function of " + item[0] + "\n")
@@ -107,8 +108,8 @@ def addFunctionToLP(file, item):
 
 #-----Convert to LP operations-----
 
-#Inputs: dict is a dictionary where the keys are compounds and the values are the implicants of each compound, name is the name of the file and path is the directory to place the file in
-#Purpose: Saves a Boolean logical model to an LP file
+#Inputs: dict is a dictionary where the keys are compounds and the values are the implicants of each compound, name is the name of the file and path is the directory to place the file in.
+#Purpose: Saves a Boolean logical model to an LP file.
 def saveLPToFile(dict, name=False, path=write_folder):
   logger = logging.getLogger("saveLP")
   logger.setLevel(logging.INFO)

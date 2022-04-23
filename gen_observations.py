@@ -12,6 +12,7 @@ from aux_scripts.common import uniquify
 
 #Attention: Input file must be in the BCF format and follow the conventions of the .lp files in the lp_models folder (results will be unpredictable otherwise)
 
+
 #-----Configs-----
 
 #Command-line usage
@@ -91,8 +92,8 @@ def parseArgs():
   return
 
 
-#Inputs: Obtained atoms from the solved model by clingo
-#Purpose: Saves generated observations to file
+#Inputs: Obtained atoms from the solved model by clingo.
+#Purpose: Saves generated observations to file.
 def saveObsToFile(atoms):
     experiments_observations = {}
     current_answer_set = 0

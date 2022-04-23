@@ -58,7 +58,8 @@ global_logger.setLevel(logging.DEBUG)
 
 
 #-----Auxiliary Functions-----
-
+#Inputs: atoms is a list of atoms obtained from solving with clingo.
+#Purpose: Stores inconsistency atoms in a separate file (to be used by repairs later on).
 def saveInconsistenciesToFile(atoms):
   logger = logging.getLogger("saveIncst")
   logger.setLevel(logging.DEBUG)
@@ -145,6 +146,8 @@ def parseArgs():
   return
 
 
+#Inputs: atoms is a list of atoms obtained from solving with clingo.
+#Purpose: Prints the obtained atoms in a more readable manner.
 def isConsistent(atoms):
   if not atoms:
     print("No answers sets could be found	\u2755 there must be something wrong with the encoding...")
