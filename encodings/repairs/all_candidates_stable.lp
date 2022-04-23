@@ -8,7 +8,7 @@
 factorial(0,1). 
 factorial(N+1, F*(N+1)) :- factorial(N,F), N < TARGET, get_factorial(TARGET). 
 
-%Variables of inconsistent function F (function change will only work with these variables)
+%Variables of inconsistent function F
 variable(F,N) :- term(F,_,N), inconsistent(E,F,_).
 
 %Total number of variables of function F
@@ -28,9 +28,9 @@ level_clause_total(F,L,FACT1/FACT2/FACT3) :- level(F,L), total_variables(F,T),
 %Generate terms for every clause of every level (all possible function terms are generated here)
 %e.g for {a,b,c}:
 %level 1 (3 clauses, 1 term each):   a; b; c
-%level 2 (3 clauses, 2 terms each):  a & b; a &c ; b & c 
+%level 2 (3 clauses, 2 terms each):  a & b; a & c ; b & c 
 %level 3 (1 clause, 3 terms in it): a & b & c
-%F - function that could be defined by these variable combinations
+%F - inconsistent function
 %L - the level of the generated term
 %N - the variable being placed in clause C of level L
 %C - the clause of level L that is being considered
@@ -57,7 +57,7 @@ not_contained_in(F,L1,C1,L2,C2) :- clause(F,L1,C1), clause(F,L2,C2), generated_t
 function_clauses(F,1..MAX_CLAUSES) :- total_variables(F,T), factorial(T,FACT_T), factorial(T/2, FACT_TDIV1), factorial(T-T/2, FACT_TDIV2), MAX_CLAUSES = FACT_T/FACT_TDIV1/FACT_TDIV2.
 
 %function_candidate(F,ID,CLAUSE_NUMBER,L,C)
-%F - function that needs to be changed
+%F - inconsistent function
 %ID - unique ID of this function candidate
 %CLAUSE_NUMBER - number of total clauses in this candidate
 %L - level of the generated clause that is a part of this candidate

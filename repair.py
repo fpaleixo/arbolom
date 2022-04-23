@@ -113,7 +113,7 @@ def printMaps(term_map, func_map):
                 current_clause = lc[1]
                 func_clause = term_map[func][current_level][current_clause]
                 if lc != levels_clauses[-1]:
-                  print(str(func_clause), end=" | ")
+                  print(str(func_clause), end=" or ")
                 else:
                   print(str(func_clause))
       else:
