@@ -7,7 +7,7 @@ The ARBoLoM tool aims to automate the revision of Boolean logical models, with f
 All scripts can be tested with no installation by using Google Colab. Just download the repository and change the working directory to the arbolom folder.
 
 ### Using a local installation
-For a local installation, Python 3.6 or above is required, alongside the [clingo package](https://pypi.org/project/clingo/). Detailed instructions can be found in the [potassco website](https://potassco.org/clingo/).
+For a local installation, Python 3.8 or above is required, alongside the [clingo package](https://pypi.org/project/clingo/). Detailed instructions can be found in the [potassco website](https://potassco.org/clingo/).
 
 ## Running the Scripts
 
