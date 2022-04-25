@@ -7,6 +7,9 @@ from aux_scripts.common import uniquify
 
 #-----Configs-----
 
+#Toggle debug mode
+debug_toggled = False
+
 #Model path
 model_path = "lp_models/corrupted/3/3-corrupted-f.lp"
 
@@ -127,7 +130,6 @@ def displaySolution(atoms):
   term_map = {}
   func_map = {}
 
-  print(atoms)
   for a in atoms:
     if "generated_term" in a:
       buildTermMap(term_map,a)
@@ -163,7 +165,11 @@ class Context:
     return N(combin)
 
 #-----Main-----
-ctl = clingo.Control(arguments=[])
+clingo_args = []
+if(debug_toggled):
+  clingo_args = ["--output-debug=text"]
+  
+ctl = clingo.Control(arguments=clingo_args)
 
 ctl.load(model_path)
 ctl.load(obsv_path)
@@ -176,4 +182,5 @@ with ctl.solve(yield_=True) as handle:
   for model in handle:
     atoms = (str(model).split(" "))
 
+#print(atoms)
 printRepairs(atoms)

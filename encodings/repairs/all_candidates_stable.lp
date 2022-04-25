@@ -1,6 +1,6 @@
 %Repair strategy: For each inconsistent node, generate all possible function candidates.
 %Reject candidates which are not able to replicate expected behavior.
-#const max_candidates = 18.
+#const max_candidates = 18. %TODO find a way around using this constant
 
 %Define
 %--Generate all possible term combinations--
@@ -29,9 +29,10 @@ clause(F,L,1..CTOTAL) :- level(F,L), level_clause_total(F,L,CTOTAL).
 %L - the level of the generated term
 %N - the variable being placed in clause C of level L
 %C - the clause of level L that is being considered
-{generated_term(F,L,N,1..C) : variable(F,N)} = C*L :-  level(F,L), level_clause_total(F,L,C).
+{generated_term(F,L,N,C) : variable(F,N)} = L :- clause(F,L,C).
 
 %Two clauses are distinct if there is a term that's a part of one of them, but not a part of the other
+%TODO optimize this, takes up the biggest chunk of grounding...
 distinct_clauses(F,L,C1,C2) :- clause(F,L,C1), clause(F,L,C2), generated_term(F,L,N,C1), not generated_term(F,L,N,C2), C1 < C2.
 
 %--Generate all possible functions--
@@ -64,12 +65,6 @@ distinct_candidates(F,ID1,ID2) :- function_candidate(F,ID1,CLAUSE_NUMBER,L,C), f
 
 %Test
 %--Generate all possible term combinations--
-%Fill in clauses in order
-:- clause(F,L,C+1), not clause(F,L,C), C > 0.
-
-%Number of terms per clause must to be equal to the level
-:- #count{N : generated_term(F,L,N,C)} != L, clause(F,L,C).
-
 %Every clause must be unique
 :- clause(F,L,C1), clause(F,L,C2), not distinct_clauses(F,L,C1,C2), C1 < C2.
 
@@ -86,6 +81,7 @@ distinct_candidates(F,ID1,ID2) :- function_candidate(F,ID1,CLAUSE_NUMBER,L,C), f
 
 %IDs must be unique
 :- function_candidate(F,ID,CLAUSE_NUMBER1,_,_), function_candidate(F,ID,CLAUSE_NUMBER2,_,_), CLAUSE_NUMBER1 != CLAUSE_NUMBER2.
+
 
 %Display
 %#show function_clauses/2.
