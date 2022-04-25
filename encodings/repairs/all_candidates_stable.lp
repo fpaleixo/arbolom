@@ -4,10 +4,6 @@
 
 %Define
 %--Generate all possible term combinations--
-%Factorial functions - used to determine number of terms to generate
-factorial(0,1). 
-factorial(N+1, F*(N+1)) :- factorial(N,F), N < TARGET, get_factorial(TARGET). 
-
 %Variables of inconsistent function F
 variable(F,N) :- term(F,_,N), inconsistent(E,F,_).
 
@@ -17,13 +13,12 @@ total_variables(F,T) :- T = #count{N : variable(F,N)}, inconsistent(E,F,_).
 %Levels represent the number of terms held by each clause, e.g. in level 1 each clause will only have 1 term,
 %in level L there will be a single clause for all L terms
 level(F,1..T) :- total_variables(F,T).
-
-%Calculate maximum factorial required for our calculations
-get_factorial(T) :- total_variables(F,T).
  
 %Calculate how many clauses exactly each level should have
-level_clause_total(F,L,FACT1/FACT2/FACT3) :- level(F,L), total_variables(F,T), 
-    factorial(T, FACT1), factorial(T-L, FACT2), factorial(L, FACT3).
+level_clause_total(F,L,TOTAL) :- level(F,L), total_variables(F,T), TOTAL = @combination(T,L).
+
+%Clauses occupied by generated terms
+clause(F,L,1..CTOTAL) :- level(F,L), level_clause_total(F,L,CTOTAL).
   
 %Generate terms for every clause of every level (all possible function terms are generated here)
 %e.g for {a,b,c}:
@@ -36,11 +31,8 @@ level_clause_total(F,L,FACT1/FACT2/FACT3) :- level(F,L), total_variables(F,T),
 %C - the clause of level L that is being considered
 {generated_term(F,L,N,1..C) : variable(F,N)} = C*L :-  level(F,L), level_clause_total(F,L,C).
 
-%Clauses occupied by generated terms
-clause(F,L,C) :- generated_term(F,L,N,C).
-
-%Total number T of terms on clause C of level L -- this is probably very inefficient, since generated_term comes from a choice rule...
-terms_per_clause(F,L,C,T) :- T = #count{N : generated_term(F,L,N,C)}, function(F,_), clause(F,L,C).
+%Two clauses are distinct if there is a term that's a part of one of them, but not a part of the other
+distinct_clauses(F,L,C1,C2) :- clause(F,L,C1), clause(F,L,C2), generated_term(F,L,N,C1), not generated_term(F,L,N,C2), C1 < C2.
 
 %--Generate all possible functions--
 %IDs of each candidate
@@ -54,7 +46,7 @@ not_contained_in(F,L1,C1,L2,C2) :- clause(F,L1,C1), clause(F,L2,C2), generated_t
 
 %How many clauses there will be in a given candidate (used to ensure we are generating all candidates with
 %1,2,...,MAX clauses possible)
-function_clauses(F,1..MAX_CLAUSES) :- total_variables(F,T), factorial(T,FACT_T), factorial(T/2, FACT_TDIV1), factorial(T-T/2, FACT_TDIV2), MAX_CLAUSES = FACT_T/FACT_TDIV1/FACT_TDIV2.
+function_clauses(F,1..MAX_CLAUSES) :- total_variables(F,T), MAX_CLAUSES = @combination(T,T/2).
 
 %function_candidate(F,ID,CLAUSE_NUMBER,L,C)
 %F - inconsistent function
@@ -76,11 +68,10 @@ distinct_candidates(F,ID1,ID2) :- function_candidate(F,ID1,CLAUSE_NUMBER,L,C), f
 :- clause(F,L,C+1), not clause(F,L,C), C > 0.
 
 %Number of terms per clause must to be equal to the level
-:- terms_per_clause(_,L,_,T), T != L.
+:- #count{N : generated_term(F,L,N,C)} != L, clause(F,L,C).
 
 %Every clause must be unique
-:- clause(F,L,C1), clause(F,L,C2), C1 != C2, 
-    REPETITIONS = #count{N : generated_term(F,L,N,C1), generated_term(F,L,N,C2)}, REPETITIONS = L.
+:- clause(F,L,C1), clause(F,L,C2), not distinct_clauses(F,L,C1,C2), C1 < C2.
 
 %--Generate all possible functions--
 %Functions must contain as many clauses as their CLAUSE_NUMBER
@@ -96,9 +87,8 @@ distinct_candidates(F,ID1,ID2) :- function_candidate(F,ID1,CLAUSE_NUMBER,L,C), f
 %IDs must be unique
 :- function_candidate(F,ID,CLAUSE_NUMBER1,_,_), function_candidate(F,ID,CLAUSE_NUMBER2,_,_), CLAUSE_NUMBER1 != CLAUSE_NUMBER2.
 
-
 %Display
-#show function_clauses/2.
+%#show function_clauses/2.
 #show total_variables/2.
 #show function_candidate/5.
 %#show distinct_candidates/3.

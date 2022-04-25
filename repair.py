@@ -1,4 +1,5 @@
 import argparse, logging, clingo
+from math import comb
 from aux_scripts.common import uniquify
 #--Work in progress--
 #Usage: $python repair.py
@@ -93,7 +94,7 @@ def printMaps(term_map, func_map):
           clause_map = level_map[level]
           for clause in clause_map.keys():
             if clause != list(clause_map.keys())[-1]:
-              print(clause + ":" + str(clause_map[clause]),  end=" | ")
+              print(clause + ":" + str(clause_map[clause]),  end=" \033[1;32m | \033[0;37;40m")
             else:
               print(clause + ":" + str(clause_map[clause]))
 
@@ -152,6 +153,14 @@ def printRepairs(atoms):
     print("No repairs could be found \u274C")
 
 
+#-----Auxiliary clingo Functions-----
+class Context:
+  #Input: n - objects; r - sample (both as clingo Symbols)
+  #Purpose: used to efficiently calculate combinations of n r
+  def combination(n,r):
+    N = clingo.Number
+    combin = comb(n.number,r.number)
+    return N(combin)
 
 #-----Main-----
 ctl = clingo.Control(arguments=[])
@@ -161,7 +170,7 @@ ctl.load(obsv_path)
 ctl.load(incst_path)
 ctl.load(repairs_path)
 
-ctl.ground([("base", [])])
+ctl.ground([("base", [])], context=Context)
 atoms = []
 with ctl.solve(yield_=True) as handle:
   for model in handle:
