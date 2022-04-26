@@ -1,6 +1,7 @@
 import argparse, logging, clingo
 from math import comb
 from aux_scripts.common import uniquify
+
 #--Work in progress--
 #Usage: $python repair.py
 #Note: Model, observations and inconsistencies to be used by the algorithm have to be specified in the configs below
@@ -33,8 +34,15 @@ global_logger = logging.getLogger("global")
 global_logger.setLevel(logging.DEBUG)
 
 
-
 #-----Auxiliary Functions-----
+#Input: stats_dict dictionary from clingo.Control
+#Purpose: Prints time statistics from clingo
+def printStatistics(stats_dict):
+  times = stats_dict["summary"]["times"]
+  print("--Statistics--")
+  print("Total: "+str(times["total"]) + "s (Solving: "+str(times["solve"])+"s)")
+  print("CPU Time: "+str(times["cpu"])+"s")
+
 #Inputs: term_map is the map created in displaySolution that will store term atoms.
 #Purpose: Builds the term map by storing each term atom.
 def buildTermMap(term_map, atom):
@@ -184,3 +192,4 @@ with ctl.solve(yield_=True) as handle:
 
 #print(atoms)
 printRepairs(atoms)
+printStatistics(ctl.statistics)

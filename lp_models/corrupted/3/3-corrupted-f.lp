@@ -40,10 +40,12 @@ term(v3, 3, v6).
 term(v3, 3, v7).
 term(v3, 3, v8).
 term(v3, 3, v9).
+
+
 term(v3, 3, v10).
 term(v3, 3, v11).
-
 term(v3, 3, v12).
+
 term(v3, 3, v13).
 term(v3, 3, v14).
 term(v3, 3, v15).

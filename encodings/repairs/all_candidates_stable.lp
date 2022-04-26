@@ -1,5 +1,6 @@
 %Repair strategy: For each inconsistent node, generate all possible function candidates.
 %Reject candidates which are not able to replicate expected behavior.
+%TODO fix term generation bottleneck - with 10 variables takes 91s, out of which 84s are for solving time
 #const max_candidates = 18. %TODO find a way around using this constant
 
 %Define
@@ -31,9 +32,6 @@ clause(F,L,1..CTOTAL) :- level(F,L), level_clause_total(F,L,CTOTAL).
 %C - the clause of level L that is being considered
 {generated_term(F,L,N,C) : variable(F,N)} = L :- clause(F,L,C).
 
-%Two clauses are distinct if there is a term that's a part of one of them, but not a part of the other
-%TODO optimize this, takes up the biggest chunk of grounding...
-distinct_clauses(F,L,C1,C2) :- clause(F,L,C1), clause(F,L,C2), generated_term(F,L,N,C1), not generated_term(F,L,N,C2), C1 < C2.
 
 %--Generate all possible functions--
 %IDs of each candidate
@@ -65,8 +63,9 @@ distinct_candidates(F,ID1,ID2) :- function_candidate(F,ID1,CLAUSE_NUMBER,L,C), f
 
 %Test
 %--Generate all possible term combinations--
-%Every clause must be unique
-:- clause(F,L,C1), clause(F,L,C2), not distinct_clauses(F,L,C1,C2), C1 < C2.
+%Clauses must be unique
+:- #count{N : generated_term(F,L,N,C1), generated_term(F,L,N,C2)} = L, clause(F,L,C1), clause(F,L,C2), C2 > C1.
+
 
 %--Generate all possible functions--
 %Functions must contain as many clauses as their CLAUSE_NUMBER
