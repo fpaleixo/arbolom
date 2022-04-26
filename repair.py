@@ -166,7 +166,7 @@ def printRepairs(atoms):
 #-----Auxiliary clingo Functions-----
 class Context:
   #Input: n - objects; r - sample (both as clingo Symbols)
-  #Purpose: used to efficiently calculate combinations of n r
+  #Purpose: used to efficiently calculate combinations (n choose r)
   def combination(n,r):
     N = clingo.Number
     combin = comb(n.number,r.number)

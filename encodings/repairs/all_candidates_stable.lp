@@ -1,6 +1,6 @@
 %Repair strategy: For each inconsistent node, generate all possible function candidates.
 %Reject candidates which are not able to replicate expected behavior.
-%TODO fix term generation bottleneck - with 10 variables takes 91s, out of which 84s are for solving time
+%TODO fix term generation bottleneck - with 10 variables takes around 78s, out of which 71s are for solving
 #const max_candidates = 18. %TODO find a way around using this constant
 
 %Define
@@ -66,6 +66,9 @@ distinct_candidates(F,ID1,ID2) :- function_candidate(F,ID1,CLAUSE_NUMBER,L,C), f
 %Clauses must be unique
 :- #count{N : generated_term(F,L,N,C1), generated_term(F,L,N,C2)} = L, clause(F,L,C1), clause(F,L,C2), C2 > C1.
 
+%Each variable occurs exactly (T-1) C (L-1) times in each level 
+:- level(F,L), total_variables(F,T), variable(F,N), #count{ 1,C : generated_term(F,L,N,C)} != @combination(T-1,L-1).
+
 
 %--Generate all possible functions--
 %Functions must contain as many clauses as their CLAUSE_NUMBER
@@ -85,6 +88,7 @@ distinct_candidates(F,ID1,ID2) :- function_candidate(F,ID1,CLAUSE_NUMBER,L,C), f
 %Display
 %#show function_clauses/2.
 #show total_variables/2.
+#show level_clause_total/3.
 #show function_candidate/5.
 %#show distinct_candidates/3.
 %#show not_contained_in/5.
