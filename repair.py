@@ -10,8 +10,9 @@ from aux_scripts.common import uniquify
 
 #-----Configs-----
 
-#Toggle debug mode
-debug_toggled = False
+#Toggle debug modes
+termgen_debug_toggled = False
+funcgen_debug_toggled = False
 
 #Model path
 model_path = "lp_models/corrupted/3/3-corrupted-f.lp"
@@ -44,9 +45,10 @@ global_logger.setLevel(logging.DEBUG)
 #Purpose: Prints time statistics from clingo
 def printStatistics(stats_dict):
   times = stats_dict["summary"]["times"]
-  print("--Statistics--")
+  print("\n<Statistics>")
   print("Total: "+str(times["total"]) + "s (Solving: "+str(times["solve"])+"s)")
   print("CPU Time: "+str(times["cpu"])+"s")
+  print("\n")
 
 def termsMap(atoms):
   term_map = {}
@@ -91,49 +93,87 @@ def printTermsMap(term_map):
         else:
           print(str(term))
 
-def displayTerms(atoms):
-  term_map = termsMap(atoms)
-  printTermsMap(term_map)
+def getTermLP(term_map):
+  logic_program = ""
 
-#Inputs: atoms is a list with the atoms obtained from solving with clingo.
-#Purpose: Prints clingo's solution in a more readable manner.
-def printTerms(atoms):
+  for func in term_map.keys():
+    varnumber_map = term_map[func]
+
+    for variable_number in varnumber_map.keys():
+      clause_id = 1
+      term_list = varnumber_map[variable_number]
+
+      for term in term_list:
+        logic_program += "clause("+ func + "," + variable_number + f",{clause_id}).\n"
+
+        for variable in term:
+          logic_program += "generated_term("+ func + "," + variable_number + f",{clause_id}," + variable + ").\n"
+
+        clause_id += 1
+        logic_program += '\n'
+
+  return logic_program
+
+def processTerms(atoms):
   if not atoms:
     print("No answers sets could be found	\u2755 there must be something wrong with the encoding...")
+
   elif atoms[0]:
-    displayTerms(atoms)
+    term_map = termsMap(atoms)
+    printTermsMap(term_map)
+    logic_program = getTermLP(term_map)
+    return logic_program
+
   else: 
     print("No atoms could be found \u274C")
 
+def generateTerms():
+  clingo_args = ["0"]
+  if termgen_debug_toggled:
+    clingo_args.append("--output-debug=text")
 
-#-----Auxiliary clingo Functions-----
-class Context:
-  #Input: n - objects; r - sample (both as clingo Symbols)
-  #Purpose: used to efficiently calculate combinations (n choose r)
-  def combination(n,r):
-    N = clingo.Number
-    combin = comb(n.number,r.number)
-    return N(combin)
+  ctl = clingo.Control(arguments=clingo_args)
 
-#-----Main-----
-clingo_args = ["0"]
-if(debug_toggled):
-  clingo_args.append("--output-debug=text")
+  ctl.load(model_path)
+  ctl.load(incst_path)
+  ctl.load(termgen_path)
+
+  print("Starting term generation...")
+  ctl.ground([("base", [])])
+  terms = []
+
+  with ctl.solve(yield_=True) as handle:
+    for model in handle:
+      terms.append(str(model).split(" "))
+
+  print("Finished term generation!")
+  printStatistics(ctl.statistics)
+  return terms
+
+def generateFunctions(terms_LP):
+  clingo_args = ["0"]
+  if funcgen_debug_toggled:
+    clingo_args.append("--output-debug=text")
+    
+  ctl = clingo.Control(arguments=clingo_args)
+
+  ctl.add("base", [], program=terms_LP)
+  ctl.load(funcgen_path)
+
+  ctl.ground([("base", [])])
+  functions = []
+
+  with ctl.solve(yield_=True) as handle:
+    for model in handle:
+      functions.append(str(model).split(" "))
   
-ctl = clingo.Control(arguments=clingo_args)
-
-ctl.load(model_path)
-ctl.load(obsv_path)
-ctl.load(incst_path)
-ctl.load(termgen_path)
-ctl.load(funcgen_path)
-
-ctl.ground([("base", [])], context=Context)
-terms = []
-with ctl.solve(yield_=True) as handle:
-  for model in handle:
-    terms.append(str(model).split(" "))
-
+#-----Main-----
+terms = generateTerms()
 print(terms)
-printTerms(terms)
-printStatistics(ctl.statistics)
+terms_LP = processTerms(terms)
+
+generateFunctions(terms_LP)
+
+
+
+
