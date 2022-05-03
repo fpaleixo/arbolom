@@ -6,6 +6,8 @@ from aux_scripts.common import uniquify
 #Usage: $python repair.py
 #Note: Model, observations and inconsistencies to be used by the algorithm have to be specified in the configs below
 
+#TODO cmd line support
+
 #-----Configs-----
 
 #Toggle debug modes
@@ -15,12 +17,26 @@ candcheck_debug_toggled = False
 
 #Model path
 model_path = "lp_models/corrupted/3/3-corrupted-f.lp"
+#model_path = "lp_models/corrupted/8/8-corrupted-f.lp"
 
 #Paths of expected observations
 obsv_path = "lp_models/obsv/sstate/3-obs.lp"
+#obsv_path = "lp_models/obsv/tseries/sync/3-obs.lp"
+#obsv_path = "lp_models/obsv/tseries/async/3-obs.lp"
+
+#obsv_path = "lp_models/obsv/sstate/8-obs.lp"
+#obsv_path = "lp_models/obsv/tseries/sync/8-obs.lp"
+#obsv_path = "lp_models/obsv/tseries/async/8-obs.lp"
 
 #Paths of encodings with inconsistencies
-incst_path = "./lp_models/corrupted/3/inconsistencies/3-corrupted-f-stable_inconsistency.lp"
+incst_path = "lp_models/corrupted/3/inconsistencies/3-corrupted-f-stable_inconsistency.lp"
+#incst_path = "lp_models/corrupted/3/inconsistencies/3-corrupted-f-sync_inconsistency.lp"
+#incst_path = "lp_models/corrupted/3/inconsistencies/3-corrupted-f-async_inconsistency.lp"
+
+#incst_path = "./lp_models/corrupted/8/inconsistencies/8-corrupted-f-stable_inconsistency.lp"
+#incst_path = "lp_models/corrupted/8/inconsistencies/8-corrupted-f-sync_inconsistency.lp"
+#incst_path = "lp_models/corrupted/8/inconsistencies/8-corrupted-f-async_inconsistency.lp"
+
 
 #Paths of encodings for generating terms
 termgen_path = "./encodings/repairs/term_generator.lp"
@@ -29,9 +45,9 @@ termgen_path = "./encodings/repairs/term_generator.lp"
 funcgen_path = "./encodings/repairs/func_generator.lp"
 
 #Paths of encodings for checking consistency
-ss_consis_path = "encodings/consistency/ss_consistency.lp"
-sync_consis_path = "encodings/consistency/sync_consistency.lp"
-async_consis_path = "encodings/consistency/async_consistency.lp"
+ss_consis_path = "encodings/repairs/single_consistency/ss_single_consistency.lp"
+sync_consis_path = "encodings/repairs/single_consistency/sync_single_consistency.lp"
+async_consis_path = "encodings/repairs/single_consistency/async_single_consistency.lp"
 
 #Mode flags 
 toggle_stable_state = True
@@ -257,14 +273,21 @@ def getViableCandidatesMap(term_map, func_map):
 
   for func in candidate_map.keys():
     func_candidates = candidate_map[func]
+    total_candidates = len(func_candidates)
     original_LP = func_candidates[0]
     consistent_candidates[func] = []
+
+    print_times = True
+    if total_candidates > 100:
+      print("Too many candidates to print times...")
+      print_times = False
     
     for candidate_idx in range(1,len(func_candidates)):
       current_candidate = func_candidates[candidate_idx]
 
       complete_LP = original_LP + current_candidate
-      inconsistencies = consistencyCheck(complete_LP)
+      
+      inconsistencies = consistencyCheck(complete_LP,print_times,func)
 
       if not inconsistencies[0]:
         consistent_candidates[func].append(current_candidate)
@@ -408,14 +431,15 @@ def generateFunctions(terms_LP):
   with ctl.solve(yield_=True) as handle:
     for model in handle:
       functions.append(str(model).split(" "))
+  
   print("Finished function generation \U0001F3C1")
   printStatistics(ctl.statistics)
   return functions
 
 #Input: The LP with the modified original model which now includes the new candidate
 #Purpose: Use clingo to check if the given LP is consistent with the observations or not
-def consistencyCheck(complete_LP):
-  clingo_args = ["0"]
+def consistencyCheck(complete_LP, print_times,func):
+  clingo_args = ["0", "-c compound="+func]
   if candcheck_debug_toggled:
     clingo_args.append("--output-debug=text")
     
@@ -423,9 +447,17 @@ def consistencyCheck(complete_LP):
 
   ctl.add("base", [], program=complete_LP)
   ctl.load(obsv_path)
-  ctl.load(ss_consis_path)
 
-  print("Starting candidate check \u23F1")
+  if toggle_stable_state:
+    ctl.load(ss_consis_path)
+  elif toggle_sync:
+    ctl.load(sync_consis_path)
+  elif toggle_async:
+    ctl.load(async_consis_path)
+
+  if print_times:
+    print("Starting candidate check \u23F1")
+
   ctl.ground([("base", [])], context=Context)
   inconsistencies = []
 
@@ -433,8 +465,10 @@ def consistencyCheck(complete_LP):
     for model in handle:
       inconsistencies += (str(model).split(" "))
 
-  print("Finished candidate check \U0001F3C1")
-  printStatistics(ctl.statistics)
+  if print_times:
+    print("Finished candidate check \U0001F3C1")
+    printStatistics(ctl.statistics)
+
   return inconsistencies
 
 

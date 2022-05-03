@@ -26,7 +26,7 @@ present(F,N) :- function_candidate(F,CN,L,C), generated_term(F,L,C,N).
 :- #count{F : inconsistent_function(F)} != 1.
 
 %Since we are considering non-degenerate functions, all regulators of F must be present in the candidate
-:- generated_term(F,_,_,N), not present(F,N).
+:- generated_term(F,_,_,N), not present(F,N), inconsistent_function(F).
 
 %Clauses in a function cannot contain any other clause in that function (BCF)
 :- function_candidate(F,CLAUSE_NUMBER,L1,C1), function_candidate(F,CLAUSE_NUMBER,L2,C2), not not_contained_in(F,L1,C1,L2,C2), L2 > L1.

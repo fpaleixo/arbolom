@@ -2,7 +2,9 @@
 
 %Define
 %Choose the function to generate terms for (only one per answer set, as enforced by the IC below)
-{inconsistent_function(F)} :- inconsistent(_,F,_).
+{inconsistent_function(F)} :- inconsistent(_,F,_). %Stable state inconsistent predicate has arity 3
+{inconsistent_function(F)} :- inconsistent(_,_,F,_). %Time series inconsistent predicate has arity 4 (includes the time step)
+
 
 %Get the variables (regulators) of the inconsistent function
 variable(F,N) :- term(F,_,N), inconsistent_function(F).
