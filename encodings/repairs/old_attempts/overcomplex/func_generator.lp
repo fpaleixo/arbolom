@@ -1,5 +1,9 @@
 %Generates all possible function candidates for inconsistent functions
 
+%! DEPRECATED
+%! DEPRECATED
+%! DEPRECATED
+
 %Define
 %Choose the function to generate terms for (only one per answer set, as enforced by the IC below)
 {inconsistent_function(F)} :- total_variables(F,T).

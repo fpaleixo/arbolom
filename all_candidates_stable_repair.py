@@ -2,7 +2,11 @@ import argparse, logging, clingo
 from math import comb
 from aux_scripts.common import uniquify
 
-#Usage: $python repair_old.py
+#!Deprecated
+#!Deprecated
+#!Deprecated
+
+#Usage: $python all_candidates_stable_repair.py
 #Note: Model, observations and inconsistencies to be used by the algorithm have to be specified in the configs below
 
 #-----Configs-----
@@ -20,7 +24,7 @@ obsv_path = "lp_models/obsv/sstate/3-obs.lp"
 incst_path = "./lp_models/corrupted/3/inconsistencies/3-corrupted-f-stable_inconsistency.lp"
 
 #Paths of encodings for repairs
-repairs_path = "./encodings/repairs/all_candidates_stable.lp"
+repairs_path = "./encodings/repairs/old_attempts/all_candidates/all_candidates_stable.lp"
 
 #Mode flags 
 toggle_stable_state = True

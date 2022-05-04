@@ -1,5 +1,9 @@
 %Generates the terms to be used in creating function candidates
 
+%! DEPRECATED
+%! DEPRECATED
+%! DEPRECATED
+
 %Define
 %Choose the function to generate terms for (only one per answer set, as enforced by the IC below)
 {inconsistent_function(F)} :- inconsistent(_,F,_). %Stable state inconsistent predicate has arity 3

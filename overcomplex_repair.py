@@ -2,16 +2,17 @@ import argparse, logging, clingo
 from math import comb
 from aux_scripts.common import uniquify
 
-#--Work in progress--
-#Usage: $python repair.py
-#Note: Model, observations and inconsistencies to be used by the algorithm have to be specified in the configs below
+#!Deprecated
+#!Deprecated
+#!Deprecated
 
+#Usage: $python overcomplex_repair.py
+#Note: Model, observations and inconsistencies to be used by the algorithm have to be specified in the configs below
 
 #-----Configs-----
 
 #Toggle debug modes
-iftv_debug_toggled = False
-nodegen_debug_toggled = False
+termgen_debug_toggled = False
 funcgen_debug_toggled = False
 candcheck_debug_toggled = False
 
@@ -37,14 +38,12 @@ incst_path = "lp_models/corrupted/3/inconsistencies/3-corrupted-f-stable_inconsi
 #incst_path = "lp_models/corrupted/8/inconsistencies/8-corrupted-f-sync_inconsistency.lp"
 #incst_path = "lp_models/corrupted/8/inconsistencies/8-corrupted-f-async_inconsistency.lp"
 
-#Paths of encodings for obtaining inconsistent functions and total variables of each
-iftv_path = "./encodings/repairs/iftv.lp"
 
 #Paths of encodings for generating terms
-nodegen_path = "./encodings/repairs/node_generator.lp"
+termgen_path = "./encodings/repairs/old_attempts/overcomplex/term_generator.lp"
 
 #Paths of encodings for generating functions
-funcgen_path = "./encodings/repairs/func_generator.lp"
+funcgen_path = "./encodings/repairs/old_attempts/overcomplex/func_generator.lp"
 
 #Paths of encodings for checking consistency
 ss_consis_path = "encodings/repairs/single_consistency/ss_single_consistency.lp"
@@ -122,29 +121,13 @@ def printViableCandidatesMap(viable_candidates_map):
     
     print(f"Total viable candidates: {len(viable_candidates_map[func])}" )
 
-#Purpose: Prints the initial node generation phase message
-def printFuncRepairStart(current_function):
-  print(f"\033[1;32m ----{current_function} REPAIR START----\033[0;37;40m")
+#Purpose: Prints the initial term generation phase message
+def printTermStart():
+  print("\033[1;32m ----TERM GENERATION START----\033[0;37;40m")
 
-#Purpose: Prints the initial node generation phase message
-def printFuncRepairEnd(current_function):
-  print(f"\033[1;32m ----{current_function} REPAIR END----\033[0;37;40m")
-
-#Purpose: Prints the initial iftv generation phase message
-def printIFTVStart():
-  print("\033[1;32m ----IFTV GENERATION START----\033[0;37;40m")
-
-#Purpose: Prints the final iftv generation phase message
-def printIFTVEnd():
-  print("\033[1;32m ----IFTV GENERATION END----\033[0;37;40m")
-
-#Purpose: Prints the initial node generation phase message
-def printNodeStart():
-  print("\033[1;32m ----NODE GENERATION START----\033[0;37;40m")
-
-#Purpose: Prints the final node generation phase message
-def printNodeEnd():
-  print("\n\033[1;32m ----NODE GENERATION END----\033[0;37;40m\n")
+#Purpose: Prints the final term generation phase message
+def printTermEnd():
+  print("\n\033[1;32m ----TERM GENERATION END----\033[0;37;40m\n")
 
 #Purpose: Prints the initial function generation phase message
 def printFuncStart():
@@ -165,12 +148,12 @@ def printCandCheckEnd():
 
 #---Auxiliary clingo Functions---
 class Context:
-  #Input: n - number of variables;
-  #Purpose: used to calculate the total number of possible nodes (n choose 1 + n choose 2 + ... n choose n = 2^n)
-  def totalNodes(n):
+  #Input: n - objects; r - sample (both as clingo Symbols)
+  #Purpose: used to efficiently calculate combinations (n choose r)
+  def combination(n,r):
     N = clingo.Number
-    total = pow(2,n.number) - 1 #Minus one because we are not interested in n choose 0
-    return N(total)
+    combin = comb(n.number,r.number)
+    return N(combin)
 
 
 
@@ -315,41 +298,36 @@ def getViableCandidatesMap(term_map, func_map):
 
 
 #-----Functions that create the LPs to be used by clingo-----
-#Input: The nodes generated from clingo
-#Purpose: Creates the logic program that will be used to establish relations between nodes
-def getIftvsLP(iftvs):
-  result_LP = {}
+#Input: The output from getTermsMapAndTotalVars, containing the term map and number of total variables of each inconsistent function
+#Purpose: Creates the logic program that will be used to generate function candidates
+def getTermLP(term_output):
+  term_map = term_output[0]
+  total_vars = term_output[1]
+  logic_program = ""
 
-  for iftv in iftvs:
-    current_LP = ""
-    var_name = ""
-    for atom in iftv:
-
-      if "inconsistent_function" in atom:
-        var_name = iftv[0].split(')')[0].split('(')[1]
-      else:
-        current_LP += atom +".\n"
-
-    result_LP[var_name] = current_LP
-  return result_LP
-
-#Input: The nodes generated from clingo
-#Purpose: Creates the logic program that will be used to establish relations between nodes
-def getNodesLP(nodes):
-  result_LP = ""
-  current_node_id = 1
+  for func in total_vars.keys():
+    total = total_vars[func]
+    logic_program += "total_variables(" + func + "," + total + ").\n"
   
-  for node in nodes:
-    result_LP += f"node_id({current_node_id}).\n"
+  logic_program += "\n"
 
-    for variable in node:
-      var_name = variable.split(')')[0].split('(')[1]
-      result_LP += f"node_variable({current_node_id},{var_name}).\n"
-    
-    result_LP += "\n"
-    current_node_id += 1
+  for func in term_map.keys():
+    varnumber_map = term_map[func]
 
-  return result_LP
+    for variable_number in varnumber_map.keys():
+      clause_id = 1
+      term_list = varnumber_map[variable_number]
+
+      for term in term_list:
+        logic_program += "clause("+ func + "," + variable_number + f",{clause_id}).\n"
+
+        for variable in term:
+          logic_program += "generated_term("+ func + "," + variable_number + f",{clause_id}," + variable + ").\n"
+
+        clause_id += 1
+        logic_program += '\n'
+
+  return logic_program
 
 #Input: Inconsistent function
 #Purpose: Extracts from the original model everything except the part where the inconsistent regulatory function func is defined
@@ -365,50 +343,28 @@ def getOriginalModelLP(func):
 
 
 #-----Functions that process output from clingo-----
-#Input: The generated iftv output from clingo
-#Purpose: Processes clingo's iftv output by creating an LP with them, forming a tuple with an inconsistent function and the respective
-#number of total variables
-def processIFTVs(iftvs):
-  if not iftvs:
+#Input: The generated terms output from clingo
+#Purpose: Processes clingo's term generation output by creating a map with them, printing it, and using it to output the LP to be used 
+# to generate function candidates
+def processTerms(atoms):
+  if not atoms:
     print("No answers sets could be found	\u2755 there must be something wrong with the encoding...")
 
-  elif iftvs[0]:
+  elif atoms[0]:
+    term_output = getTermsMapAndTotalVars(atoms)
 
-    iftvs_LP = getIftvsLP(iftvs)
-
-    total_iftvs = len(iftvs)
-    if(total_iftvs < 100):
-      print("<Resulting inconsistent functions and total variables>")
-      print(str(iftvs_LP))
+    size = len(atoms)
+    if size < 5000:
+      printTermsMap(term_output[0])
     else:
-      print("Too many iftvs to print...!")
-    print(f"Total iftv: {total_iftvs}")
+      print("Too many terms to print...")
+    print("Total terms: ",size)
 
-    return iftvs_LP
+    logic_program = getTermLP(term_output)
+    return term_output[0], logic_program
 
   else: 
-    print("No iftvs could be found \u274C")
-
-#Input: The generated nodes output from clingo
-#Purpose: Processes clingo's node generation output by creating an LP with them, identifying each node
-def processNodes(nodes):
-  if not nodes:
-    print("No answers sets could be found	\u2755 there must be something wrong with the encoding...")
-
-  elif nodes[0]:
-
-    nodes_LP = getNodesLP(nodes)
-
-    total_nodes = len(nodes)
-    if(total_nodes < 100):
-      print("<Resulting nodes>")
-      print(nodes_LP)
-    else:
-      print("Too many nodes to print...!")
-    print(f"Total nodes: {total_nodes}")
-
-  else: 
-    print("No nodes could be found \u274C")
+    print("No terms could be found \u274C")
 
 #Input: The function candidates output from clingo
 #Purpose: Processes clingo's function candidates output by creating a map with it and printing it
@@ -433,54 +389,29 @@ def processFunctions(atoms,terms_map):
 
 
 #-----Functions that solve LPs with clingo-----
-#Purpose: Generates all nodes containing the possible variable conjunctions
-def generateInconsistentFunctionsAndTotalVars():
+#Purpose: Generates all possible function terms that can be used to generate function candidates
+def generateTerms():
   clingo_args = ["0"]
-  if iftv_debug_toggled:
+  if termgen_debug_toggled:
     clingo_args.append("--output-debug=text")
 
   ctl = clingo.Control(arguments=clingo_args)
 
   ctl.load(model_path)
   ctl.load(incst_path)
-  ctl.load(iftv_path)
+  ctl.load(termgen_path)
 
-  print("Starting iftv generation \u23F1")
+  print("Starting term generation \u23F1")
   ctl.ground([("base", [])])
-  iftv = []
+  terms = []
 
   with ctl.solve(yield_=True) as handle:
     for model in handle:
-      iftv.append(str(model).split(" "))
+      terms.append(str(model).split(" "))
 
-  print("Finished iftv generation \U0001F3C1")
+  print("Finished term generation \U0001F3C1")
   printStatistics(ctl.statistics)
-  return iftv
-
-#Purpose: Generates all nodes containing the possible variable conjunctions
-def generateNodes(iftvs_LP):
-  clingo_args = ["0"]
-  if nodegen_debug_toggled:
-    clingo_args.append("--output-debug=text")
-
-  ctl = clingo.Control(arguments=clingo_args)
-
-  ctl.load(model_path)
-  ctl.load(incst_path)
-  ctl.load(nodegen_path)
-  ctl.add("base",[],program=iftvs_LP)
-
-  print("Starting node generation \u23F1")
-  ctl.ground([("base", [])])
-  nodes = []
-
-  with ctl.solve(yield_=True) as handle:
-    for model in handle:
-      nodes.append(str(model).split(" "))
-
-  print("Finished node generation \U0001F3C1")
-  printStatistics(ctl.statistics)
-  return nodes
+  return terms
 
 #Input: The logic program containing information regarding the terms that can be used to create function candidates
 #Purpose: Generates all possible function candidates with the given logic progam
@@ -543,40 +474,28 @@ def consistencyCheck(complete_LP, print_times,func):
 
 
 #-----Main-----
-printIFTVStart()
-iftvs = generateInconsistentFunctionsAndTotalVars()
-processed_ifts_output = processIFTVs(iftvs)
-printIFTVEnd()
+printTermStart()
+terms = generateTerms()
+#print(terms)
+process_terms_output = processTerms(terms)
+printTermEnd()
 
-if processed_ifts_output:
-
-  for func in processed_ifts_output.keys():
-
-    printFuncRepairStart(func)
-    printNodeStart()
-
-    nodes = generateNodes(processed_ifts_output[func])
-    process_nodes_output = processNodes(nodes)
-
-    printNodeEnd()
-    printFuncRepairEnd(func)
-
-"""   if process_terms_output:
-    terms_map = process_terms_output[0]
-    terms_LP = process_terms_output[1]
-    #print(terms_LP)
-    
-    printFuncStart()
-    functions = generateFunctions(terms_LP)
-    process_func_output = processFunctions(functions,terms_map)
-    printFuncEnd()
-
-    if process_func_output:
-      func_map = process_func_output
-
-      printCandCheckStart()
-      viable_candidates_map = getViableCandidatesMap(terms_map, func_map)
-      printViableCandidatesMap(viable_candidates_map)
-      printCandCheckEnd() """
+if process_terms_output:
+  terms_map = process_terms_output[0]
+  terms_LP = process_terms_output[1]
+  #print(terms_LP)
   
+  printFuncStart()
+  functions = generateFunctions(terms_LP)
+  process_func_output = processFunctions(functions,terms_map)
+  printFuncEnd()
+
+  if process_func_output:
+    func_map = process_func_output
+
+    printCandCheckStart()
+    viable_candidates_map = getViableCandidatesMap(terms_map, func_map)
+    printViableCandidatesMap(viable_candidates_map)
+    printCandCheckEnd()
+
     

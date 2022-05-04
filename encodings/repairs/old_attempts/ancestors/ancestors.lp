@@ -1,6 +1,8 @@
 % Encoding used to calculate ancestors of monotone Boolean functions
 
-%TODO - implement rules 2,3
+%! DEPRECATED
+%! DEPRECATED
+%! DEPRECATED
 
 %Define
 %--Generate all possible term combinations--

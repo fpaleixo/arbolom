@@ -1,7 +1,11 @@
 %Repair strategy: For each inconsistent node, generate all possible function candidates.
 %Reject candidates which are not able to replicate expected behavior.
-%TODO fix term generation bottleneck - with 10 variables takes around 78s, out of which 71s are for solving
-#const max_candidates = 18. %TODO find a way around using this constant
+
+%! DEPRECATED
+%! DEPRECATED
+%! DEPRECATED
+
+#const max_candidates = 18. 
 
 %Define
 %--Generate all possible term combinations--
