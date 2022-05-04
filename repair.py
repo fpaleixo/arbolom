@@ -14,6 +14,7 @@ iftv_debug_toggled = False
 nodegen_debug_toggled = False
 funcgen_debug_toggled = False
 candcheck_debug_toggled = False
+edgegen_debug_toggled = False
 
 #Model path
 model_path = "lp_models/corrupted/3/3-corrupted-f.lp"
@@ -40,8 +41,11 @@ incst_path = "lp_models/corrupted/3/inconsistencies/3-corrupted-f-stable_inconsi
 #Paths of encodings for obtaining inconsistent functions and total variables of each
 iftv_path = "./encodings/repairs/iftv.lp"
 
-#Paths of encodings for generating terms
+#Paths of encodings for generating nodes
 nodegen_path = "./encodings/repairs/node_generator.lp"
+
+#Paths of encodings for generating edges between nodes
+edgegen_path = "./encodings/repairs/edge_generator.lp"
 
 #Paths of encodings for generating functions
 funcgen_path = "./encodings/repairs/func_generator.lp"
@@ -407,6 +411,8 @@ def processNodes(nodes):
       print("Too many nodes to print...!")
     print(f"Total nodes: {total_nodes}")
 
+    return nodes_LP
+
   else: 
     print("No nodes could be found \u274C")
 
@@ -482,6 +488,29 @@ def generateNodes(iftvs_LP):
   printStatistics(ctl.statistics)
   return nodes
 
+#Purpose: Generates edges between nodes
+def generateEdges(nodes_LP):
+  clingo_args = ["0"]
+  if edgegen_debug_toggled:
+    clingo_args.append("--output-debug=text")
+
+  ctl = clingo.Control(arguments=clingo_args)
+
+  ctl.load(edgegen_path)
+  ctl.add("base",[],program=nodes_LP)
+
+  print("Starting edge generation \u23F1")
+  ctl.ground([("base", [])])
+  edges = []
+
+  with ctl.solve(yield_=True) as handle:
+    for model in handle:
+      edges.append(str(model).split(" "))
+
+  print("Finished edge generation \U0001F3C1")
+  printStatistics(ctl.statistics)
+  return edges
+
 #Input: The logic program containing information regarding the terms that can be used to create function candidates
 #Purpose: Generates all possible function candidates with the given logic progam
 def generateFunctions(terms_LP):
@@ -553,12 +582,15 @@ if processed_ifts_output:
   for func in processed_ifts_output.keys():
 
     printFuncRepairStart(func)
-    printNodeStart()
 
+    printNodeStart()
     nodes = generateNodes(processed_ifts_output[func])
     process_nodes_output = processNodes(nodes)
-
     printNodeEnd()
+
+    if process_nodes_output:
+      edges = generateEdges(process_nodes_output)
+
     printFuncRepairEnd(func)
 
 """   if process_terms_output:
