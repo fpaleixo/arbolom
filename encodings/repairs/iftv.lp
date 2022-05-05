@@ -1,4 +1,4 @@
-%Obtaining inconsistent functions and total variables of each
+%Obtaining inconsistent functions, variables and total variables of each
 
 %Define
 %Identify inconsistent functions

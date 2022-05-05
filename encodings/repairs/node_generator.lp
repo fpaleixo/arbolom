@@ -1,5 +1,6 @@
 %Generates the nodes containing all possible variable conjuntions
 
+%Define
 %Choose the number of variables that will be in the generated node
 {node_variable_number(1..TV)} = 1 :- total_variables(TV).
 
