@@ -150,6 +150,14 @@ def printNodeStart():
 def printNodeEnd():
   print("\n\033[1;32m ----NODE GENERATION END----\033[0;37;40m\n")
 
+#Purpose: Prints the initial edge generation phase message
+def printEdgeStart():
+  print("\033[1;32m ----EDGE GENERATION START----\033[0;37;40m")
+
+#Purpose: Prints the final edge generation phase message
+def printEdgeEnd():
+  print("\n\033[1;32m ----EDGE GENERATION END----\033[0;37;40m\n")
+
 #Purpose: Prints the initial function generation phase message
 def printFuncStart():
   print("\033[1;32m ----FUNCTION GENERATION START----\033[0;37;40m")
@@ -260,7 +268,7 @@ def getCandidatesMap(term_map, func_map):
     candidate_map[func] = []
     candidate_LP_list = candidate_map[func]
 
-    original_model_LP = getOriginalModelLP(func) #TODO implement
+    original_model_LP = getOriginalModelLP(func) 
     candidate_LP_list.append(original_model_LP)
 
     clause_number_map = func_map[func]
@@ -386,7 +394,7 @@ def processIFTVs(iftvs):
       print(str(iftvs_LP))
     else:
       print("Too many iftvs to print...!")
-    print(f"Total iftv: {total_iftvs}")
+    print(f"Total iftvs: {total_iftvs}\n")
 
     return iftvs_LP
 
@@ -578,9 +586,7 @@ processed_ifts_output = processIFTVs(iftvs)
 printIFTVEnd()
 
 if processed_ifts_output:
-
   for func in processed_ifts_output.keys():
-
     printFuncRepairStart(func)
 
     printNodeStart()
@@ -589,7 +595,11 @@ if processed_ifts_output:
     printNodeEnd()
 
     if process_nodes_output:
+      printEdgeStart()
       edges = generateEdges(process_nodes_output)
+      #TODO process_edges_output = processEdges(edges)
+      print(edges)
+      printEdgeEnd()
 
     printFuncRepairEnd(func)
 
