@@ -46,4 +46,4 @@ inconsistent(E,N,0) :- not active(E,N), curated_observation(E,N,1), N=compound.
 :- curated_observation(E,N,1), not active(E,N), input_node(N).
 
 %There can be no inconsistent atoms
-:-inconsistent(E,N,_).
+:-inconsistent(E,N,_), N = compound.

@@ -50,7 +50,7 @@ edgegen_path = "encodings/repairs/edge_generator.lp"
 #Paths of encodings for generating functions
 funcgen_path = "encodings/repairs/func_generator.lp"
 
-#Paths of encodings for checking consistency
+#Paths of encodings for filtering generated functions
 ss_filter_path = "encodings/repairs/ss_func_filter.lp"
 sync_filter_path = "encodings/repairs/sync_func_filter.lp"
 async_filter_path = "encodings/repairs/async_func_filter.lp"

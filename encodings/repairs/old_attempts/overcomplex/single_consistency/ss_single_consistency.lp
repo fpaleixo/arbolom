@@ -1,7 +1,9 @@
 %Encoding to determine a model's consistency using stable state observations
 %Modified to focus only on a single compound's inconsistencies
 
-%TODO - optimize so that only predicates for specified compound are considered
+%! DEPRECATED
+%! DEPRECATED
+%! DEPRECATED
 
 #const compound = c.
 

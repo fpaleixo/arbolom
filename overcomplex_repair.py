@@ -239,7 +239,7 @@ def getCandidatesMap(term_map, func_map):
     candidate_map[func] = []
     candidate_LP_list = candidate_map[func]
 
-    original_model_LP = getOriginalModelLP(func) #TODO implement
+    original_model_LP = getOriginalModelLP(func)
     candidate_LP_list.append(original_model_LP)
 
     clause_number_map = func_map[func]
