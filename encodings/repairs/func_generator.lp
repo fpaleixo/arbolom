@@ -2,7 +2,6 @@
 %(because we may need to fill in the gaps of incomplete observations, we always need to work
 %with all compounds and all observations)
 
-%TODO - get original LP, take out inconsistent function; transform candidate into standard function format; filter candidate
 #const compound = c.
 
 %Define
@@ -23,9 +22,6 @@ present(V) :- function_candidate(N), node_variable(N,V), variable(V).
 function(compound, MN) :- candidate_nodes(MN).
 term(compound,TERM_NO,V) :- term_number(N,TERM_NO), node_variable(N,V).
 
-%---Candidate filtering---
-%TODO
-
 
 %Test 
 %---Candidate generation---
@@ -35,6 +31,7 @@ term(compound,TERM_NO,V) :- term_number(N,TERM_NO), node_variable(N,V).
 %Clauses in a function cannot contain any other clause in that function (BCF)
 :- function_candidate(N1), function_candidate(N2), edge_(N1,N2).
 
+
 %---Candidate convertion---
 %Different nodes must belong to different function terms
 :- term_number(N1,TN1), term_number(N2,TN1), N1 != N2.
@@ -43,9 +40,6 @@ term(compound,TERM_NO,V) :- term_number(N,TERM_NO), node_variable(N,V).
 %for the same solution
 :- function_candidate(N1), function_candidate(N2), N2 > N1, 
   term_number(N1,TN1), term_number(N2,TN2), TN1 > TN2.
-
-%---Candidate filtering---
-%TODO
 
 
 %Display

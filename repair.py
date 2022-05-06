@@ -39,21 +39,21 @@ incst_path = "lp_models/corrupted/3/inconsistencies/3-corrupted-f-stable_inconsi
 #incst_path = "lp_models/corrupted/8/inconsistencies/8-corrupted-f-async_inconsistency.lp"
 
 #Paths of encodings for obtaining inconsistent functions and total variables of each
-iftv_path = "./encodings/repairs/iftv.lp"
+iftv_path = "encodings/repairs/iftv.lp"
 
 #Paths of encodings for generating nodes
-nodegen_path = "./encodings/repairs/node_generator.lp"
+nodegen_path = "encodings/repairs/node_generator.lp"
 
 #Paths of encodings for generating edges between nodes
-edgegen_path = "./encodings/repairs/edge_generator.lp"
+edgegen_path = "encodings/repairs/edge_generator.lp"
 
 #Paths of encodings for generating functions
-funcgen_path = "./encodings/repairs/func_generator.lp"
+funcgen_path = "encodings/repairs/func_generator.lp"
 
 #Paths of encodings for checking consistency
-ss_consis_path = "encodings/repairs/single_consistency/ss_single_consistency.lp"
-sync_consis_path = "encodings/repairs/single_consistency/sync_single_consistency.lp"
-async_consis_path = "encodings/repairs/single_consistency/async_single_consistency.lp"
+ss_filter_path = "encodings/repairs/ss_func_filter.lp"
+sync_filter_path = "encodings/repairs/sync_func_filter.lp"
+async_filter_path = "encodings/repairs/async_func_filter.lp"
 
 #Mode flags 
 toggle_stable_state = True
@@ -177,6 +177,18 @@ def getEdgesLP(edges):
 
   return result_LP
 
+#Input: Inconsistent function
+#Purpose: Extracts from the original model everything except the part where the inconsistent regulatory function func is defined
+def getOriginalModelLP(func):
+  original = open(model_path, 'r')
+  lines = original.readlines()
+  original_LP = ""
+
+  for line in lines: 
+    if f"function({func}" not in line and f"term({func}" not in line:
+      original_LP += line
+  return original_LP
+
 
 
 #-----Functions that process output from clingo-----
@@ -259,33 +271,36 @@ def processFunctions(functions):
   elif functions[0]:
 
     total_candidates = len(functions)
+
     print("<Resulting candidates>")
-    
-    for candidate_idx in range(0,total_candidates):
-      organized_candidates = {}
-      current_candidate = functions[candidate_idx]
+    if(total_candidates < 500):
       
-      print(f"Candidate {candidate_idx + 1}: ")
-
-      for atom in current_candidate:
-
-        if "function" in atom:
-          print(atom)
+      for candidate_idx in range(0,total_candidates):
+        organized_candidates = {}
+        current_candidate = functions[candidate_idx]
         
-        elif "term" in atom:
-          term_number = atom.split(',')[1]
+        print(f"Candidate {candidate_idx + 1}: ")
 
-          if term_number not in organized_candidates.keys():
-            organized_candidates[term_number] = [atom]
-          else:
-            organized_candidates[term_number].append(atom)
+        for atom in current_candidate:
+
+          if "function" in atom:
+            print(atom)
           
-      for term_no in organized_candidates.keys():
-        for term in organized_candidates[term_no]:
-          print(term)
-      print()
+          elif "term" in atom:
+            term_number = atom.split(',')[1]
 
-    print(f"\nTotal candidates: {total_candidates}")
+            if term_number not in organized_candidates.keys():
+              organized_candidates[term_number] = [atom]
+            else:
+              organized_candidates[term_number].append(atom)
+            
+        for term_no in organized_candidates.keys():
+          for term in organized_candidates[term_no]:
+            print(term)
+        print()
+    else:
+      print("Too many candidates to print...!")
+    print(f"Total candidates: {total_candidates}")
 
   else: 
     print("No function candidates could be found \u274C") 
@@ -367,17 +382,26 @@ def generateEdges(nodes_LP):
 
 #Input: The logic program containing information regarding the terms that can be used to create function candidates
 #Purpose: Generates all possible function candidates with the given logic progam
-def generateFunctions(func,iftv_LP,nodes_LP,edges_LP):
+def generateFunctions(original_LP,func,iftv_LP,nodes_LP,edges_LP):
   clingo_args = ["0", f"-c compound={func}"]
   if funcgen_debug_toggled:
     clingo_args.append("--output-debug=text")
     
   ctl = clingo.Control(arguments=clingo_args)
 
+  ctl.add("base", [], program=original_LP)
   ctl.add("base", [], program=iftv_LP)
   ctl.add("base", [], program=nodes_LP)
   ctl.add("base", [], program=edges_LP)
+  ctl.load(obsv_path)
   ctl.load(funcgen_path)
+
+  if toggle_stable_state:
+    ctl.load(ss_filter_path)
+  elif toggle_sync:
+    ctl.load(sync_filter_path)
+  elif toggle_async:
+    ctl.load(async_filter_path)
 
   print("Starting function generation \u23F1")
   ctl.ground([("base", [])], context=Context)
@@ -416,7 +440,8 @@ if processed_ifts_output:
 
       if process_edges_output:
         printFuncStart()
-        functions = generateFunctions(func,processed_ifts_output[func], process_nodes_output, process_edges_output)
+        functions = generateFunctions(getOriginalModelLP(func),func,
+          processed_ifts_output[func], process_nodes_output, process_edges_output)
         process_functions_output = processFunctions(functions)
         printFuncEnd()
 

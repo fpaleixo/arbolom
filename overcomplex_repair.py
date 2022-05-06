@@ -46,9 +46,9 @@ termgen_path = "./encodings/repairs/old_attempts/overcomplex/term_generator.lp"
 funcgen_path = "./encodings/repairs/old_attempts/overcomplex/func_generator.lp"
 
 #Paths of encodings for checking consistency
-ss_consis_path = "encodings/repairs/single_consistency/ss_single_consistency.lp"
-sync_consis_path = "encodings/repairs/single_consistency/sync_single_consistency.lp"
-async_consis_path = "encodings/repairs/single_consistency/async_single_consistency.lp"
+ss_consis_path = "encodings/repairs/old_attempts/overcomplex/single_consistency/ss_single_consistency.lp"
+sync_consis_path = "encodings/repairs/old_attempts/overcomplex/single_consistency/sync_single_consistency.lp"
+async_consis_path = "encodings/repairs/old_attempts/overcomplex/single_consistency/async_single_consistency.lp"
 
 #Mode flags 
 toggle_stable_state = True
