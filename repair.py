@@ -262,18 +262,29 @@ def processFunctions(functions):
     print("<Resulting candidates>")
     
     for candidate_idx in range(0,total_candidates):
+      organized_candidates = {}
       current_candidate = functions[candidate_idx]
+      
       print(f"Candidate {candidate_idx + 1}: ")
 
-      for node in current_candidate:
-        node_id = node.split(')')[0].split('(')[1]
+      for atom in current_candidate:
 
-        if node != current_candidate[-1]:
-          print(f"Node {node_id}", end=" or ")
-        else:
-          print(f"Node {node_id}")
+        if "function" in atom:
+          print(atom)
+        
+        elif "term" in atom:
+          term_number = atom.split(',')[1]
 
-    
+          if term_number not in organized_candidates.keys():
+            organized_candidates[term_number] = [atom]
+          else:
+            organized_candidates[term_number].append(atom)
+          
+      for term_no in organized_candidates.keys():
+        for term in organized_candidates[term_no]:
+          print(term)
+      print()
+
     print(f"\nTotal candidates: {total_candidates}")
 
   else: 
@@ -356,8 +367,8 @@ def generateEdges(nodes_LP):
 
 #Input: The logic program containing information regarding the terms that can be used to create function candidates
 #Purpose: Generates all possible function candidates with the given logic progam
-def generateFunctions(iftv_LP,nodes_LP,edges_LP):
-  clingo_args = ["0"]
+def generateFunctions(func,iftv_LP,nodes_LP,edges_LP):
+  clingo_args = ["0", f"-c compound={func}"]
   if funcgen_debug_toggled:
     clingo_args.append("--output-debug=text")
     
@@ -405,7 +416,7 @@ if processed_ifts_output:
 
       if process_edges_output:
         printFuncStart()
-        functions = generateFunctions(processed_ifts_output[func], process_nodes_output, process_edges_output)
+        functions = generateFunctions(func,processed_ifts_output[func], process_nodes_output, process_edges_output)
         process_functions_output = processFunctions(functions)
         printFuncEnd()
 
