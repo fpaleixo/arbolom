@@ -1,14 +1,16 @@
 import os, argparse, logging, clingo, re
 from aux_scripts.common import uniquify
 
-#Usage: $python gen_observations.py -f (FILENAME) -async -e (NUMBER OF EXPERIMENTS) -t (TIME STEPS) -as (NUMBER OF ANSWER SETS)
+#Usage: $python gen_observations.py -f (FILENAME) -async -e (NUMBER OF EXPERIMENTS) -t (TIME STEPS) -as (NUMBER OF ANSWER SETS) -s (SAVE_DIRECTORY)
 #Optional flags:
 #-async ->  Produces observations using the asynchronous mode.
+#-s -> Path of directory to save generated observations (default is lp_models/obsv/tseries/(a)sync/(name_of_file))
 #Variables:
 #FILENAME ->  Path of file containing Boolean model in the BCF format written in lp.
 #NUMBER OF EXPERIMENTS ->  The number of experiments (sets of observations) to generate.
 #TIME STEPS ->  The number of time steps to consider in each experiment.
 #NUMBER OF ANSWER SETS ->  The number of answer sets to obtain.
+#SAVE_DIRECTORY -> Path of directory to save generated observations to.
 
 #Attention: Input file must be in the BCF format and follow the conventions of the .lp files in the lp_models folder (results will be unpredictable otherwise)
 
@@ -19,7 +21,7 @@ from aux_scripts.common import uniquify
 cmd_enabled = True
 
 #Model path
-model_path = "./lp_models/1.lp"
+model_path = "lp_models/1.lp"
 
 #Sync/async flag 
 generate_sync = True
@@ -30,12 +32,13 @@ time_steps = "5"
 models_to_obtain = "1"
 
 #Encoding paths
-sync_path = "./encodings/observations/sync_observations.lp"
-async_path = "./encodings/observations/async_observations.lp"
+sync_path = "encodings/observations/sync_observations.lp"
+async_path = "encodings/observations/async_observations.lp"
 
 #Save folder paths
-save_sync = "./lp_models/obsv/tseries/sync"
-save_async = "./lp_models/obsv/tseries/async"
+save_folder = "lp_models/obsv/tseries"
+save_sync = "sync"
+save_async = "async"
 
 #Parser (will only be used if command-line usage is enabled above)
 parser = None
@@ -47,6 +50,7 @@ if(cmd_enabled):
   parser.add_argument("-e", "--experiments_number", help="Number of experiments (sets of observations) to generate (default is " + experiments_number + ").")
   parser.add_argument("-t", "--time_steps", help="Number of time steps to consider in each experiment (default is " + time_steps + ").")
   parser.add_argument("-as", "--models_to_obtain", help="Number of answer sets to obtain (default is " + models_to_obtain + ").")
+  parser.add_argument("-s", "--save_directory", help="Path of directory to save generated observations to.")
   args = parser.parse_args()
 
 #Global logger (change logging.(LEVEL) to desired (LEVEL) )
@@ -63,7 +67,7 @@ def parseArgs():
   logger = logging.getLogger("parser")
   logger.setLevel(logging.DEBUG)
 
-  global model_path, generate_sync, experiments_number, time_steps, models_to_obtain
+  global model_path, save_folder, generate_sync, experiments_number, time_steps, models_to_obtain
 
   model_path = args.model_to_observe
   logger.debug("Obtained file: " + model_path)
@@ -72,6 +76,10 @@ def parseArgs():
   experiments = args.experiments_number
   time = args.time_steps
   models = args.models_to_obtain
+
+  if(args.save_directory):
+    save_folder = args.save_directory
+    logger.debug("Write folder is: "+ save_folder)
 
   if asynch:
     generate_sync = False
@@ -95,6 +103,9 @@ def parseArgs():
 #Inputs: Obtained atoms from the solved model by clingo.
 #Purpose: Saves generated observations to file.
 def saveObsToFile(atoms):
+    logger = logging.getLogger("saveToFile")
+    logger.setLevel(logging.INFO)
+
     experiments_observations = {}
     current_answer_set = 0
 
@@ -102,11 +113,11 @@ def saveObsToFile(atoms):
 
     origin_path = None
     if generate_sync:
-      origin_path = os.path.join(save_sync, os.path.basename(model_path).replace(".lp", "-obs.lp"))
+      origin_path = os.path.join(save_folder, save_sync, os.path.basename(model_path).replace(".lp", "-obs.lp"))
     else:
-      origin_path = os.path.join(save_async, os.path.basename(model_path).replace(".lp", "-obs.lp"))
+      origin_path = os.path.join(save_folder, save_async, os.path.basename(model_path).replace(".lp", "-obs.lp"))
     current_path = origin_path
-    
+
     for atom in atoms:
         if "experiment" in atom:
 
@@ -114,7 +125,6 @@ def saveObsToFile(atoms):
               current_answer_set += 1
               answer_set_finished = False
               
-
             exp_num = ''.join(d for d in atom if d.isdigit())
 
             if current_answer_set not in experiments_observations.keys():
@@ -129,6 +139,10 @@ def saveObsToFile(atoms):
             terms = re.search('\((.*)\)', atom).group(1)
             terms = terms.split(',')
             experiments_observations[current_answer_set][terms[0]] += [atom]
+
+    if not os.path.exists(os.path.dirname(current_path)):
+      os.makedirs(os.path.dirname(current_path))
+      logger.info("Created directory: " + os.path.dirname(current_path))
 
     for answer_set in range(0,current_answer_set+1):
       f = open(current_path, 'w')

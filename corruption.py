@@ -22,8 +22,10 @@ cmd_enabled = True
 
 #Original model paths
 read_folder = './simple_models/'
-write_folder = './simple_models/corrupted'
 filename = '6.bnet'
+
+#Save path
+write_folder = './simple_models/corrupted'
 
 #Operations (set desired operations to True)
 f_toggle = False #Function Change
@@ -200,7 +202,7 @@ def saveToFile(dict, name=False, ops=''):
 
   if not os.path.exists(os.path.dirname(current_path)):
     os.makedirs(os.path.dirname(current_path))
-    logger.info("Created directory: " + str(current_path))
+    logger.info("Created directory: " + str(os.path.dirname(current_path)))
 
   f = open(current_path, 'w')
 
