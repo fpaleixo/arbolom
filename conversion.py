@@ -17,8 +17,8 @@ from aux_scripts.common import *
 cmd_enabled = True
 
 #Original model paths
-read_folder= './simple_models/'
-write_folder= './lp_models/corrupted'
+read_folder = './simple_models/'
+write_folder = './lp_models/corrupted'
 filename = '5.bnet'
 
 #Parser (will only be used if command-line usage is enabled above)
@@ -126,6 +126,11 @@ def saveLPToFile(dict, path, name=False):
     current_path = os.path.join(path, base_filename, name.replace(".bnet", '.lp'))
   else:
     current_path = os.path.join(path, name.replace(".bnet", '.lp'))
+
+  if not os.path.exists(os.path.dirname(current_path)):
+    os.makedirs(os.path.dirname(current_path))
+    logger.info("Created directory: " + str(current_path))
+
   f = open(current_path, 'w')
 
   logger.info("Saved to: " + str(current_path))

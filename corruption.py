@@ -1,12 +1,16 @@
 import os, sys, argparse, logging, glob, random
 from aux_scripts.common import *
 
-#Usage: $python corruption.py -f (FILENAME) -op (OPERATIONS) -(O)p (PROBABILITY)
+#Usage: $python corruption.py -f (FILENAME) -op (OPERATIONS) -(O)p (PROBABILITY) -s (SAVE_DIRECTORY)
+#Optional flags:
+#-(O)p -> Probability (0.0 to 1.0) of corruption O taking place (default is 0.2)
+#-s -> Path of directory to save corrupted file (default is ./simple_models/corrupted/(name_of_file))
 #Variables: 
 #FILENAME -> Path of file inside simple models folder to corrupt.
 #OPERATIONS -> A string with one (or more) specific characters, denoting which corruptions to apply. These characters are 'f','e','r' and 'a'. 'fera' would be the full string, representing that (f)unction change, (e)dge flip, edge (r)emove and edge (a)dd will all be applied.
 #O -> A character that can take one of four possible values: 'f','e','r' and 'a' (followed by 'p'). -fp would change the probability of function change to occur, -ep of edge removal, etc. The argument that uses this O variable is an optional one.
 #PROBABILITY -> A float from 0.0 to 1.0 denoting the probability of a given corruption to occur. For example, -ap 0.5 would change the add edge operation's probability to 50%
+#SAVE_DIRECTORY -> Path of directory to save corrupted model to.
 
 #Attention: Input files must be in the BCF format and follow the conventions of the .bnet files in the simple_models folder (results will be unpredictable otherwise)
 
@@ -17,7 +21,8 @@ from aux_scripts.common import *
 cmd_enabled = True
 
 #Original model paths
-folder= './simple_models/'
+read_folder = './simple_models/'
+write_folder = './simple_models/corrupted'
 filename = '6.bnet'
 
 #Operations (set desired operations to True)
@@ -38,11 +43,12 @@ args = None
 if(cmd_enabled):
   parser = argparse.ArgumentParser(description="Corrupt a Boolean logical model written in the BCF format.")
   parser.add_argument("-f", "--file_to_corrupt", help="Path to file to be corrupted.")
-  parser.add_argument("-op", "--operations", help="Corruptions to apply")
-  parser.add_argument("-fp", "--f_probability", help="Probability of applying function change", type=float)
-  parser.add_argument("-ep", "--e_probability", help="Probability of applying edge flip", type=float)
-  parser.add_argument("-rp", "--r_probability", help="Probability of applying edge remove", type=float)
-  parser.add_argument("-ap", "--a_probability", help="Probability of applying edge add", type=float)
+  parser.add_argument("-op", "--operations", help="Corruptions to apply.")
+  parser.add_argument("-fp", "--f_probability", help="Probability of applying function change.", type=float)
+  parser.add_argument("-ep", "--e_probability", help="Probability of applying edge flip.", type=float)
+  parser.add_argument("-rp", "--r_probability", help="Probability of applying edge remove.", type=float)
+  parser.add_argument("-ap", "--a_probability", help="Probability of applying edge add.", type=float)
+  parser.add_argument("-s", "--save_directory", help="Path of directory to save converted model to.")
   args = parser.parse_args()
 
 #Global logger (change logging.(LEVEL) to desired (LEVEL) )
@@ -133,14 +139,18 @@ def parseArgs():
   r_p = args.r_probability
   a_p = args.a_probability
 
-  global folder, filename, f_toggle, e_toggle, r_toggle, a_toggle, f_chance, e_chance, r_chance, a_chance
+  global read_folder, write_folder, filename, f_toggle, e_toggle, r_toggle, a_toggle, f_chance, e_chance, r_chance, a_chance
 
   if filepath:
     filename=os.path.basename(filepath)
-    folder=os.path.dirname(filepath)
+    read_folder=os.path.dirname(filepath)
 
   logger.debug("Filename is: "+ filename)
-  logger.debug("Folder is: "+ folder)
+  logger.debug("Read folder is: "+ read_folder)
+
+  if(args.save_directory):
+    write_folder = args.save_directory
+    logger.debug("Write folder is: "+ write_folder)
 
   if 'f' in operations:
     f_toggle = True
@@ -174,18 +184,24 @@ def parseArgs():
 
 #Input: dict is a dictionary with all the regulatory functions, path is the folder where the file will be stored and file is the file name.
 #Purpose: Stores the contents of the dictionary into a file using the .bnet format.
-def saveToFile(dict, name=False, path=False, ops=''):
+def saveToFile(dict, name=False, ops=''):
+  logger = logging.getLogger("saveLP")
+  logger.setLevel(logging.INFO)
 
-  if not path:
-    path = folder
+  global read_folder, write_folder
 
   if not name:
     name = filename
 
-  print("PATH IS: "+path)
-  print("NAME IS: "+name)
-  current_path = uniquify(os.path.join(path, "corrupted", name.replace(".bnet", ''),
+  print("PATH IS: " + write_folder)
+  print("NAME IS: " + name)
+  current_path = uniquify(os.path.join(write_folder, name.replace(".bnet", ''),
   name.replace(".bnet", '') + "-corrupted" + "-" + ops + ".bnet"))
+
+  if not os.path.exists(os.path.dirname(current_path)):
+    os.makedirs(os.path.dirname(current_path))
+    logger.info("Created directory: " + str(current_path))
+
   f = open(current_path, 'w')
 
   for function in dict.items():
@@ -406,7 +422,7 @@ def edgeFlip(implicants, chance):
 if(cmd_enabled):
   parseArgs()
 
-for fname in glob.glob(os.path.join(folder, filename)):
+for fname in glob.glob(os.path.join(read_folder, filename)):
   with open(os.path.join(os.getcwd(), fname), 'r') as f:
     global_logger.info("Reading file: " + filename)
 
