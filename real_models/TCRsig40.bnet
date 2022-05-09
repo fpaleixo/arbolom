@@ -1,0 +1,40 @@
+ap1,  !fos & !jun
+cd45,  !cd45
+cd8,  !cd8
+cre,  !creb
+creb,  !rsk
+ca,  !ip3
+calcin,  !ca
+dag,  !plcg_a
+erk,  !mek
+fos,  !erk
+fyn,  (!cd45 & !lck) | (!cd45 & !tcrbind)
+gads,  !lat
+grb2sos,  !lat
+ikk,  !pkcth
+ip3,  !plcg_a
+ikb,  ikk
+itk,  !zap70 & !slp76
+jnk,  !sek
+jun,  !jnk
+lat,  !zap70
+lck,  !cd45 & !cd8 & pagcsk
+mek,  !raf
+nfat,  !calcin
+nfkb,  ikb
+pagcsk,  tcrbind
+pkcth,  !dag
+plcg_a,  (!zap70 & !itk & !slp76 & !plcg_b) | (!rlk & !zap70 & !slp76 & !plcg_b)
+plcg_b,  !lat
+raf,  !ras
+ras,  !grb2sos & !rasgrp1
+rasgrp1,  !dag & !pkcth
+rlk,  !lck
+rsk,  !erk
+sek,  !pkcth
+slp76,  !gads
+tcrbind,  !tcrlig & ccbl
+tcrlig,  !tcrlig
+tcrphos,  (!tcrbind & !lck) | (!fyn)
+zap70,  !lck & ccbl & !tcrphos
+ccbl,  !zap70

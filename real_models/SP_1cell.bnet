@@ -1,0 +1,19 @@
+ci1,  en
+ciact_b1,  (!ci1 & pka_b1) | (!ciact_b1 & !ciact_b2) | (!ci1 & !dsh)
+ciact_b2,  !dsh & !ci1 & !ciact_b1 & pka_b1
+cirep,  dsh & !ci1 & !pka_b1 & !pka_b2
+dsh,  !fz
+en,  !dsh & slp
+fz,  !wg_ext & !wg_b1
+hh,  !en & cirep
+hh_ext,  !hh_ext
+nkd_b1,  (!nkd_b1 & !nkd_b2) | (en)
+nkd_b2,  !dsh & !nkd_b1 & en
+pka_b1,  (!pka_b1 & !pka_b2) | (!ptc_b1)
+pka_b2,  !pka_b1 & !ptc_b1
+ptc_b1,  (en & hh_ext) | (!ptc_b1 & !ptc_b2)
+ptc_b2,  en & !ciact_b1 & !ptc_b1 & hh_ext
+slp,  !dsh & en
+wg_b1,  (!slp & nkd_b1 & en & !ciact_b1) | (!slp & en & !ciact_b1 & nkd_b2) | (!slp & en & !ciact_b1 & !ciact_b2) | (!wg_b1 & !wg_b2)
+wg_b2,  !wg_b1 & !slp & en & !ciact_b1 & !ciact_b2
+wg_ext,  !wg_ext

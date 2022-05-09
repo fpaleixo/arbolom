@@ -110,7 +110,7 @@ def addFunctionToLP(file, item):
 
 #Inputs: dict is a dictionary where the keys are compounds and the values are the implicants of each compound, name is the name of the file and path is the directory to place the file in.
 #Purpose: Saves a Boolean logical model to an LP file.
-def saveLPToFile(dict, name=False, path=write_folder):
+def saveLPToFile(dict, path, name=False):
   logger = logging.getLogger("saveLP")
   logger.setLevel(logging.INFO)
 
@@ -166,6 +166,6 @@ for fname in glob.glob(os.path.join(read_folder, filename)):
 
       func_dict[full[0]] = implicants  #each compound is a key; the value is the corresponding list of prime implicants
 
-    saveLPToFile(func_dict)
+    saveLPToFile(func_dict, write_folder)
 
     

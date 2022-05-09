@@ -1,0 +1,19 @@
+nfat,  !tcr
+ifn_br,  !ifn_b
+il_18r,  !il_18r & stat6
+irak,  !il_18r
+socs1,  (!t_bet) | (!stat1)
+il_12r,  !il_12 & stat6
+stat4,  !il_12r & gata3
+t_bet,  (!t_bet & gata3) | (!stat1 & gata3)
+ifn_g,  (!nfat & stat3) | (!irak & stat3) | (!stat4 & stat3) | (!t_bet & stat3)
+ifn_gr,  !ifn_g
+jak1,  !ifn_gr & socs1
+stat1,  (!jak1) | (!ifn_br)
+il_4,  stat1 & !gata3
+il_4r,  !il_4 & socs1
+stat6,  !il_4r
+gata3,  (!stat6 & t_bet) | (!gata3 & t_bet)
+il_10,  !gata3
+il_10r,  !il_10
+stat3,  !il_10r
