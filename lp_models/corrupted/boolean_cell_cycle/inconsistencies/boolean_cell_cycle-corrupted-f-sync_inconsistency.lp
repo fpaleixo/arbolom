@@ -1,0 +1,17 @@
+inconsistent(1,1,cyca,1).
+inconsistent(1,10,cyca,1).
+inconsistent(1,12,cyca,1).
+inconsistent(1,13,cyca,1).
+inconsistent(1,14,cyca,1).
+inconsistent(1,15,cyca,1).
+inconsistent(1,16,cyca,1).
+inconsistent(1,18,cyca,1).
+inconsistent(1,19,cyca,1).
+inconsistent(1,2,cyca,1).
+inconsistent(1,20,cyca,1).
+inconsistent(1,3,cyca,1).
+inconsistent(1,4,cyca,1).
+inconsistent(1,6,cyca,1).
+inconsistent(1,7,cyca,1).
+inconsistent(1,8,cyca,1).
+inconsistent(1,9,cyca,1).

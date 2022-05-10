@@ -1,6 +1,8 @@
 import os, argparse, logging, clingo
 from aux_scripts.common import uniquify
 
+#TODO - implement flag for save directory
+
 #Usage: $python consistency_checking.py -f (FILENAME) -o (OBSERVATIONS) -stable -sync -async 
 #Optional flags:
 #-stable -> Performs consistency checking using stable state observations.
