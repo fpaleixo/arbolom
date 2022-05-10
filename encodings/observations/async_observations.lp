@@ -1,6 +1,9 @@
 #const e=1. %e is no. of experiments
 #const t=3. %t is max time steps
 
+%TODO - maybe add the possibility of forcing that a specific node's function be applied? so that we can ensure that the produced
+%TODO observation will test a node we know to be inconsistent (because asynchronous mode only requires that, at each time step, one function be applied,
+%TODO which means that we can generate observations where a certain node's function is never applied)
 
 %Generate
 experiment(1..e).

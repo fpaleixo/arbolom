@@ -1,0 +1,10 @@
+inconsistent(1,1,wg_b1,0).
+inconsistent(1,11,wg_b1,0).
+inconsistent(1,13,wg_b1,0).
+inconsistent(1,15,wg_b1,0).
+inconsistent(1,17,wg_b1,0).
+inconsistent(1,19,wg_b1,0).
+inconsistent(1,3,wg_b1,0).
+inconsistent(1,5,wg_b1,0).
+inconsistent(1,7,wg_b1,0).
+inconsistent(1,9,wg_b1,0).

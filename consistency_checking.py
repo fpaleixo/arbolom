@@ -1,13 +1,13 @@
 import os, argparse, logging, clingo
 from aux_scripts.common import uniquify
 
-#TODO - implement flag for save directory
-
-#Usage: $python consistency_checking.py -f (FILENAME) -o (OBSERVATIONS) -stable -sync -async 
+#Usage: $python consistency_checking.py -f (FILENAME) -o (OBSERVATIONS) -stable -sync -async -s (SAVE_DIRECTORY)
 #Optional flags:
 #-stable -> Performs consistency checking using stable state observations.
 #-sync -> Performs consistency checking using synchronous observations.
 #-async -> Performs consistency checking using asynchronous observations.
+#-s -> Path of directory to save inconsistencies, when they exist (default is lp_models/corrupted/(name_of_file))
+
 #Variables:
 #FILENAME -> Path of file containing Boolean model in the BCF format written in lp.
 #OBSERVATIONS -> Path of file containing observations written in lp. 
@@ -28,7 +28,7 @@ model_path = "lp_models/corrupted/1/1-corrupted-era.lp"
 obsv_path = "./lp_models/obsv/sstate/1-obs.lp" 
 
 #Inconsistencies save path
-incst_path = "lp_models/corrupted" 
+write_folder = "lp_models/corrupted" 
 
 #Mode flags 
 toggle_stable_state = True
@@ -50,6 +50,7 @@ if(cmd_enabled):
   parser.add_argument("-stable", "--stable_state", action='store_true', help="Flag to check the consistency using stable state observations (default).")
   parser.add_argument("-sync", "--synchronous", action='store_true', help="Flag to check the consistency using synchronous observations (default is stable state).")
   parser.add_argument("-async", "--asynchronous", action='store_true', help="Flag to check the consistency using asynchronous observations (default is stable state).")
+  parser.add_argument("-s", "--save_directory", help="Path of directory to save inconsistent functions to (if they exist).")
   args = parser.parse_args()
 
 #Global logger (change logging.(LEVEL) to desired (LEVEL) )
@@ -64,27 +65,11 @@ global_logger.setLevel(logging.DEBUG)
 #Purpose: Stores inconsistency atoms in a separate file (to be used by repairs later on).
 def saveInconsistenciesToFile(atoms):
   logger = logging.getLogger("saveIncst")
-  logger.setLevel(logging.DEBUG)
+  logger.setLevel(logging.INFO)
 
-  global incst_path
+  global write_folder
 
   filename = os.path.basename(model_path)
-  foldername = filename.split('-')[0]
-
-  logger.debug("Filename: " + str(filename))
-  logger.debug("Foldername: " + str(foldername))
-
-  incst_path = os.path.join(incst_path, foldername)
-
-  if not os.path.exists(incst_path):
-    os.makedirs(incst_path)
-    logger.info("Created directory: " + str(incst_path))
-
-  incst_path = os.path.join(incst_path,"inconsistencies")
-
-  if not os.path.exists(incst_path):
-    os.makedirs(incst_path)
-    logger.info("Created directory: " + str(incst_path))
 
   if toggle_stable_state:
     filename = filename.replace(".lp", "-stable_inconsistency.lp")
@@ -93,18 +78,30 @@ def saveInconsistenciesToFile(atoms):
   else:
     filename = filename.replace(".lp", "-async_inconsistency.lp")
 
-  incst_path = os.path.join(incst_path,filename)
+  logger.debug("Filename: " + str(filename))
 
-  logger.debug("Full path: " + str(incst_path))
+  foldername = None
+  if "corrupted" in filename:
+    foldername = filename.split('-')[0]
+    logger.debug("Foldername: " + str(foldername))
+    write_folder = os.path.join(write_folder, foldername, "inconsistencies")
 
-  f = open(incst_path, 'w')
+  if not os.path.exists(write_folder):
+    os.makedirs(write_folder)
+    logger.info("Created directory: " + str(write_folder))
+
+  write_fullpath = os.path.join(write_folder,filename)
+
+  logger.debug("Full path: " + str(write_fullpath))
+
+  f = open(write_fullpath, 'w')
 
   for a in atoms:
     if "inconsistent" in a:
       f.write(a+".")
       f.write('\n')
   f.close()
-  logger.info("Saved to: " + str(incst_path))
+  logger.info("Saved to: " + str(write_fullpath))
 
 
 #Purpose: Parses the argument regarding which file to generate observations for.
@@ -112,7 +109,7 @@ def parseArgs():
   logger = logging.getLogger("parser")
   logger.setLevel(logging.DEBUG)
 
-  global model_path, obsv_path, toggle_stable_state, toggle_sync, toggle_async
+  global model_path, write_folder, obsv_path, toggle_stable_state, toggle_sync, toggle_async
 
   model_path = args.model_to_check
 
@@ -122,6 +119,10 @@ def parseArgs():
   stable = args.stable_state
   synchronous = args.synchronous
   asynchronous = args.asynchronous
+
+  if(args.save_directory):
+    write_folder = args.save_directory
+    logger.debug("Write folder is: "+ write_folder)
 
   if obsv:
     obsv_path = obsv

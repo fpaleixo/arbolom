@@ -19,13 +19,14 @@ funcgen_debug_toggled = False
 
 
 #Model path
-model_path = "lp_models/corrupted/3/3-corrupted-f.lp"
+#model_path = "lp_models/corrupted/3/3-corrupted-f.lp"
 #model_path = "lp_models/corrupted/8/8-corrupted-f.lp"
 #model_path = "real_models/lp/corrupted/boolean_cell_cycle-corrupted-f.lp"
+model_path = "real_models/lp/corrupted/SP_1cell-corrupted-f.lp"
 
 
 #Paths of expected observations
-obsv_path = "lp_models/obsv/sstate/3-obs.lp"
+#obsv_path = "lp_models/obsv/sstate/3-obs.lp"
 #obsv_path = "lp_models/obsv/tseries/sync/3-obs.lp"
 #obsv_path = "lp_models/obsv/tseries/async/3-obs.lp"
 
@@ -34,11 +35,11 @@ obsv_path = "lp_models/obsv/sstate/3-obs.lp"
 #obsv_path = "lp_models/obsv/tseries/async/8-obs.lp"
 
 #obsv_path = "real_models/lp/observations/tseries/sync/boolean_cell_cycle-obs.lp"
-#obsv_path = "real_models/lp/observations/tseries/async/boolean_cell_cycle-obs.lp"
+obsv_path = "real_models/lp/observations/tseries/async/SP_1cell-obs.lp"
 
 
 #Paths of encodings with inconsistencies
-incst_path = "lp_models/corrupted/3/inconsistencies/3-corrupted-f-stable_inconsistency.lp"
+#incst_path = "lp_models/corrupted/3/inconsistencies/3-corrupted-f-stable_inconsistency.lp"
 #incst_path = "lp_models/corrupted/3/inconsistencies/3-corrupted-f-sync_inconsistency.lp"
 #incst_path = "lp_models/corrupted/3/inconsistencies/3-corrupted-f-async_inconsistency.lp"
 
@@ -47,7 +48,7 @@ incst_path = "lp_models/corrupted/3/inconsistencies/3-corrupted-f-stable_inconsi
 #incst_path = "lp_models/corrupted/8/inconsistencies/8-corrupted-f-async_inconsistency.lp"
 
 #incst_path = "lp_models/corrupted/boolean_cell_cycle/inconsistencies/boolean_cell_cycle-corrupted-f-sync_inconsistency.lp"
-
+incst_path = "lp_models/corrupted/SP_1cell/inconsistencies/SP_1cell-corrupted-f-sync_inconsistency.lp"
 
 #Paths of encodings for obtaining inconsistent functions and total variables of each
 iftv_path = "encodings/repairs/iftv.lp"
@@ -72,8 +73,8 @@ async_filter_path = "encodings/repairs/no_conversion/async_func_filter.lp"
 
 
 #Mode flags 
-toggle_stable_state = True
-toggle_sync = False
+toggle_stable_state = False
+toggle_sync = True
 toggle_async = False
 
 #Global logger (change logging.(LEVEL) to desired (LEVEL) )

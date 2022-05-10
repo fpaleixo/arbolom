@@ -152,6 +152,7 @@ def saveObsToFile(atoms):
               f.write(atom+".\n")
           f.write("\n")
       f.close()
+      logger.info("Saved to: " + current_path)
       current_path = uniquify(origin_path)
 
 
