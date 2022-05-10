@@ -6,12 +6,8 @@
 
 %Define
 %---Candidate generation---
-%How many nodes there will be in a given candidate (used to ensure we are generating all candidates with
-%1,2,...,MAX nodes possible)
-{candidate_nodes(1..MAX_NODES)} = 1 :- total_variables(TV), MAX_NODES = @combination(TV,TV/2).
-
-%For the chosen number of nodes, create a function candidate with as many nodes as that number
-{function_candidate(N) : node_(N)} = MN:- candidate_nodes(MN).
+%Determine the nodes that will be a part of this candidate
+{function_candidate(N) : node_(N)}.
 
 %If a variable (regulator) is a part of the function candidate, then it is present
 present(V) :- function_candidate(N), node_variable(N,V), variable(V).

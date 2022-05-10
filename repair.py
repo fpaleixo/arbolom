@@ -135,16 +135,6 @@ def printFuncEnd():
   print("\n\033[1;32m ----FUNCTION GENERATION END----\033[0;37;40m")
 
 
-#---Auxiliary clingo Functions---
-class Context:
-  #Input: n - objects; r - sample (both as clingo Symbols)
-  #Purpose: used to efficiently calculate combinations (n choose r)
-  def combination(n,r):
-    N = clingo.Number
-    combin = comb(n.number,r.number)
-    return N(combin)
-
-
 
 #-----Functions that create the LPs to be used by clingo-----
 #Input: The nodes generated from clingo
@@ -420,7 +410,7 @@ def generateFunctions(original_LP,func,iftv_LP,nodes_LP,edges_LP):
     ctl.load(async_filter_path)
 
   print("Starting function generation \u23F1")
-  ctl.ground([("base", [])], context=Context)
+  ctl.ground([("base", [])])
   functions = []
 
   with ctl.solve(yield_=True) as handle:
