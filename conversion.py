@@ -17,8 +17,8 @@ from aux_scripts.common import *
 cmd_enabled = True
 
 #Original model paths
-read_folder = './simple_models/'
-write_folder = './lp_models/corrupted'
+read_folder = 'simple_models/'
+write_folder = 'simple_models/lp/corrupted'
 filename = '5.bnet'
 
 #Parser (will only be used if command-line usage is enabled above)
@@ -110,7 +110,7 @@ def addFunctionToLP(file, item):
 
 #Inputs: dict is a dictionary where the keys are compounds and the values are the implicants of each compound, name is the name of the file and path is the directory to place the file in.
 #Purpose: Saves a Boolean logical model to an LP file.
-def saveLPToFile(dict, path, name=False):
+def saveLPToFile(dict, name=False):
   logger = logging.getLogger("saveLP")
   logger.setLevel(logging.INFO)
 
@@ -123,9 +123,9 @@ def saveLPToFile(dict, path, name=False):
   current_path = None
   if 'corrupted' in name and not args.save_directory:
     base_filename = name.split('-')[0] 
-    current_path = os.path.join(path, base_filename, name.replace(".bnet", '.lp'))
+    current_path = os.path.join(write_folder, base_filename, name.replace(".bnet", '.lp'))
   else:
-    current_path = os.path.join(path, name.replace(".bnet", '.lp'))
+    current_path = os.path.join(write_folder, name.replace(".bnet", '.lp'))
 
   if not os.path.exists(os.path.dirname(current_path)):
     os.makedirs(os.path.dirname(current_path))
@@ -151,7 +151,6 @@ def saveLPToFile(dict, path, name=False):
 
 
 #-----Main-----
-
 if(cmd_enabled):
   parseArgs()
 
@@ -171,6 +170,6 @@ for fname in glob.glob(os.path.join(read_folder, filename)):
 
       func_dict[full[0]] = implicants  #each compound is a key; the value is the corresponding list of prime implicants
 
-    saveLPToFile(func_dict, write_folder)
+    saveLPToFile(func_dict)
 
     

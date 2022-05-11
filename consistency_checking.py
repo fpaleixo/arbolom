@@ -22,13 +22,13 @@ from aux_scripts.common import uniquify
 cmd_enabled = True
 
 #Model path
-model_path = "lp_models/corrupted/1/1-corrupted-era.lp"
+model_path = "simple_models/lp/corrupted/1/1-corrupted-era.lp"
 
 #Observations path
-obsv_path = "./lp_models/obsv/sstate/1-obs.lp" 
+obsv_path = "simple_models/lp/observations/sstate/1-obs.lp" 
 
 #Inconsistencies save path
-write_folder = "lp_models/corrupted" 
+write_folder = "simple_models/lp/corrupted" 
 
 #Mode flags 
 toggle_stable_state = True

@@ -19,36 +19,36 @@ funcgen_debug_toggled = False
 
 
 #Model path
-#model_path = "lp_models/corrupted/3/3-corrupted-f.lp"
-#model_path = "lp_models/corrupted/8/8-corrupted-f.lp"
-#model_path = "real_models/lp/corrupted/boolean_cell_cycle-corrupted-f.lp"
-model_path = "real_models/lp/corrupted/SP_1cell-corrupted-f.lp"
+#model_path = "simple_models/lp/corrupted/3/3-corrupted-f.lp"
+model_path = "simple_models/lp/corrupted/8/8-corrupted-f.lp"
+#model_path = "real_models/lp/corrupted/boolean_cell_cycle/boolean_cell_cycle-corrupted-f.lp"
+#model_path = "real_models/lp/corrupted/SP_1cell/SP_1cell-corrupted-f.lp"
 
 
 #Paths of expected observations
-#obsv_path = "lp_models/obsv/sstate/3-obs.lp"
-#obsv_path = "lp_models/obsv/tseries/sync/3-obs.lp"
-#obsv_path = "lp_models/obsv/tseries/async/3-obs.lp"
+#obsv_path = "simple_models/lp/observations/sstate/3-obs.lp"
+#obsv_path = "simple_models/lp/observations/tseries/sync/3-obs.lp"
+#obsv_path = "simple_models/lp/observations/tseries/async/3-obs.lp"
 
-#obsv_path = "lp_models/obsv/sstate/8-obs.lp"
-#obsv_path = "lp_models/obsv/tseries/sync/8-obs.lp"
-#obsv_path = "lp_models/obsv/tseries/async/8-obs.lp"
+#obsv_path = "simple_models/lp/observations/sstate/8-obs.lp"
+obsv_path = "simple_models/lp/observations/tseries/sync/8-obs.lp"
+#obsv_path = "simple_models/lp/observations/tseries/async/8-obs.lp"
 
 #obsv_path = "real_models/lp/observations/tseries/sync/boolean_cell_cycle-obs.lp"
-obsv_path = "real_models/lp/observations/tseries/async/SP_1cell-obs.lp"
+#obsv_path = "real_models/lp/observations/tseries/sync/SP_1cell-obs.lp"
 
 
 #Paths of encodings with inconsistencies
-#incst_path = "lp_models/corrupted/3/inconsistencies/3-corrupted-f-stable_inconsistency.lp"
-#incst_path = "lp_models/corrupted/3/inconsistencies/3-corrupted-f-sync_inconsistency.lp"
-#incst_path = "lp_models/corrupted/3/inconsistencies/3-corrupted-f-async_inconsistency.lp"
+#incst_path = "simple_models/lp/corrupted/3/inconsistencies/3-corrupted-f-stable_inconsistency.lp"
+#incst_path = "simple_models/lp/corrupted/3/inconsistencies/3-corrupted-f-sync_inconsistency.lp"
+#incst_path = "simple_models/lp/corrupted/3/inconsistencies/3-corrupted-f-async_inconsistency.lp"
 
-#incst_path = "./lp_models/corrupted/8/inconsistencies/8-corrupted-f-stable_inconsistency.lp"
-#incst_path = "lp_models/corrupted/8/inconsistencies/8-corrupted-f-sync_inconsistency.lp"
-#incst_path = "lp_models/corrupted/8/inconsistencies/8-corrupted-f-async_inconsistency.lp"
+#incst_path = "simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-stable_inconsistency.lp"
+incst_path = "simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-sync_inconsistency.lp"
+#incst_path = "simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-async_inconsistency.lp"
 
-#incst_path = "lp_models/corrupted/boolean_cell_cycle/inconsistencies/boolean_cell_cycle-corrupted-f-sync_inconsistency.lp"
-incst_path = "lp_models/corrupted/SP_1cell/inconsistencies/SP_1cell-corrupted-f-sync_inconsistency.lp"
+#incst_path = "real_models/lp/corrupted/boolean_cell_cycle/boolean_cell_cycle-corrupted-f.lp"
+#incst_path = "real_models/lp/corrupted/SP_1cell/inconsistencies/SP_1cell-corrupted-f-sync_inconsistency.lp"
 
 #Paths of encodings for obtaining inconsistent functions and total variables of each
 iftv_path = "encodings/repairs/iftv.lp"
@@ -60,16 +60,12 @@ nodegen_path = "encodings/repairs/node_generator.lp"
 edgegen_path = "encodings/repairs/edge_generator.lp"
 
 #Paths of encodings for generating functions
-#funcgen_path = "encodings/repairs/func_generator.lp"
-funcgen_path = "encodings/repairs/no_conversion/func_generator.lp"
+funcgen_path = "encodings/repairs/func_generator.lp"
 
 #Paths of encodings for filtering generated functions
-#ss_filter_path = "encodings/repairs/ss_func_filter.lp"
-ss_filter_path = "encodings/repairs/no_conversion/ss_func_filter.lp"
-#sync_filter_path = "encodings/repairs/sync_func_filter.lp"
-sync_filter_path = "encodings/repairs/no_conversion/sync_func_filter.lp"
-#async_filter_path = "encodings/repairs/async_func_filter.lp"
-async_filter_path = "encodings/repairs/no_conversion/async_func_filter.lp"
+ss_filter_path = "encodings/repairs/ss_func_filter.lp"
+sync_filter_path = "encodings/repairs/sync_func_filter.lp"
+async_filter_path = "encodings/repairs/async_func_filter.lp"
 
 
 #Mode flags 

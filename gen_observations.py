@@ -36,7 +36,7 @@ sync_path = "encodings/observations/sync_observations.lp"
 async_path = "encodings/observations/async_observations.lp"
 
 #Save folder paths
-save_folder = "lp_models/obsv/tseries"
+save_folder = "simple_models/lp/observations/tseries"
 save_sync = "sync"
 save_async = "async"
 
