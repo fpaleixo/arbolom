@@ -1,13 +1,11 @@
 import os, argparse, logging, clingo
-from aux_scripts.common import uniquify
 
 #Usage: $python consistency_checking.py -f (FILENAME) -o (OBSERVATIONS) -stable -sync -async -s (SAVE_DIRECTORY)
 #Optional flags:
-#-stable -> Performs consistency checking using stable state observations.
+#-stable -> Performs consistency checking using stable state observations (default).
 #-sync -> Performs consistency checking using synchronous observations.
 #-async -> Performs consistency checking using asynchronous observations.
 #-s -> Path of directory to save inconsistencies, when they exist (default is lp_models/corrupted/(name_of_file))
-
 #Variables:
 #FILENAME -> Path of file containing Boolean model in the BCF format written in lp.
 #OBSERVATIONS -> Path of file containing observations written in lp. 

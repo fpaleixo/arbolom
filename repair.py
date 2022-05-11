@@ -1,15 +1,38 @@
 import argparse, logging, clingo
-from math import comb
-from aux_scripts.common import uniquify
-
-#TODO - clean up & add cmd line support
 
 #--Work in progress--
-#Usage: $python repair.py
-#Note: Model, observations and inconsistencies to be used by the algorithm have to be specified in the configs below
+#Usage: $python repair.py -f (FILENAME) -o (OBSERVATIONS) -i (INCONSISTENCIES) -stable -sync -async -nf
+#Optional flags:
+#-stable -> Performs repairs using stable state observations (default).
+#-sync -> Performs repairs using synchronous observations.
+#-async -> Performs repairs using asynchronous observations.
+#-nf -> Disables candidate function filtering (useful to obtain all candidates)
+#Variables:
+#FILENAME -> Path of file containing Boolean model in the BCF format written in lp.
+#OBSERVATIONS -> Path of file containing observations written in lp. 
+#INCONSISTENCIES -> Path of file containing inconsistencies obtained from the consistency checking phase.
+
+
+#-----Testing shortcuts (to be removed at a later date)----
+'''
+python .\repair.py -f simple_models/lp/corrupted/3/3-corrupted-f.lp -o simple_models/lp/observations/sstate/3-obs.lp -i simple_models/lp/corrupted/3/inconsistencies/3-corrupted-f-stable_inconsistency.lp -stable
+python .\repair.py -f simple_models/lp/corrupted/3/3-corrupted-f.lp -o simple_models/lp/observations/tseries/sync/3-obs.lp -i simple_models/lp/corrupted/3/inconsistencies/3-corrupted-f-sync_inconsistency.lp -sync
+python .\repair.py -f simple_models/lp/corrupted/3/3-corrupted-f.lp -o simple_models/lp/observations/tseries/async/3-obs.lp -i simple_models/lp/corrupted/3/inconsistencies/3-corrupted-f-async_inconsistency.lp -async
+
+python .\repair.py -f simple_models/lp/corrupted/8/8-corrupted-f.lp -o simple_models/lp/observations/sstate/8-obs.lp -i simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-stable_inconsistency.lp -stable
+python .\repair.py -f simple_models/lp/corrupted/8/8-corrupted-f.lp -o simple_models/lp/observations/tseries/sync/8-obs.lp -i simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-sync_inconsistency.lp -sync
+python .\repair.py -f simple_models/lp/corrupted/8/8-corrupted-f.lp -o simple_models/lp/observations/tseries/async/8-obs.lp -i simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-async_inconsistency.lp -async
+
+python .\repair.py -f real_models/lp/corrupted/boolean_cell_cycle/boolean_cell_cycle-corrupted-f.lp -o real_models/lp/observations/tseries/sync/boolean_cell_cycle-obs.lp -i real_models/lp/corrupted/boolean_cell_cycle/inconsistencies/boolean_cell_cycle-corrupted-f-sync_inconsistency.lp -sync
+
+python .\repair.py -f real_models/lp/corrupted/SP_1cell/SP_1cell-corrupted-f.lp -o real_models/lp/observations/tseries/sync/SP_1cell-obs.lp -i real_models/lp/corrupted/SP_1cell/inconsistencies/SP_1cell-corrupted-f-sync_inconsistency.lp -sync
+'''
 
 
 #-----Configs-----
+
+#Command-line usage
+cmd_enabled = True
 
 #Toggle debug modes
 iftv_debug_toggled = False
@@ -17,38 +40,14 @@ nodegen_debug_toggled = False
 edgegen_debug_toggled = False
 funcgen_debug_toggled = False
 
-
 #Model path
-#model_path = "simple_models/lp/corrupted/3/3-corrupted-f.lp"
 model_path = "simple_models/lp/corrupted/8/8-corrupted-f.lp"
-#model_path = "real_models/lp/corrupted/boolean_cell_cycle/boolean_cell_cycle-corrupted-f.lp"
-#model_path = "real_models/lp/corrupted/SP_1cell/SP_1cell-corrupted-f.lp"
-
 
 #Paths of expected observations
-#obsv_path = "simple_models/lp/observations/sstate/3-obs.lp"
-#obsv_path = "simple_models/lp/observations/tseries/sync/3-obs.lp"
-#obsv_path = "simple_models/lp/observations/tseries/async/3-obs.lp"
-
-#obsv_path = "simple_models/lp/observations/sstate/8-obs.lp"
 obsv_path = "simple_models/lp/observations/tseries/sync/8-obs.lp"
-#obsv_path = "simple_models/lp/observations/tseries/async/8-obs.lp"
-
-#obsv_path = "real_models/lp/observations/tseries/sync/boolean_cell_cycle-obs.lp"
-#obsv_path = "real_models/lp/observations/tseries/sync/SP_1cell-obs.lp"
-
 
 #Paths of encodings with inconsistencies
-#incst_path = "simple_models/lp/corrupted/3/inconsistencies/3-corrupted-f-stable_inconsistency.lp"
-#incst_path = "simple_models/lp/corrupted/3/inconsistencies/3-corrupted-f-sync_inconsistency.lp"
-#incst_path = "simple_models/lp/corrupted/3/inconsistencies/3-corrupted-f-async_inconsistency.lp"
-
-#incst_path = "simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-stable_inconsistency.lp"
 incst_path = "simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-sync_inconsistency.lp"
-#incst_path = "simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-async_inconsistency.lp"
-
-#incst_path = "real_models/lp/corrupted/boolean_cell_cycle/boolean_cell_cycle-corrupted-f.lp"
-#incst_path = "real_models/lp/corrupted/SP_1cell/inconsistencies/SP_1cell-corrupted-f-sync_inconsistency.lp"
 
 #Paths of encodings for obtaining inconsistent functions and total variables of each
 iftv_path = "encodings/repairs/iftv.lp"
@@ -69,9 +68,25 @@ async_filter_path = "encodings/repairs/async_func_filter.lp"
 
 
 #Mode flags 
-toggle_stable_state = False
-toggle_sync = True
+toggle_filtering = True
+toggle_stable_state = True
+toggle_sync = False
 toggle_async = False
+
+
+#Parser (will only be used if command-line usage is enabled above)
+parser = None
+args = None
+if(cmd_enabled):
+  parser = argparse.ArgumentParser(description="Repair an inconsistent Boolean logical model in the BCF written in lp, given a set of observations and inconsistent compounds, both written in lp.")
+  parser.add_argument("-f", "--model_to_repair", help="Path to model to check the consistency of.", required=True)
+  parser.add_argument("-o", "--observations_to_use", help="Path to observations obtained from the original model.", required=True)
+  parser.add_argument("-i", "--inconsistencies", help="Path to inconsistencies obtained from the consistency checking phase.", required=True)
+  parser.add_argument("-stable", "--stable_state", action='store_true', help="Flag to check the consistency using stable state observations (default).")
+  parser.add_argument("-sync", "--synchronous", action='store_true', help="Flag to check the consistency using synchronous observations (default is stable state).")
+  parser.add_argument("-async", "--asynchronous", action='store_true', help="Flag to check the consistency using asynchronous observations (default is stable state).")
+  parser.add_argument("-nf", "--no_filtering", action='store_true', help="Flag to disable the filtering of function candidates (use it to obtain all candidates).")
+  args = parser.parse_args()
 
 #Global logger (change logging.(LEVEL) to desired (LEVEL) )
 logging.basicConfig()
@@ -81,6 +96,63 @@ global_logger.setLevel(logging.DEBUG)
 
 
 #-----Auxiliary Functions-----
+#---Argument parser---
+#Purpose: Parses the argument regarding which file to generate observations for.
+def parseArgs():
+  logger = logging.getLogger("parser")
+  logger.setLevel(logging.DEBUG)
+
+  parser = argparse.ArgumentParser(description="Repair an inconsistent Boolean logical model in the BCF written in lp, given a set of observations and inconsistent compounds, both written in lp.")
+  parser.add_argument("-f", "--model_to_repair", help="Path to model to check the consistency of.", required=True)
+  parser.add_argument("-o", "--observations_to_use", help="Path to observations obtained from the original model.", required=True)
+  parser.add_argument("-i", "--inconsistencies", help="Path to inconsistencies obtained from the consistency checking phase.", required=True)
+  parser.add_argument("-stable", "--stable_state", action='store_true', help="Flag to check the consistency using stable state observations (default).")
+  parser.add_argument("-sync", "--synchronous", action='store_true', help="Flag to check the consistency using synchronous observations (default is stable state).")
+  parser.add_argument("-async", "--asynchronous", action='store_true', help="Flag to check the consistency using asynchronous observations (default is stable state).")
+  parser.add_argument("-nf", "--no_filtering", action='store_true', help="Flag to disable the filtering of function candidates (use it to obtain all candidates).")
+  args = parser.parse_args()
+
+  global model_path, obsv_path, incst_path, toggle_stable_state, toggle_sync, toggle_async, toggle_filtering
+
+  model_path = args.model_to_repair
+  obsv_path = args.observations_to_use
+  incst_path = args.inconsistencies
+
+  logger.debug("Obtained model: " + model_path)
+  logger.debug("Obtained observations: " + obsv_path)
+  logger.debug("Obtained inconsistencies: " + incst_path)
+
+
+  stable = args.stable_state
+  synchronous = args.synchronous
+  asynchronous = args.asynchronous
+  no_filtering = args.no_filtering
+
+
+  if no_filtering:
+    toggle_filtering = False
+    logger.debug("Filtering disabled, obtaining all function candidates.")
+
+  if stable:
+    toggle_stable_state = True
+    toggle_sync = False
+    toggle_async = False
+    logger.debug("Mode used: Stable State \U0001f6d1")
+
+  elif synchronous:
+    toggle_stable_state = False
+    toggle_sync = True
+    toggle_async = False
+    logger.debug("Mode used: Synchronous \U0001f550")
+
+  elif asynchronous:
+    toggle_stable_state = False
+    toggle_sync = False
+    toggle_async = True
+    logger.debug("Mode used: Asynchronous \U0001f331")
+
+  return
+
 #---Printing functions---
 #Input: stats_dict dictionary from clingo.Control
 #Purpose: Prints time statistics from clingo
@@ -399,12 +471,13 @@ def generateFunctions(original_LP,func,iftv_LP,nodes_LP,edges_LP):
   ctl.load(obsv_path)
   ctl.load(funcgen_path)
 
-  if toggle_stable_state:
-    ctl.load(ss_filter_path)
-  elif toggle_sync:
-    ctl.load(sync_filter_path)
-  elif toggle_async:
-    ctl.load(async_filter_path)
+  if toggle_filtering:
+    if toggle_stable_state:
+      ctl.load(ss_filter_path)
+    elif toggle_sync:
+      ctl.load(sync_filter_path)
+    elif toggle_async:
+      ctl.load(async_filter_path)
 
   print("Starting function generation \u23F1")
   ctl.ground([("base", [])])
@@ -421,6 +494,9 @@ def generateFunctions(original_LP,func,iftv_LP,nodes_LP,edges_LP):
 
 
 #-----Main-----
+if cmd_enabled:
+  parseArgs()
+
 printIFTVStart()
 iftvs = generateInconsistentFunctionsAndTotalVars()
 processed_ifts_output = processIFTVs(iftvs)
