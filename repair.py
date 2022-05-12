@@ -58,13 +58,16 @@ nodegen_path = "encodings/repairs/node_generator.lp"
 #Paths of encodings for generating edges between nodes
 edgegen_path = "encodings/repairs/edge_generator.lp"
 
+#Path of encoding that gives functions scores
+funcscore_path = "encodings/repairs/auxiliary/func_score.lp"
+
 #Paths of encodings for generating functions
 funcgen_path = "encodings/repairs/func_generator.lp"
 
 #Paths of encodings for filtering generated functions
-ss_filter_path = "encodings/repairs/ss_func_filter.lp"
-sync_filter_path = "encodings/repairs/sync_func_filter.lp"
-async_filter_path = "encodings/repairs/async_func_filter.lp"
+ss_filter_path = "encodings/repairs/filtering/ss_func_filter.lp"
+sync_filter_path = "encodings/repairs/filtering/sync_func_filter.lp"
+async_filter_path = "encodings/repairs/filtering/async_func_filter.lp"
 
 
 #Mode flags 
@@ -258,11 +261,15 @@ def getOriginalModelLP(func):
   original = open(model_path, 'r')
   lines = original.readlines()
   original_LP = ""
+  inconsistent_func_LP = ""
 
   for line in lines: 
     if f"function({func}" not in line and f"term({func}" not in line:
       original_LP += line
-  return original_LP
+    else:
+      inconsistent_func_LP += line
+
+  return original_LP, inconsistent_func_LP
 
 
 
@@ -455,9 +462,28 @@ def generateEdges(nodes_LP):
   printStatistics(ctl.statistics)
   return edges
 
+#Input: The logic program containing a function in the standard format
+#Purpose: Gives a score to that function according to the level of AND and OR operators in it
+def calculateFuncScore(func_LP):
+  clingo_args = ["0"]
+    
+  ctl = clingo.Control(arguments=clingo_args)
+
+  ctl.add("base", [], program=func_LP)
+  ctl.load(funcscore_path)
+
+  ctl.ground([("base", [])])
+  score = []
+
+  with ctl.solve(yield_=True) as handle:
+    for model in handle:
+      score.append(str(model).split(" "))
+  
+  return score[0][0] + "."
+
 #Input: The logic program containing information regarding the terms that can be used to create function candidates
 #Purpose: Generates all possible function candidates with the given logic progam
-def generateFunctions(original_LP,func,iftv_LP,nodes_LP,edges_LP):
+def generateFunctions(original_LP,func,score_LP,iftv_LP,nodes_LP,edges_LP):
   clingo_args = ["0", f"-c compound={func}"]
   if funcgen_debug_toggled:
     clingo_args.append("--output-debug=text")
@@ -465,6 +491,7 @@ def generateFunctions(original_LP,func,iftv_LP,nodes_LP,edges_LP):
   ctl = clingo.Control(arguments=clingo_args)
 
   ctl.add("base", [], program=original_LP)
+  ctl.add("base", [], program=score_LP)
   ctl.add("base", [], program=iftv_LP)
   ctl.add("base", [], program=nodes_LP)
   ctl.add("base", [], program=edges_LP)
@@ -519,7 +546,10 @@ if processed_ifts_output:
 
       if process_edges_output:
         printFuncStart()
-        functions = generateFunctions(getOriginalModelLP(func),func,
+        original_LP = getOriginalModelLP(func)
+        func_score = calculateFuncScore(original_LP[1])
+        print(func_score)
+        functions = generateFunctions(original_LP[0],func, func_score,
           processed_ifts_output[func], process_nodes_output, process_edges_output)
         process_functions_output = processFunctions(functions)
         printFuncEnd()
