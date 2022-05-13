@@ -197,7 +197,7 @@ edge(wg_b1, wg_b1, 1).
 edge(wg_b2, wg_b1, 1).
 
 %Regulatory function of wg_b1
-function(wg_b1, 4).
+function(wg_b1, 1).
 term(wg_b1, 1, ciact_b1).
 term(wg_b1, 1, en).
 term(wg_b1, 1, nkd_b1).

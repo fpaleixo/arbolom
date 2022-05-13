@@ -58,11 +58,19 @@ nodegen_path = "encodings/repairs/node_generator.lp"
 #Paths of encodings for generating edges between nodes
 edgegen_path = "encodings/repairs/edge_generator.lp"
 
-#Path of encoding that gives functions scores
-funcscore_path = "encodings/repairs/auxiliary/func_score.lp"
+#Path of encoding that gives node levels
+node_levelgen_path = "encodings/repairs/auxiliary/node_levels.lp"
 
-#Paths of encodings for generating functions
+#Path of encoding that gives function levels
+func_level_path = "encodings/repairs/auxiliary/function_level.lp"
+
+#Paths of encodings for generating functions (unrestricted)
 funcgen_path = "encodings/repairs/func_generator.lp"
+
+#Paths of encodings for generating functions (restricted)
+ancestors_path = "encodings/repairs/func_restricted_generators/func_ancestors.lp"
+children_path = "encodings/repairs/func_restricted_generators/func_children.lp"
+siblings_path = "encodings/repairs/func_restricted_generators/func_siblings.lp"
 
 #Paths of encodings for filtering generated functions
 ss_filter_path = "encodings/repairs/filtering/ss_func_filter.lp"
@@ -462,28 +470,49 @@ def generateEdges(nodes_LP):
   printStatistics(ctl.statistics)
   return edges
 
-#Input: The logic program containing a function in the standard format
-#Purpose: Gives a score to that function according to the level of AND and OR operators in it
-def calculateFuncScore(func_LP):
+#Input: The logic programs containing the number of total variables, and the generated nodes
+#Purpose: Returns the level of each generated node
+def generateNodeLevels(iftvs_LP, nodes_LP):
   clingo_args = ["0"]
     
   ctl = clingo.Control(arguments=clingo_args)
 
-  ctl.add("base", [], program=func_LP)
-  ctl.load(funcscore_path)
+  ctl.add("base", [], program=iftvs_LP)
+  ctl.add("base", [], program=nodes_LP)
+  ctl.load(node_levelgen_path)
 
   ctl.ground([("base", [])])
-  score = []
+  levels = []
 
   with ctl.solve(yield_=True) as handle:
     for model in handle:
-      score.append(str(model).split(" "))
+      levels.append(str(model).split(" "))
   
-  return score[0][0] + "."
+  return levels
+
+#Input: The logic programs containing the number of total variables, and the function to determine the level of
+#Purpose: Returns the level of the given function
+def generateFuncLevel(iftvs_LP, func_LP):
+  clingo_args = ["0"]
+    
+  ctl = clingo.Control(arguments=clingo_args)
+
+  ctl.add("base", [], program=iftvs_LP)
+  ctl.add("base", [], program=func_LP)
+  ctl.load(func_level_path)
+
+  ctl.ground([("base", [])])
+  levels = []
+
+  with ctl.solve(yield_=True) as handle:
+    for model in handle:
+      levels.append(str(model).split(" "))
+  
+  return levels
 
 #Input: The logic program containing information regarding the terms that can be used to create function candidates
 #Purpose: Generates all possible function candidates with the given logic progam
-def generateFunctions(original_LP,func,score_LP,iftv_LP,nodes_LP,edges_LP):
+def generateFunctions(original_LP,func,node_levels_LP,func_level_LP,iftv_LP,nodes_LP,edges_LP):
   clingo_args = ["0", f"-c compound={func}"]
   if funcgen_debug_toggled:
     clingo_args.append("--output-debug=text")
@@ -491,7 +520,8 @@ def generateFunctions(original_LP,func,score_LP,iftv_LP,nodes_LP,edges_LP):
   ctl = clingo.Control(arguments=clingo_args)
 
   ctl.add("base", [], program=original_LP)
-  ctl.add("base", [], program=score_LP)
+  ctl.add("base", [], program=node_levels_LP)
+  ctl.add("base", [], program=func_level_LP)
   ctl.add("base", [], program=iftv_LP)
   ctl.add("base", [], program=nodes_LP)
   ctl.add("base", [], program=edges_LP)
@@ -547,9 +577,11 @@ if processed_ifts_output:
       if process_edges_output:
         printFuncStart()
         original_LP = getOriginalModelLP(func)
-        func_score = calculateFuncScore(original_LP[1])
-        print(func_score)
-        functions = generateFunctions(original_LP[0],func, func_score,
+        node_levels_LP = generateNodeLevels(processed_ifts_output[func], process_nodes_output)
+        func_level_LP = generateFuncLevel(processed_ifts_output[func], original_LP[1])
+        print(node_levels_LP)
+        print(func_level_LP)
+        functions = generateFunctions(original_LP[0],func, "", "", 
           processed_ifts_output[func], process_nodes_output, process_edges_output)
         process_functions_output = processFunctions(functions)
         printFuncEnd()
