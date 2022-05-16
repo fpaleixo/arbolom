@@ -37,6 +37,7 @@ cmd_enabled = True
 #Toggle debug modes
 iftv_debug_toggled = False
 nodegen_debug_toggled = False
+nodefilter_debug_toggled = False
 edgegen_debug_toggled = False
 funcgen_debug_toggled = False
 
@@ -55,6 +56,11 @@ iftv_path = "encodings/repairs/iftv.lp"
 #Paths of encodings for generating nodes
 nodegen_path = "encodings/repairs/node_generator.lp"
 
+#Paths of encodings for filtering generated nodes
+ss_filternode_path = "encodings/repairs/filtering/node/ss_node_filter.lp"
+sync_filternode_path = "encodings/repairs/filtering/node/sync_node_filter.lp"
+async_filternode_path = "encodings/repairs/filtering/node/async_node_filter.lp"
+
 #Paths of encodings for generating edges between nodes
 edgegen_path = "encodings/repairs/edge_generator.lp"
 
@@ -64,18 +70,13 @@ node_levelgen_path = "encodings/repairs/auxiliary/node_levels.lp"
 #Path of encoding that gives function levels
 func_level_path = "encodings/repairs/auxiliary/function_level.lp"
 
-#Paths of encodings for generating functions (unrestricted)
+#Paths of encodings for generating functions
 funcgen_path = "encodings/repairs/func_generator.lp"
 
-#Paths of encodings for generating functions (restricted)
-ancestors_path = "encodings/repairs/func_restricted_generators/func_ancestors.lp"
-children_path = "encodings/repairs/func_restricted_generators/func_children.lp"
-siblings_path = "encodings/repairs/func_restricted_generators/func_siblings.lp"
-
 #Paths of encodings for filtering generated functions
-ss_filter_path = "encodings/repairs/filtering/ss_func_filter.lp"
-sync_filter_path = "encodings/repairs/filtering/sync_func_filter.lp"
-async_filter_path = "encodings/repairs/filtering/async_func_filter.lp"
+ss_filter_path = "encodings/repairs/filtering/func/ss_func_filter.lp"
+sync_filter_path = "encodings/repairs/filtering/func/sync_func_filter.lp"
+async_filter_path = "encodings/repairs/filtering/func/async_func_filter.lp"
 
 
 #Mode flags 
@@ -198,6 +199,14 @@ def printNodeStart():
 def printNodeEnd():
   print("\n\033[1;32m ----NODE GENERATION END----\033[0;37;40m\n")
 
+#Purpose: Prints the initial node filter phase message
+def printNodeFilterStart():
+  print("\033[1;32m ----NODE FILTER START----\033[0;37;40m")
+
+#Purpose: Prints the final node filter phase message
+def printNodeFilterEnd():
+  print("\n\033[1;32m ----NODE FILTER END----\033[0;37;40m\n")
+
 #Purpose: Prints the initial edge generation phase message
 def printEdgeStart():
   print("\033[1;32m ----EDGE GENERATION START----\033[0;37;40m")
@@ -250,6 +259,20 @@ def getNodesLP(nodes):
     
     result_LP += "\n"
     current_node_id += 1
+
+  return result_LP
+
+#Input: The nodes filtered from clingo
+#Purpose: Creates the logic program containing those nodes
+def getFilteredNodesLP(nodes):
+  result_LP = ""
+  
+  for node in nodes:
+    result_LP += node[0].split("filtered_")[1] + ".\n"
+
+    for variable in node[1:]:
+      result_LP += variable.split("filtered_")[1] + ".\n"
+    result_LP += "\n"
 
   return result_LP
 
@@ -328,6 +351,29 @@ def processNodes(nodes):
 
   else: 
     print("No nodes could be found \u274C")
+
+#Input: The generated nodes output from clingo
+#Purpose: Processes clingo's node generation output by creating an LP with them, identifying each node
+def processFilteredNodes(nodes):
+  if not nodes:
+    print("No answers sets could be found	\u2755 there must be something wrong with the encoding...")
+
+  elif nodes[0]:
+
+    nodes_LP = getFilteredNodesLP(nodes)
+
+    total_nodes = len(nodes)
+    if(total_nodes < 100):
+      print("<Filtered nodes>")
+      print(nodes_LP,end="")
+    else:
+      print("Too many nodes to print...!")
+    print(f"Total nodes: {total_nodes}")
+
+    return nodes_LP
+
+  else: 
+    print("All nodes were filtered out... \u274C")
 
 #Input: The generated edges output from clingo
 #Purpose: Processes clingo's edge generation output by creating an LP with them
@@ -447,6 +493,38 @@ def generateNodes(iftvs_LP):
   printStatistics(ctl.statistics)
   return nodes
 
+#Inputs: The compound with the inconsistent function and the LPs with the original functions minus the inconsistent function, and the generated nodes
+#Purpose: Filters out nodes that produce 1s when 0s are expected
+def filterNodes(func, original_LP, nodes_LP):
+  clingo_args = ["0", f"-c compound={func}"]
+  if nodefilter_debug_toggled:
+    clingo_args.append("--output-debug=text")
+
+  ctl = clingo.Control(arguments=clingo_args)
+
+  ctl.add("base", [], program=original_LP)
+  ctl.add("base",[], program=nodes_LP)
+  ctl.load(obsv_path)
+
+  if toggle_stable_state:
+    ctl.load(ss_filternode_path)
+  elif toggle_sync:
+    ctl.load(sync_filternode_path)
+  elif toggle_async:
+    ctl.load(async_filternode_path)
+
+  print("Starting node filtering \u23F1")
+  ctl.ground([("base", [])])
+  nodes = []
+
+  with ctl.solve(yield_=True) as handle:
+    for model in handle:
+      nodes.append(str(model).split(" "))
+
+  print("Finished node filtering \U0001F3C1")
+  printStatistics(ctl.statistics)
+  return nodes
+
 #Purpose: Generates edges between nodes
 def generateEdges(nodes_LP):
   clingo_args = ["0"]
@@ -480,6 +558,7 @@ def generateNodeLevels(iftvs_LP, nodes_LP):
   ctl.add("base", [], program=iftvs_LP)
   ctl.add("base", [], program=nodes_LP)
   ctl.load(node_levelgen_path)
+  
 
   ctl.ground([("base", [])])
   levels = []
@@ -512,7 +591,7 @@ def generateFuncLevel(iftvs_LP, func_LP):
 
 #Input: The logic program containing information regarding the terms that can be used to create function candidates
 #Purpose: Generates all possible function candidates with the given logic progam
-def generateFunctions(original_LP,func,node_levels_LP,func_level_LP,iftv_LP,nodes_LP,edges_LP):
+def generateFunctions(original_LP,func,iftv_LP,nodes_LP,edges_LP):
   clingo_args = ["0", f"-c compound={func}"]
   if funcgen_debug_toggled:
     clingo_args.append("--output-debug=text")
@@ -520,8 +599,6 @@ def generateFunctions(original_LP,func,node_levels_LP,func_level_LP,iftv_LP,node
   ctl = clingo.Control(arguments=clingo_args)
 
   ctl.add("base", [], program=original_LP)
-  ctl.add("base", [], program=node_levels_LP)
-  ctl.add("base", [], program=func_level_LP)
   ctl.add("base", [], program=iftv_LP)
   ctl.add("base", [], program=nodes_LP)
   ctl.add("base", [], program=edges_LP)
@@ -561,7 +638,10 @@ printIFTVEnd()
 
 if processed_ifts_output:
   for func in processed_ifts_output.keys():
+
     printFuncRepairStart(func)
+
+    original_LP = getOriginalModelLP(func)
 
     printNodeStart()
     nodes = generateNodes(processed_ifts_output[func])
@@ -569,6 +649,13 @@ if processed_ifts_output:
     printNodeEnd()
 
     if process_nodes_output:
+
+      if toggle_filtering:
+        printNodeFilterStart()
+        filtered_nodes = filterNodes(func, original_LP[0], process_nodes_output)
+        #process_nodes_output = processFilteredNodes(filtered_nodes)
+        printNodeFilterEnd()
+
       printEdgeStart()
       edges = generateEdges(process_nodes_output)
       process_edges_output = processEdges(edges)
@@ -576,12 +663,11 @@ if processed_ifts_output:
 
       if process_edges_output:
         printFuncStart()
-        original_LP = getOriginalModelLP(func)
-        node_levels_LP = generateNodeLevels(processed_ifts_output[func], process_nodes_output)
-        func_level_LP = generateFuncLevel(processed_ifts_output[func], original_LP[1])
-        print(node_levels_LP)
-        print(func_level_LP)
-        functions = generateFunctions(original_LP[0],func, "", "", 
+        #node_levels_LP = generateNodeLevels(processed_ifts_output[func], process_nodes_output)
+        #func_level_LP = generateFuncLevel(processed_ifts_output[func], original_LP[1])
+        #print(node_levels_LP)
+        #print(func_level_LP)
+        functions = generateFunctions(original_LP[0],func,
           processed_ifts_output[func], process_nodes_output, process_edges_output)
         process_functions_output = processFunctions(functions)
         printFuncEnd()
