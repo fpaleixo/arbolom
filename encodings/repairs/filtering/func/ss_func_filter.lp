@@ -9,16 +9,6 @@ input_node(N) :- node(N), not function(N,_), N != compound.
 %Input nodes can take any value
 0 {active(E,N)} 1 :- experiment(E), input_node(N).
 
-%Input observations are converted to curated observations
-curated_observation(E,N,0) :- observation(E,N,0).
-curated_observation(E,N,1) :- observation(E,N,1).
-
-%If node N is active and there is no observation for it, fill in the missing observation
-curated_observation(E,N,1) :- active(E,N), not observation(E,N,_).
-
-%If node N is inactive and there is no observation for it, fill in the missing observation
-curated_observation(E,N,0) :- not active(E,N), not observation(E,N,_), experiment(E), node(N).
-
 %For a given node N with I implicants, if there exists a regulator in implicant number I_NO
 %which is an inactive activator (outputs 1 when active) in an obervation E, then implicant 
 %I_NO evaluates to 0 for that observation E, and so is inactive

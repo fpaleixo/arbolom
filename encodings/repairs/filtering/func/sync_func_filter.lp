@@ -4,23 +4,13 @@
 
 %Define
 %Time must occur in some rule head
-time(T) :- observation(_,T,_,_).
+time(T) :- curated_observation(_,T,_,_).
 
 %A node with no regulatory function is an input node (can take any value)
 input_node(N) :- node(N), not function(N,_), N != compound.
 
 %Input nodes can take any value
 0 {active(E,T,N)} 1 :- experiment(E), time(T), input_node(N).
-
-%Input observations are converted to curated observations
-curated_observation(E,T,N,0) :- observation(E,T,N,0).
-curated_observation(E,T,N,1) :- observation(E,T,N,1).
-
-%If node N is active at time T and there is no observation for it, fill in the missing observation
-curated_observation(E,T,N,1) :- active(E,T,N), not input_node(N), not observation(E,T,N,_), time(T), experiment(E), node(N).
-
-%If node N is inactive at time T and there is no observation for it, fill in the missing observation
-curated_observation(E,T,N,0) :- not active(E,T,N), not input_node(N), not observation(E,T,N,_), time(T), experiment(E), node(N).
 
 %For a given node N with I implicants, if there exists a regulator in implicant number I_NO
 %which is an inactive activator (outputs 1 when active) in an observation E at time T, then implicant 

@@ -61,7 +61,7 @@ global_logger.setLevel(logging.DEBUG)
 #-----Auxiliary Functions-----
 #Inputs: atoms is a list of atoms obtained from solving with clingo.
 #Purpose: Stores inconsistency atoms in a separate file (to be used by repairs later on).
-def saveInconsistenciesToFile(atoms):
+def saveInconsistenciesToFile(LP):
   logger = logging.getLogger("saveIncst")
   logger.setLevel(logging.INFO)
 
@@ -93,12 +93,9 @@ def saveInconsistenciesToFile(atoms):
   logger.debug("Full path: " + str(write_fullpath))
 
   f = open(write_fullpath, 'w')
-
-  for a in atoms:
-    if "inconsistent" in a:
-      f.write(a+".")
-      f.write('\n')
+  f.write(LP)
   f.close()
+
   logger.info("Saved to: " + str(write_fullpath))
 
 
@@ -152,25 +149,37 @@ def parseArgs():
 def isConsistent(atoms):
   if not atoms:
     print("No answers sets could be found	\u2755 there must be something wrong with the encoding...")
-  elif atoms[0]:
-    if toggle_stable_state:
-      print("Model is not consistent \u274C Inconsistent (experiment, node, value): ")
-    elif toggle_sync:
-      print("Model is not consistent \u274C Inconsistent (experiment, timestep, node, value): ")
-    else:
-      print("Model is not consistent \u274C Inconsistent (experiment, timestep, node, value/other node updated at the same time): ")
-    print(atoms)
-    saveInconsistenciesToFile(atoms)
-  else: 
-    print("Model is consistent \u2714\uFE0F")
+  else:
+    isConsistent = True
+    inconsistent_LP = ""
+    observations_LP = ""
 
+    for atom in atoms:
+      if "inconsistent" in atom:
+        isConsistent = False
+        inconsistent_LP += atom + ".\n"
+      else:
+        observations_LP += atom + ".\n"
+
+    if not isConsistent:
+      if toggle_stable_state:
+        print("Model is not consistent \u274C Inconsistent (experiment, node, value): ")
+      elif toggle_sync:
+        print("Model is not consistent \u274C Inconsistent (experiment, timestep, node, value): ")
+      else:
+        print("Model is not consistent \u274C Inconsistent (experiment, timestep, node, value/other node updated at the same time): ")  
+      print(inconsistent_LP)
+      saveInconsistenciesToFile(inconsistent_LP + "\n" + observations_LP)
+    
+    else: 
+      print("Model is consistent \u2714\uFE0F")
 
 
 #-----Main-----
 if(cmd_enabled):
   parseArgs()
 
-ctl = clingo.Control()
+ctl = clingo.Control(arguments=["0"])
 
 ctl.load(model_path)
 ctl.load(obsv_path)
@@ -186,6 +195,7 @@ ctl.ground([("base", [])])
 atoms = []
 with ctl.solve(yield_=True) as handle:
   for model in handle:
-    atoms += (str(model).split(" "))
+    atoms = (str(model).split(" "))
 
+print(atoms)
 isConsistent(atoms)

@@ -228,6 +228,24 @@ def printFuncEnd():
 
 
 #-----Functions that create the LPs to be used by clingo-----
+
+#Purpose: Separates the inconsistencies from the curated observations that are outputted from the consistency checking phase
+def getInconsistenciesAndCuratedLP():
+  inconsistencies = open(incst_path, 'r')
+  lines = inconsistencies.readlines()
+
+  incst_LP = ""
+  curated_LP = ""
+
+  for line in lines: 
+    if "inconsistent" in line:
+      incst_LP += line
+    else:
+      curated_LP += line
+
+  return incst_LP, curated_LP
+
+
 #Input: The nodes generated from clingo
 #Purpose: Creates the logic program that will be used to create nodes
 def getIftvsLP(iftvs):
@@ -447,15 +465,15 @@ def processFunctions(functions):
 
 #-----Functions that solve LPs with clingo-----
 #Purpose: Obtains inconsistent functions, the variables and total number of variables of each function
-def generateInconsistentFunctionsAndTotalVars():
+def generateInconsistentFunctionsAndTotalVars(incst_LP):
   clingo_args = ["0"]
   if iftv_debug_toggled:
     clingo_args.append("--output-debug=text")
 
   ctl = clingo.Control(arguments=clingo_args, logger= lambda a,b: None)
 
+  ctl.add("base",[], program=incst_LP)
   ctl.load(model_path)
-  ctl.load(incst_path)
   ctl.load(iftv_path)
 
   print("Starting iftv generation \u23F1")
@@ -479,7 +497,6 @@ def generateNodes(iftvs_LP):
   ctl = clingo.Control(arguments=clingo_args)
 
   ctl.load(model_path)
-  ctl.load(incst_path)
   ctl.load(nodegen_path)
   ctl.add("base",[],program=iftvs_LP)
 
@@ -497,16 +514,16 @@ def generateNodes(iftvs_LP):
 
 #Inputs: The compound with the inconsistent function and the LPs with the original functions minus the inconsistent function, and the generated nodes
 #Purpose: Filters out nodes that produce 1s when 0s are expected
-def filterNodes(func, original_LP, nodes_LP):
+def filterNodes(func, incst_LP, original_LP, nodes_LP):
   clingo_args = ["0", f"-c compound={func}"]
   if nodefilter_debug_toggled:
     clingo_args.append("--output-debug=text")
 
   ctl = clingo.Control(arguments=clingo_args)
 
+  ctl.add("base", [], program=incst_LP)
   ctl.add("base", [], program=original_LP)
   ctl.add("base",[], program=nodes_LP)
-  ctl.load(obsv_path)
 
   if toggle_stable_state:
     ctl.load(ss_filternode_path)
@@ -593,7 +610,7 @@ def generateFuncLevel(iftvs_LP, func_LP):
 
 #Input: The logic program containing information regarding the terms that can be used to create function candidates
 #Purpose: Generates all possible function candidates with the given logic progam
-def generateFunctions(original_LP,func,iftv_LP,nodes_LP,edges_LP):
+def generateFunctions(original_LP,func,curated_LP,iftv_LP,nodes_LP,edges_LP):
   clingo_args = ["0", f"-c compound={func}"]
   if funcgen_debug_toggled:
     clingo_args.append("--output-debug=text")
@@ -601,10 +618,10 @@ def generateFunctions(original_LP,func,iftv_LP,nodes_LP,edges_LP):
   ctl = clingo.Control(arguments=clingo_args)
 
   ctl.add("base", [], program=original_LP)
+  ctl.add("base", [], program=curated_LP)
   ctl.add("base", [], program=iftv_LP)
   ctl.add("base", [], program=nodes_LP)
   ctl.add("base", [], program=edges_LP)
-  ctl.load(obsv_path)
   ctl.load(funcgen_path)
 
   if toggle_filtering:
@@ -634,7 +651,9 @@ if cmd_enabled:
   parseArgs()
 
 printIFTVStart()
-iftvs = generateInconsistentFunctionsAndTotalVars()
+incst_LP, curated_LP = getInconsistenciesAndCuratedLP()
+
+iftvs = generateInconsistentFunctionsAndTotalVars(incst_LP)
 processed_ifts_output = processIFTVs(iftvs)
 printIFTVEnd()
 
@@ -654,7 +673,7 @@ if processed_ifts_output:
 
       if toggle_filtering:
         printNodeFilterStart()
-        filtered_nodes = filterNodes(func, original_LP[0], process_nodes_output)
+        filtered_nodes = filterNodes(func, curated_LP, original_LP[0], process_nodes_output)
         process_nodes_output = processFilteredNodes(filtered_nodes)
         printNodeFilterEnd()
 
@@ -669,7 +688,7 @@ if processed_ifts_output:
         #func_level_LP = generateFuncLevel(processed_ifts_output[func], original_LP[1])
         #print(node_levels_LP)
         #print(func_level_LP)
-        functions = generateFunctions(original_LP[0],func,
+        functions = generateFunctions(original_LP[0], func, curated_LP,
           processed_ifts_output[func], process_nodes_output, process_edges_output)
         process_functions_output = processFunctions(functions)
         printFuncEnd()

@@ -45,4 +45,12 @@ inconsistent(E,N,0) :- not active(E,N), curated_observation(E,N,1).
 
 
 %Display
+#show experiment/1.
 #show inconsistent/3.
+#show curated_observation/3.
+
+
+%Optimize
+%Optimize for the smallest number of inconsistent nodes (applicable for when we're dealing with
+%incomplete observations)
+#minimize{1,E,N : inconsistent(E,N,_)}.
