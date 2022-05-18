@@ -1,7 +1,11 @@
 import argparse, logging, clingo
 
+#!Deprecated
+#!Deprecated
+#!Deprecated
+
 #--Work in progress--
-#Usage: $python repair.py -f (FILENAME) -o (OBSERVATIONS) -i (INCONSISTENCIES) -stable -sync -async -nf
+#Usage: $python old_attempts/simplifiedoptimized_repair.py -f (FILENAME) -o (OBSERVATIONS) -i (INCONSISTENCIES) -stable -sync -async -nf
 #Optional flags:
 #-stable -> Performs repairs using stable state observations (default).
 #-sync -> Performs repairs using synchronous observations.
@@ -15,24 +19,24 @@ import argparse, logging, clingo
 
 #-----Testing shortcuts (to be removed at a later date)----
 '''
-python .\repair.py -f simple_models/lp/corrupted/3/3-corrupted-f.lp -o simple_models/lp/observations/sstate/3-obs.lp -i simple_models/lp/corrupted/3/inconsistencies/3-corrupted-f-stable_inconsistency.lp -stable
+python .\old_attempts/simplifiedoptimized_repair.py -f simple_models/lp/corrupted/3/3-corrupted-f.lp -o simple_models/lp/observations/sstate/3-obs.lp -i simple_models/lp/corrupted/3/inconsistencies/3-corrupted-f-stable_inconsistency.lp -stable
 #3 variables
-python .\repair.py -f simple_models/lp/corrupted/3/3-corrupted-f.lp -o simple_models/lp/observations/tseries/sync/3-obs.lp -i simple_models/lp/corrupted/3/inconsistencies/3-corrupted-f-sync_inconsistency.lp -sync
-python .\repair.py -f simple_models/lp/corrupted/3/3-corrupted-f.lp -o simple_models/lp/observations/tseries/async/3-obs.lp -i simple_models/lp/corrupted/3/inconsistencies/3-corrupted-f-async_inconsistency.lp -async
+python .\old_attempts/simplifiedoptimized_repair.py -f simple_models/lp/corrupted/3/3-corrupted-f.lp -o simple_models/lp/observations/tseries/sync/3-obs.lp -i simple_models/lp/corrupted/3/inconsistencies/3-corrupted-f-sync_inconsistency.lp -sync
+python .\old_attempts/simplifiedoptimized_repair.py -f simple_models/lp/corrupted/3/3-corrupted-f.lp -o simple_models/lp/observations/tseries/async/3-obs.lp -i simple_models/lp/corrupted/3/inconsistencies/3-corrupted-f-async_inconsistency.lp -async
 
-python .\repair.py -f simple_models/lp/corrupted/8/8-corrupted-f.lp -o simple_models/lp/observations/sstate/8-obs.lp -i simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-stable_inconsistency.lp -stable
+python .\simplifiedoptimized_repair.py -f simple_models/lp/corrupted/8/8-corrupted-f.lp -o simple_models/lp/observations/sstate/8-obs.lp -i simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-stable_inconsistency.lp -stable
 #5 variables
-python .\repair.py -f simple_models/lp/corrupted/8/8-corrupted-f.lp -o simple_models/lp/observations/tseries/sync/8-obs.lp -i simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-sync_inconsistency.lp -sync
-python .\repair.py -f simple_models/lp/corrupted/8/8-corrupted-f.lp -o simple_models/lp/observations/tseries/async/8-obs.lp -i simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-async_inconsistency.lp -async
+python .\simplifiedoptimized_repair.py -f simple_models/lp/corrupted/8/8-corrupted-f.lp -o simple_models/lp/observations/tseries/sync/8-obs.lp -i simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-sync_inconsistency.lp -sync
+python .\simplifiedoptimized_repair.py -f simple_models/lp/corrupted/8/8-corrupted-f.lp -o simple_models/lp/observations/tseries/async/8-obs.lp -i simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-async_inconsistency.lp -async
 
 #6 variables
-python .\repair.py -f real_models/lp/corrupted/boolean_cell_cycle/boolean_cell_cycle-corrupted-f.lp -o real_models/lp/observations/tseries/sync/boolean_cell_cycle-obs.lp -i real_models/lp/corrupted/boolean_cell_cycle/inconsistencies/boolean_cell_cycle-corrupted-f-sync_inconsistency.lp -sync
+python .\simplifiedoptimized_repair.py -f real_models/lp/corrupted/boolean_cell_cycle/boolean_cell_cycle-corrupted-f.lp -o real_models/lp/observations/tseries/sync/boolean_cell_cycle-obs.lp -i real_models/lp/corrupted/boolean_cell_cycle/inconsistencies/boolean_cell_cycle-corrupted-f-sync_inconsistency.lp -sync
 
 #7 variables
-python .\repair.py -f simple_models/lp/corrupted/11/11-corrupted-f.lp -o simple_models/lp/observations/tseries/sync/11-obs.lp -i simple_models/lp/corrupted/11/inconsistencies/11-corrupted-f-sync_inconsistency.lp -sync
+python .\simplifiedoptimized_repair.py -f simple_models/lp/corrupted/11/11-corrupted-f.lp -o simple_models/lp/observations/tseries/sync/11-obs.lp -i simple_models/lp/corrupted/11/inconsistencies/11-corrupted-f-sync_inconsistency.lp -sync
 
 #8 variables
-python .\repair.py -f real_models/lp/corrupted/SP_1cell/SP_1cell-corrupted-f.lp -o real_models/lp/observations/tseries/sync/SP_1cell-obs.lp -i real_models/lp/corrupted/SP_1cell/inconsistencies/SP_1cell-corrupted-f-sync_inconsistency.lp -sync
+python .\simplifiedoptimized_repair.py -f real_models/lp/corrupted/SP_1cell/SP_1cell-corrupted-f.lp -o real_models/lp/observations/tseries/sync/SP_1cell-obs.lp -i real_models/lp/corrupted/SP_1cell/inconsistencies/SP_1cell-corrupted-f-sync_inconsistency.lp -sync
 '''
 
 
@@ -58,32 +62,26 @@ obsv_path = "simple_models/lp/observations/tseries/sync/8-obs.lp"
 incst_path = "simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-sync_inconsistency.lp"
 
 #Paths of encodings for obtaining inconsistent functions and total variables of each
-iftv_path = "encodings/repairs/iftv.lp"
+iftv_path = "old_attempts/encodings/repairs/simplifiedoptimized/iftv.lp"
 
 #Paths of encodings for generating nodes
-nodegen_path = "encodings/repairs/node_generator.lp"
+nodegen_path = "old_attempts/encodings/repairs/simplifiedoptimized/node_generator.lp"
 
 #Paths of encodings for filtering generated nodes
-ss_filternode_path = "encodings/repairs/filtering/node/ss_node_filter.lp"
-sync_filternode_path = "encodings/repairs/filtering/node/sync_node_filter.lp"
-async_filternode_path = "encodings/repairs/filtering/node/async_node_filter.lp"
+ss_filternode_path = "old_attempts/encodings/repairs/simplifiedoptimized/filtering/node/ss_node_filter.lp"
+sync_filternode_path = "old_attempts/encodings/repairs/simplifiedoptimized/filtering/node/sync_node_filter.lp"
+async_filternode_path = "old_attempts/encodings/repairs/simplifiedoptimized/filtering/node/async_node_filter.lp"
 
 #Paths of encodings for generating edges between nodes
-edgegen_path = "encodings/repairs/edge_generator.lp"
-
-#Path of encoding that gives node levels
-node_levelgen_path = "encodings/repairs/auxiliary/node_levels.lp"
-
-#Path of encoding that gives function levels
-func_level_path = "encodings/repairs/auxiliary/function_level.lp"
+edgegen_path = "old_attempts/encodings/repairs/simplifiedoptimized/edge_generator.lp"
 
 #Paths of encodings for generating functions
-funcgen_path = "encodings/repairs/func_generator.lp"
+funcgen_path = "old_attempts/encodings/repairs/simplifiedoptimized/func_generator.lp"
 
 #Paths of encodings for filtering generated functions
-ss_filter_path = "encodings/repairs/filtering/func/ss_func_filter.lp"
-sync_filter_path = "encodings/repairs/filtering/func/sync_func_filter.lp"
-async_filter_path = "encodings/repairs/filtering/func/async_func_filter.lp"
+ss_filter_path = "old_attempts/encodings/repairs/simplifiedoptimized/filtering/func/ss_func_filter.lp"
+sync_filter_path = "old_attempts/encodings/repairs/simplifiedoptimized/filtering/func/sync_func_filter.lp"
+async_filter_path = "old_attempts/encodings/repairs/simplifiedoptimized/filtering/func/async_func_filter.lp"
 
 
 #Mode flags 
@@ -572,56 +570,6 @@ def generateEdges(nodes_LP):
   printStatistics(ctl.statistics)
   return edges
 
-#Input: The logic programs containing the number of total variables, and the generated nodes
-#Purpose: Returns the level of each generated node
-def generateNodeLevels(iftvs_LP, nodes_LP):
-  clingo_args = ["0"]
-    
-  ctl = clingo.Control(arguments=clingo_args)
-
-  ctl.add("base", [], program=iftvs_LP)
-  ctl.add("base", [], program=nodes_LP)
-  ctl.load(node_levelgen_path)
-  
-
-  ctl.ground([("base", [])])
-  levels = []
-
-  with ctl.solve(yield_=True) as handle:
-    for model in handle:
-      levels.append(str(model).split(" "))
-  
-  return levels
-
-#Input: The logic programs containing the number of total variables, and the function to determine the level of
-#Purpose: Returns the level of the given function
-def generateFuncLevel(iftvs_LP, func_LP):
-  clingo_args = ["0"]
-    
-  ctl = clingo.Control(arguments=clingo_args)
-
-  ctl.add("base", [], program=iftvs_LP)
-  ctl.add("base", [], program=func_LP)
-  ctl.load(func_level_path)
-
-  ctl.ground([("base", [])])
-  levels = []
-
-  with ctl.solve(yield_=True) as handle:
-    for model in handle:
-      levels.append(str(model).split(" "))
-  
-  return levels
-
-'''
-def getAllLevels(nodes_LP, node_levels_LP):
-
-  levels = []
-  for i in range(1,total_variables):
-    for clause_number in range(): 
-'''
-
-
 #Input: The logic program containing information regarding the terms that can be used to create function candidates
 #Purpose: Generates all possible function candidates with the given logic progam
 def generateFunctions(original_LP,func,curated_LP,iftv_LP,nodes_LP,edges_LP):
@@ -698,11 +646,6 @@ if processed_ifts_output:
 
       if process_edges_output:
         printFuncStart()
-        node_levels_LP = generateNodeLevels(processed_ifts_output[func], process_nodes_output)
-        func_level_LP = generateFuncLevel(processed_ifts_output[func], original_LP[1])
-        #TODO all_levels = getAllLevels(process_nodes_output, node_levels_LP)
-        print(node_levels_LP)
-        print(func_level_LP)
         functions = generateFunctions(original_LP[0], func, curated_LP,
           processed_ifts_output[func], process_nodes_output, process_edges_output)
         process_functions_output = processFunctions(functions)
