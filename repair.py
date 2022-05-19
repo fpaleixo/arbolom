@@ -468,6 +468,81 @@ def processFunctions(functions):
 
 
 
+#-----Level search functions-----
+#TODO Inputs:
+#TODO Purpose:
+def findLevelCandidates(level):
+  generateLevelCandidates(level)
+  #TODO
+
+#TODO Inputs:
+#TODO Purpose:
+def findIdxOfLowestClause(level):
+  generateLevelCandidates(level)
+  #TODO
+
+
+#TODO Inputs:
+#TODO Purpose:
+#TODO test this using dummy sets with valid and invalid levels to see if it's working properly
+def getNextLevel(level):
+  current_level = level
+  exists = False
+
+  
+  while not exists:
+    add_clause = current_level.append(1)
+    exists = generateLevelCandidates(add_clause, False)
+
+    if not exists:
+      clause_to_increase_idx = findIdxOfLowestClause(level)
+
+      next_level = []
+      for idx in range(0, clause_to_increase_idx + 1):
+        next_level.append(current_level[idx])
+
+      next_level[clause_to_increase_idx] += 1
+      current_level = next_level
+      exists = generateLevelCandidates(current_level, False)
+  
+  return exists
+
+#TODO Inputs:
+#TODO Purpose:
+def getPreviousLevel(level):
+  previous_level = []
+  #TODO
+  return previous_level
+
+#TODO Inputs:
+#Purpose: Search for a viable candidate using function levels
+def levelSearch(func_level, nodes_LP, node_levels_LP):
+
+  found_candidates = False
+  next_level = func_level
+  previous_level = func_level
+
+  while not found_candidates:
+    
+    if next_level == previous_level: #first iteration
+      candidates = generateLevelCandidates(True)
+    
+    else :
+      candidates = findLevelCandidates(next_level)
+
+      if not candidates:
+        candidates = findLevelCandidates(previous_level)
+
+    if candidates:
+      found_candidates = candidates
+    else:
+      next_level = getNextLevel(next_level)
+      previous_level = getPreviousLevel(previous_level)
+
+  return found_candidates
+
+
+
 #-----Functions that solve LPs with clingo-----
 #Purpose: Obtains inconsistent functions, the variables and total number of variables of each function
 def generateInconsistentFunctionsAndTotalVars(incst_LP):
@@ -593,7 +668,7 @@ def generateNodeLevels(iftvs_LP, nodes_LP):
   
   return levels
 
-#Input: The logic programs containing the number of total variables, and the function to determine the level of
+#Inputs: The logic programs containing the number of total variables, and the function to determine the level of
 #Purpose: Returns the level of the given function
 def generateFuncLevel(iftvs_LP, func_LP):
   clingo_args = ["0"]
@@ -613,14 +688,12 @@ def generateFuncLevel(iftvs_LP, func_LP):
   
   return levels
 
-'''
-def getAllLevels(nodes_LP, node_levels_LP):
-
-  levels = []
-  for i in range(1,total_variables):
-    for clause_number in range(): 
-'''
-
+#TODO Inputs: 
+#TODO Purpose: 
+def generateLevelCandidates(level):
+  #TODO
+  candidates = []
+  return candidates
 
 #Input: The logic program containing information regarding the terms that can be used to create function candidates
 #Purpose: Generates all possible function candidates with the given logic progam
@@ -700,7 +773,6 @@ if processed_ifts_output:
         printFuncStart()
         node_levels_LP = generateNodeLevels(processed_ifts_output[func], process_nodes_output)
         func_level_LP = generateFuncLevel(processed_ifts_output[func], original_LP[1])
-        #TODO all_levels = getAllLevels(process_nodes_output, node_levels_LP)
         print(node_levels_LP)
         print(func_level_LP)
         functions = generateFunctions(original_LP[0], func, curated_LP,
