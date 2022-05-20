@@ -472,40 +472,56 @@ def processFunctions(functions):
 #TODO Inputs:
 #TODO Purpose:
 def findLevelCandidates(level):
-  generateLevelCandidates(level)
+  generateLevelCandidatesTest(level)
   #TODO
 
-#TODO Inputs:
-#TODO Purpose:
+#Inputs: A level, represented by an array of integers ordered in decreasing order
+#Purpose: Find the index of the clause with the lowest number of missing variables
 def findIdxOfLowestClause(level):
-  generateLevelCandidates(level)
-  #TODO
+  for idx in range(1, len(level)):
+    if level[idx] < level[idx-1]:
+      return idx
+  
+  return 0 #if all clauses have the same value, return the index of the first clause
 
 
-#TODO Inputs:
-#TODO Purpose:
-#TODO test this using dummy sets with valid and invalid levels to see if it's working properly
-def getNextLevel(level):
-  current_level = level
+#Inputs: A level, represented by an array of integers ordered in decreasing order, and the total number of variables to consider
+#Purpose: Takes a level and tries to find the next existing level
+def getNextLevel(level, total_variables):
+
+  if level == None: return None
+
+  current_level = level.copy()
   exists = False
 
-  
   while not exists:
-    add_clause = current_level.append(1)
-    exists = generateLevelCandidates(add_clause, False)
+    add_clause = current_level.copy()
+    add_clause.append(1) #start by calculating the next level by trying to add a new clause with 1 missing variable
+    exists = generateLevelCandidatesTest(add_clause)
 
-    if not exists:
-      clause_to_increase_idx = findIdxOfLowestClause(level)
+    #if that level does not exist but the second last clause has more than 1 missing variable, try to incrementally approach the new clause's 
+    #number of missing variables to that number
+    while not exists and add_clause[-1] < add_clause[-2]:  
+        add_clause[-1] += 1
+        exists = generateLevelCandidatesTest(add_clause)
 
-      next_level = []
-      for idx in range(0, clause_to_increase_idx + 1):
-        next_level.append(current_level[idx])
+    if exists:
+      return add_clause
+    
+    else: #if adding a new clause did not produce an existing level, then try to increment the level of an existing clause
+      if not exists: 
+        clause_to_increase_idx = findIdxOfLowestClause(current_level)
 
-      next_level[clause_to_increase_idx] += 1
-      current_level = next_level
-      exists = generateLevelCandidates(current_level, False)
-  
-  return exists
+        next_level = current_level[:clause_to_increase_idx + 1] #copy everything from the first clause to the clause to be incremented
+        next_level[clause_to_increase_idx] += 1
+
+        current_level = next_level
+        if current_level[0] == total_variables: #if the first clause has as many missing variables as the number of total variables, then we have exhausted all levels
+          return None
+
+        exists = generateLevelCandidatesTest(current_level)
+
+  return current_level
 
 #TODO Inputs:
 #TODO Purpose:
@@ -525,7 +541,7 @@ def levelSearch(func_level, nodes_LP, node_levels_LP):
   while not found_candidates:
     
     if next_level == previous_level: #first iteration
-      candidates = generateLevelCandidates(True)
+      candidates = generateLevelCandidatesTest(True)
     
     else :
       candidates = findLevelCandidates(next_level)
@@ -688,12 +704,42 @@ def generateFuncLevel(iftvs_LP, func_LP):
   
   return levels
 
-#TODO Inputs: 
-#TODO Purpose: 
-def generateLevelCandidates(level):
-  #TODO
+#Inputs: Level to test
+#Purpose: Used to test if level traversal is working as expected
+def generateLevelCandidatesTest(level):
   candidates = []
-  return candidates
+  ''' 4 vars
+  candidates.append([0])
+  candidates.append([1,1])
+  candidates.append([1,1,1])
+  candidates.append([1,1,1,1])
+  candidates.append([2,1])
+  candidates.append([2,1,1])
+  candidates.append([2,2])
+  candidates.append([2,2,1])
+  candidates.append([2,2,2])
+  candidates.append([2,2,2,2])
+  candidates.append([2,2,2,2,2])
+  candidates.append([2,2,2,2,2,2])
+  candidates.append([3,1])
+  candidates.append([3,2,2])
+  candidates.append([3,2,2,2])
+  candidates.append([3,3,2])
+  candidates.append([3,3,3,3])
+  '''
+
+  '''3 vars'''
+  candidates.append([0])
+  candidates.append([1,1])
+  candidates.append([1,1,1])
+  candidates.append([2,1])
+  candidates.append([2,2,2])
+
+
+  if level in candidates:
+    return True
+  else:
+    return False
 
 #Input: The logic program containing information regarding the terms that can be used to create function candidates
 #Purpose: Generates all possible function candidates with the given logic progam
@@ -734,6 +780,14 @@ def generateFunctions(original_LP,func,curated_LP,iftv_LP,nodes_LP,edges_LP):
 
 
 #-----Main-----
+'''
+level = [1,1]
+for i in range(0,16):
+  level = getNextLevel(level,3)
+  print(level)
+  print(i)
+'''
+
 if cmd_enabled:
   parseArgs()
 
@@ -781,6 +835,5 @@ if processed_ifts_output:
         printFuncEnd()
 
     printFuncRepairEnd(func)
-
   
     
