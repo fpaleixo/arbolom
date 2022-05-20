@@ -1,4 +1,5 @@
 import argparse, logging, clingo
+from math import comb
 
 #--Work in progress--
 #Usage: $python repair.py -f (FILENAME) -o (OBSERVATIONS) -i (INCONSISTENCIES) -stable -sync -async -nf
@@ -488,7 +489,6 @@ def findIdxOfLowestClause(level):
 #Inputs: A level, represented by an array of integers ordered in decreasing order, and the total number of variables to consider
 #Purpose: Takes a level and tries to find the next existing level
 def getNextLevel(level, total_variables):
-
   if level == None: return None
 
   current_level = level.copy()
@@ -523,12 +523,50 @@ def getNextLevel(level, total_variables):
 
   return current_level
 
-#TODO Inputs:
-#TODO Purpose:
-def getPreviousLevel(level):
-  previous_level = []
-  #TODO
-  return previous_level
+#Inputs: A level, represented by an array of integers ordered in decreasing order, and the total number of variables to consider
+#Purpose: Takes a level and tries to find the previous existing level
+def getPreviousLevel(level, total_variables):
+  if level == [0] or level == None: return None
+
+  current_level = level.copy()
+  exists = False
+
+  while not exists:
+    remove_clause = current_level.copy()
+    
+    #start by calculating the previous level by trying to remove the last clause if it has only 1 missing variable
+    if remove_clause[-1] == 1:
+      remove_clause.pop()
+
+      if len(remove_clause) == 1 and remove_clause[0] == 1: #if we only have one clause left and that clause has level 1, then we've reached the last level
+        exists = generateLevelCandidatesTest([0])
+        if not exists:
+          return None
+        else:
+          return [0]
+
+      exists = generateLevelCandidatesTest(remove_clause)
+
+      if exists:
+        return remove_clause
+      
+      else:
+        current_level = remove_clause
+
+    else: #if we were unable to remove the last clause, then decrease its level
+
+      current_level[-1] -= 1
+      #add the maximum amount of clauses with the level of the new lowest clause
+      #TODO perhaps implement a binary search of sorts, to avoid always exploring everything?
+      max_clauses = comb(total_variables, total_variables - current_level[0])
+
+      while len(current_level) != max_clauses:
+        current_level.append(current_level[-1])
+
+      exists = generateLevelCandidatesTest(current_level)
+
+  return current_level
+
 
 #TODO Inputs:
 #Purpose: Search for a viable candidate using function levels
@@ -708,7 +746,7 @@ def generateFuncLevel(iftvs_LP, func_LP):
 #Purpose: Used to test if level traversal is working as expected
 def generateLevelCandidatesTest(level):
   candidates = []
-  ''' 4 vars
+  ''' 4 vars  
   candidates.append([0])
   candidates.append([1,1])
   candidates.append([1,1,1])
@@ -781,11 +819,11 @@ def generateFunctions(original_LP,func,curated_LP,iftv_LP,nodes_LP,edges_LP):
 
 #-----Main-----
 '''
-level = [1,1]
+level = [2,2,2]
 for i in range(0,16):
-  level = getNextLevel(level,3)
+  #level = getNextLevel(level,4)
+  level = getPreviousLevel(level,3)
   print(level)
-  print(i)
 '''
 
 if cmd_enabled:
@@ -836,4 +874,3 @@ if processed_ifts_output:
 
     printFuncRepairEnd(func)
   
-    
