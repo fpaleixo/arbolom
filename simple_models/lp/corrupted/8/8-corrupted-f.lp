@@ -24,7 +24,6 @@ term(v1, 2, v3).
 term(v1, 3, v4).
 term(v1, 4, v3).
 term(v1, 4, v5).
-term(v1, 4, v3).
 term(v1, 4, v6).
 
 %Regulators of v2
