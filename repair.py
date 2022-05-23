@@ -2,9 +2,9 @@ import argparse, logging, clingo
 from math import comb
 
 #TODO LIST
-#TODO - figure out why it doesn't stop running for 6 variables testing scenario
-#TODO - Add function to combine multiple LPs into one, so that less arguments are passed between functions in the main
-#TODO - change name of main variables that are LPs to make it more legible
+#TODO check if all comments describing function inputs and purpose are correct
+#TODO separate functions into more scripts
+#TODO Improve efficiency of getPreviousLevel by introducing some sort of binary search 
 
 #--Work in progress--
 #Usage: $python repair.py -f (FILENAME) -o (OBSERVATIONS) -i (INCONSISTENCIES) -stable -sync -async -nf
@@ -236,6 +236,15 @@ def printFuncStart():
 def printFuncEnd():
   print("\n\033[1;32m ----FUNCTION GENERATION END----\033[0;37;40m")
 
+
+#---LP combiner---
+#Input: An array of strings, where each string is an LP
+#Purpose: Combines the LPs in the array into a single string (to avoid having to pass many LPs as different arguments)
+def combineLPs(LP_array):
+  resulting_LP = ""
+  for LP in LP_array:
+    resulting_LP += LP + "\n"
+  return resulting_LP
 
 
 #-----Functions that create the LPs to be used by clingo-----
@@ -513,7 +522,7 @@ def findIdxOfLowestClause(level):
 
 #Inputs: A level, represented by an array of integers ordered in decreasing order, and the total number of variables to consider
 #Purpose: Takes a level and tries to find the next existing level
-def getNextLevel(level, iftvs_LP, nodes_LP, edges_LP, node_levels_LP, total_variables):
+def getNextLevel(level, level_search_base_LP, total_variables):
   if level == None: return None
 
   current_level = level.copy()
@@ -521,14 +530,14 @@ def getNextLevel(level, iftvs_LP, nodes_LP, edges_LP, node_levels_LP, total_vari
 
   while not exists:
     add_clause = current_level.copy()
-    add_clause.append(1) #start by calculating the next level by trying to add a new clause with 1 missing variable
-    exists = generateLevelCandidates(iftvs_LP, nodes_LP, edges_LP, node_levels_LP, getLevelLP(add_clause), all_candidates=False)
+    add_clause.append(1) #start by calculating the next level by trying to add a new clause with 1 missing variable~
+    exists = generateLevelCandidates(level_search_base_LP, getLevelLP(add_clause))
 
     #if that level does not exist but the second last clause has more than 1 missing variable, try to incrementally approach the new clause's 
     #number of missing variables to that number
     while not exists and add_clause[-1] < add_clause[-2]:  
         add_clause[-1] += 1
-        exists = generateLevelCandidates(iftvs_LP, nodes_LP, edges_LP, node_levels_LP, getLevelLP(add_clause), all_candidates=False)
+        exists = generateLevelCandidates(level_search_base_LP, getLevelLP(add_clause))
 
     if exists:
       return add_clause
@@ -544,13 +553,13 @@ def getNextLevel(level, iftvs_LP, nodes_LP, edges_LP, node_levels_LP, total_vari
         if current_level[0] == total_variables: #if the first clause has as many missing variables as the number of total variables, then we have exhausted all levels
           return None
 
-        exists = generateLevelCandidates(iftvs_LP, nodes_LP, edges_LP, node_levels_LP, getLevelLP(current_level), all_candidates=False)
+        exists = generateLevelCandidates(level_search_base_LP, getLevelLP(current_level))
 
   return current_level
 
 #Inputs: A level, represented by an array of integers ordered in decreasing order, and the total number of variables to consider
 #Purpose: Takes a level and tries to find the previous existing level
-def getPreviousLevel(level, iftvs_LP, nodes_LP, edges_LP, node_levels_LP, total_variables):
+def getPreviousLevel(level, level_search_base_LP, total_variables):
   if level == [0] or level == None: return None
 
   current_level = level.copy()
@@ -564,13 +573,13 @@ def getPreviousLevel(level, iftvs_LP, nodes_LP, edges_LP, node_levels_LP, total_
       remove_clause.pop()
 
       if len(remove_clause) == 1 and remove_clause[0] == 1: #if we only have one clause left and that clause has level 1, then we've reached the last level
-        exists = generateLevelCandidates(iftvs_LP, nodes_LP, edges_LP, node_levels_LP, getLevelLP([0]), all_candidates=False)
+        exists = generateLevelCandidates(level_search_base_LP, getLevelLP([0]))
         if not exists:
           return None
         else:
           return [0]
       
-      exists = generateLevelCandidates(iftvs_LP, nodes_LP, edges_LP, node_levels_LP, getLevelLP(remove_clause), all_candidates=False)
+      exists = generateLevelCandidates(level_search_base_LP, getLevelLP(remove_clause))
 
       if exists:
         return remove_clause
@@ -579,7 +588,7 @@ def getPreviousLevel(level, iftvs_LP, nodes_LP, edges_LP, node_levels_LP, total_
         current_level = remove_clause
 
     else: #if we were unable to remove the last clause, then decrease its level
-
+      
       current_level[-1] -= 1
       #add the maximum amount of clauses with the level of the new lowest clause
       #TODO perhaps implement a binary search of sorts, to avoid always exploring everything?
@@ -588,7 +597,7 @@ def getPreviousLevel(level, iftvs_LP, nodes_LP, edges_LP, node_levels_LP, total_
       while len(current_level) != max_clauses:
         current_level.append(current_level[-1])
 
-      exists = generateLevelCandidates(iftvs_LP, nodes_LP, edges_LP, node_levels_LP, getLevelLP(current_level), all_candidates=False)
+      exists = generateLevelCandidates(level_search_base_LP, getLevelLP(current_level))
 
   return current_level
 
@@ -596,7 +605,7 @@ def getPreviousLevel(level, iftvs_LP, nodes_LP, edges_LP, node_levels_LP, total_
 #TODO shorten this Inputs: The compound whose function is inconsistent, an LP with the original LP, the curated observations, the iftvs_LP, the nodes_LP and the node_levels LP,
 #and lastly  the level of the inconsistent function and total unique variables it uses
 #Purpose: Search for a viable candidate using function levels
-def levelSearch(func, original_LP, curated_LP, func_level, iftvs_LP, nodes_LP, edges_LP, node_levels_LP, total_variables):
+def levelSearch(func, func_level, total_variables, original_LP, curated_LP, level_search_base_LP):
 
   found_candidates = None
   found_candidates_level = None
@@ -606,22 +615,22 @@ def levelSearch(func, original_LP, curated_LP, func_level, iftvs_LP, nodes_LP, e
   while not found_candidates:
     
     if next_level == previous_level: #first iteration
-      found_candidates = generateLevelCandidates(iftvs_LP, nodes_LP, edges_LP, node_levels_LP, getLevelLP(next_level), True, func, original_LP, curated_LP)
+      found_candidates = generateLevelCandidates(level_search_base_LP, getLevelLP(next_level), func, original_LP, curated_LP, all_candidates=True)
       found_candidates_level = next_level
 
     else:
       if next_level:
-        found_candidates = generateLevelCandidates(iftvs_LP, nodes_LP, edges_LP, node_levels_LP, getLevelLP(next_level), True, func, original_LP, curated_LP)
+        found_candidates = generateLevelCandidates(level_search_base_LP, getLevelLP(next_level), func, original_LP, curated_LP, all_candidates=True)
         found_candidates_level = next_level
 
       if not found_candidates and previous_level:
-        found_candidates = generateLevelCandidates(iftvs_LP, nodes_LP, edges_LP, node_levels_LP, getLevelLP(previous_level), True, func, original_LP, curated_LP)
+        found_candidates = generateLevelCandidates(level_search_base_LP, getLevelLP(previous_level), func, original_LP, curated_LP, all_candidates=True)
         found_candidates_level = previous_level
 
     if not found_candidates:
       
-      next_level = getNextLevel(next_level, iftvs_LP, nodes_LP, edges_LP, node_levels_LP, total_variables)
-      previous_level = getPreviousLevel(previous_level, iftvs_LP, nodes_LP, edges_LP, node_levels_LP, total_variables)
+      next_level = getNextLevel(next_level, level_search_base_LP, total_variables)
+      previous_level = getPreviousLevel(previous_level, level_search_base_LP, total_variables)
 
       print("Trying next level: ", next_level)
       print("Trying previous level: ", previous_level )
@@ -815,7 +824,9 @@ def generateLevelCandidatesTest(level):
   else:
     return False
 
-def generateLevelCandidates(iftvs_LP, nodes_LP, edges_LP, node_levels_LP, level_LP, all_candidates, func=None, original_LP=None, curated_LP=None):
+#TODO Inputs:
+#TODO Purpose:
+def generateLevelCandidates(level_search_base_LP, level_LP, func=None, original_LP=None, curated_LP=None, all_candidates=False):
   clingo_args = []
 
   if all_candidates:
@@ -823,10 +834,7 @@ def generateLevelCandidates(iftvs_LP, nodes_LP, edges_LP, node_levels_LP, level_
     
   ctl = clingo.Control(arguments=clingo_args)
 
-  ctl.add("base", [], program=iftvs_LP)
-  ctl.add("base", [], program=nodes_LP)
-  ctl.add("base", [], program=edges_LP)
-  ctl.add("base", [], program=node_levels_LP)
+  ctl.add("base", [], program=level_search_base_LP)
   ctl.add("base", [], program=level_LP)
   ctl.load(funcgen_path)
 
@@ -854,14 +862,6 @@ def generateLevelCandidates(iftvs_LP, nodes_LP, edges_LP, node_levels_LP, level_
 
 
 #-----Main-----
-'''
-level = [2,2,2]
-for i in range(0,16):
-  #level = getNextLevel(level,4)
-  level = getPreviousLevel(level,3)
-  print(level)
-'''
-
 if cmd_enabled:
   parseArgs()
 
@@ -869,47 +869,44 @@ printIFTVStart()
 incst_LP, curated_LP = getInconsistenciesAndCuratedLP()
 
 iftvs = generateInconsistentFunctionsAndTotalVars(incst_LP)
-processed_ifts_output, total_vars = processIFTVs(iftvs)
+iftvs_LP, total_vars = processIFTVs(iftvs)
 printIFTVEnd()
 
-if processed_ifts_output:
-  for func in processed_ifts_output.keys():
+if iftvs_LP:
+  for func in iftvs_LP.keys():
 
     printFuncRepairStart(func)
 
     original_LP = getOriginalModelLP(func)
 
     printNodeStart()
-    nodes = generateNodes(processed_ifts_output[func])
-    process_nodes_output = processNodes(nodes)
+    nodes = generateNodes(iftvs_LP[func])
+    nodes_LP = processNodes(nodes)
     printNodeEnd()
 
-    if process_nodes_output:
+    if nodes_LP:
 
       if toggle_filtering:
         printNodeFilterStart()
-        filtered_nodes = filterNodes(func, curated_LP, original_LP[0], process_nodes_output)
-        process_nodes_output = processFilteredNodes(filtered_nodes)
+        filtered_nodes = filterNodes(func, curated_LP, original_LP[0], nodes_LP)
+        nodes_LP = processFilteredNodes(filtered_nodes)
         printNodeFilterEnd()
 
       printEdgeStart()
-      edges = generateEdges(process_nodes_output)
-      process_edges_output = processEdges(edges)
+      edges = generateEdges(nodes_LP)
+      edges_LP = processEdges(edges)
       printEdgeEnd()
 
-      if process_edges_output:
+      if edges_LP:
         printFuncStart()
-        node_levels = generateNodeLevels(processed_ifts_output[func], process_nodes_output)
-        func_level = generateFuncLevel(processed_ifts_output[func], original_LP[1])
+        node_levels = generateNodeLevels(iftvs_LP[func], nodes_LP)
+        func_level = generateFuncLevel(iftvs_LP[func], original_LP[1])
         node_levels_LP = getNodeLevelsLP(node_levels)
 
-        #nl = getNextLevel(formatFuncLevel(func_level), processed_ifts_output[func], process_nodes_output, process_edges_output, node_levels_LP, total_vars[func])
-        #pl = getPreviousLevel(formatFuncLevel(func_level), processed_ifts_output[func], process_nodes_output, process_edges_output, node_levels_LP, total_vars[func])
-        #print(pl)
+        #LP containing LPs with variables, nodes, edges and node levels
+        level_search_base_LP = combineLPs([iftvs_LP[func], nodes_LP, edges_LP, node_levels_LP])
 
-        functions, level = levelSearch(func, original_LP[0], curated_LP, formatFuncLevel(func_level), processed_ifts_output[func], process_nodes_output, 
-          process_edges_output, node_levels_LP, total_vars[func])
-
+        functions, level = levelSearch(func, formatFuncLevel(func_level), total_vars[func], original_LP[0], curated_LP, level_search_base_LP)
         processFunctions(functions)
 
         print("Original function level: ",formatFuncLevel(func_level))
