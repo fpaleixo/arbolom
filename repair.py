@@ -1,9 +1,10 @@
 import argparse, logging, clingo
+from aux_scripts.level_search import *
+from aux_scripts.repair_prints import *
 from math import comb
 
+
 #TODO LIST
-#TODO check if all comments describing function inputs and purpose are correct
-#TODO separate functions into more scripts
 #TODO Improve efficiency of getPreviousLevel by introducing some sort of binary search 
 
 #--Work in progress--
@@ -102,16 +103,6 @@ toggle_async = False
 #Parser (will only be used if command-line usage is enabled above)
 parser = None
 args = None
-if(cmd_enabled):
-  parser = argparse.ArgumentParser(description="Repair an inconsistent Boolean logical model in the BCF written in lp, given a set of observations and inconsistent compounds, both written in lp.")
-  parser.add_argument("-f", "--model_to_repair", help="Path to model to check the consistency of.", required=True)
-  parser.add_argument("-o", "--observations_to_use", help="Path to observations obtained from the original model.", required=True)
-  parser.add_argument("-i", "--inconsistencies", help="Path to inconsistencies obtained from the consistency checking phase.", required=True)
-  parser.add_argument("-stable", "--stable_state", action='store_true', help="Flag to check the consistency using stable state observations (default).")
-  parser.add_argument("-sync", "--synchronous", action='store_true', help="Flag to check the consistency using synchronous observations (default is stable state).")
-  parser.add_argument("-async", "--asynchronous", action='store_true', help="Flag to check the consistency using asynchronous observations (default is stable state).")
-  parser.add_argument("-nf", "--no_filtering", action='store_true', help="Flag to disable the filtering of function candidates (use it to obtain all candidates).")
-  args = parser.parse_args()
 
 #Global logger (change logging.(LEVEL) to desired (LEVEL) )
 logging.basicConfig()
@@ -122,10 +113,12 @@ global_logger.setLevel(logging.DEBUG)
 
 #-----Auxiliary Functions-----
 #---Argument parser---
-#Purpose: Parses the argument regarding which file to generate observations for.
+#Purpose: Parses the arguments of function repair
 def parseArgs():
   logger = logging.getLogger("parser")
   logger.setLevel(logging.DEBUG)
+
+  global parser, args
 
   parser = argparse.ArgumentParser(description="Repair an inconsistent Boolean logical model in the BCF written in lp, given a set of observations and inconsistent compounds, both written in lp.")
   parser.add_argument("-f", "--model_to_repair", help="Path to model to check the consistency of.", required=True)
@@ -188,54 +181,6 @@ def printStatistics(stats_dict):
   print("CPU Time: "+str(times["cpu"])+"s")
   print("\n")
 
-#Purpose: Prints the initial node generation phase message
-def printFuncRepairStart(current_function):
-  print(f"\033[1;32m ----{current_function} REPAIR START----\033[0;37;40m")
-
-#Purpose: Prints the initial node generation phase message
-def printFuncRepairEnd(current_function):
-  print(f"\033[1;32m ----{current_function} REPAIR END----\033[0;37;40m")
-
-#Purpose: Prints the initial iftv generation phase message
-def printIFTVStart():
-  print("\033[1;32m ----IFTV GENERATION START----\033[0;37;40m")
-
-#Purpose: Prints the final iftv generation phase message
-def printIFTVEnd():
-  print("\033[1;32m ----IFTV GENERATION END----\033[0;37;40m")
-
-#Purpose: Prints the initial node generation phase message
-def printNodeStart():
-  print("\033[1;32m ----NODE GENERATION START----\033[0;37;40m")
-
-#Purpose: Prints the final node generation phase message
-def printNodeEnd():
-  print("\n\033[1;32m ----NODE GENERATION END----\033[0;37;40m\n")
-
-#Purpose: Prints the initial node filter phase message
-def printNodeFilterStart():
-  print("\033[1;32m ----NODE FILTER START----\033[0;37;40m")
-
-#Purpose: Prints the final node filter phase message
-def printNodeFilterEnd():
-  print("\n\033[1;32m ----NODE FILTER END----\033[0;37;40m\n")
-
-#Purpose: Prints the initial edge generation phase message
-def printEdgeStart():
-  print("\033[1;32m ----EDGE GENERATION START----\033[0;37;40m")
-
-#Purpose: Prints the final edge generation phase message
-def printEdgeEnd():
-  print("\n\033[1;32m ----EDGE GENERATION END----\033[0;37;40m\n")
-
-#Purpose: Prints the initial function generation phase message
-def printFuncStart():
-  print("\033[1;32m ----FUNCTION GENERATION START----\033[0;37;40m")
-
-#Purpose: Prints the final function generation phase message
-def printFuncEnd():
-  print("\n\033[1;32m ----FUNCTION GENERATION END----\033[0;37;40m")
-
 
 #---LP combiner---
 #Input: An array of strings, where each string is an LP
@@ -249,7 +194,7 @@ def combineLPs(LP_array):
 
 #-----Functions that create the LPs to be used by clingo-----
 
-#Purpose: Separates the inconsistencies from the curated observations that are outputted from the consistency checking phase
+#Purpose: Separates the inconsistencies from the curated observations that are outputted as an LP from the consistency checking phase
 def getInconsistenciesAndCuratedLP():
   inconsistencies = open(incst_path, 'r')
   lines = inconsistencies.readlines()
@@ -266,12 +211,11 @@ def getInconsistenciesAndCuratedLP():
   return incst_LP, curated_LP
 
 #Input: The nodes generated from clingo
-#Purpose: Creates the logic program that will be used to create nodes
+#Purpose: Creates a map of logic programs, indexed by inconsistent functions. Each value contains a string with the variables and total number of variables
+# of the respective inconsistent function.
 def getIftvsLPAndTotalVars(iftvs):
   result_LP = {}
   total_vars = {}
-
-  print(iftvs)
 
   for iftv in iftvs:
     current_LP = ""
@@ -285,11 +229,10 @@ def getIftvsLPAndTotalVars(iftvs):
     result_LP[var_name] = current_LP
     total_vars[var_name] = int(iftv[-1].split(')')[0].split('(')[1])
 
-    print(result_LP[var_name])
   return result_LP, total_vars
 
 #Input: The nodes generated from clingo
-#Purpose: Creates the logic program that will be used to establish relations between nodes
+#Purpose: Creates a logic program containing information about nodes (specifically, ID and variables contained within)
 def getNodesLP(nodes):
   result_LP = ""
   current_node_id = 1
@@ -307,7 +250,7 @@ def getNodesLP(nodes):
   return result_LP
 
 #Input: The nodes filtered from clingo
-#Purpose: Creates the logic program containing those nodes
+#Purpose: Creates a logic program containing those filtered nodes
 def getFilteredNodesLP(nodes):
   result_LP = ""
   
@@ -321,7 +264,7 @@ def getFilteredNodesLP(nodes):
   return result_LP
 
 #Input: The edges generated from clingo
-#Purpose: Creates the logic program that will be used to create function candidates
+#Purpose: Creates a logic program using the edge predicate, which connects nodes to other nodes that contain them
 def getEdgesLP(edges):
   result_LP = ""
   
@@ -331,7 +274,8 @@ def getEdgesLP(edges):
   return result_LP
 
 #Input: Inconsistent function
-#Purpose: Extracts from the original model everything except the part where the inconsistent regulatory function func is defined
+#Purpose: Extracts everything from the original model except the part where the inconsistent regulatory function func is defined
+# (so that clingo can use that original model with the candidate functions it generates)
 def getOriginalModelLP(func):
   original = open(model_path, 'r')
   lines = original.readlines()
@@ -346,8 +290,8 @@ def getOriginalModelLP(func):
 
   return original_LP, inconsistent_func_LP
 
-#Input: Inconsistent function
-#Purpose: Extracts from the original model everything except the part where the inconsistent regulatory function func is defined
+#Input: Node levels, as outputted from clingo
+#Purpose: Transforms clingo's output into an LP
 def getNodeLevelsLP(node_levels):
   node_levels_LP = ""
 
@@ -371,7 +315,7 @@ def getLevelLP(level):
 #-----Functions that process output from clingo-----
 #Input: The generated iftv output from clingo
 #Purpose: Processes clingo's iftv output by creating an LP with them, forming a map with inconsistent functions as keys and the respective
-#LP containing the variables and total number of variables as value 
+# LP containing the variables and total number of variables as value 
 def processIFTVs(iftvs):
   if not iftvs:
     print("No answers sets could be found	\u2755 there must be something wrong with the encoding...")
@@ -462,20 +406,8 @@ def processEdges(edges):
   else: 
     print("No edges could be found \u274C")
 
-#Input: Function level obtained from clingo
-#Purpose: Function level formatted to array
-def formatFuncLevel(func_level):
-  func_level_formatted = []
-
-  for clause in func_level[0]:
-    arguments = clause.split(')')[0].split('(')[1].split(',')
-    clause_level = arguments[1]
-    func_level_formatted.append(int(clause_level))
-
-  return sorted(func_level_formatted, reverse=True)
-
 #Input: The function candidates output from clingo
-#Purpose: Processes clingo's function candidates output by creating a map with it and printing it
+#Purpose: Processes clingo's function candidates output by printing them in a more readable manner
 def processFunctions(functions):
   if not functions:
     print("No answers sets could be found	\u2755 there must be something wrong with the encoding...")
@@ -488,7 +420,6 @@ def processFunctions(functions):
     if(total_candidates < 500):
       
       for candidate_idx in range(0,total_candidates):
-        organized_candidates = {}
         current_candidate = functions[candidate_idx]
         
         print(f"Candidate {candidate_idx + 1}: ")
@@ -507,20 +438,8 @@ def processFunctions(functions):
   else: 
     print("No function candidates could be found \u274C") 
 
-
-
-#-----Level search functions-----
-#Inputs: A level, represented by an array of integers ordered in decreasing order
-#Purpose: Find the index of the clause with the lowest number of missing variables
-def findIdxOfLowestClause(level):
-  for idx in range(1, len(level)):
-    if level[idx] < level[idx-1]:
-      return idx
-  
-  return 0 #if all clauses have the same value, return the index of the first clause
-
-
-#Inputs: A level, represented by an array of integers ordered in decreasing order, and the total number of variables to consider
+#Inputs: A level, represented by an array of integers ordered in decreasing order, 
+# the LP containing base information for level search, and the total number of variables to consider
 #Purpose: Takes a level and tries to find the next existing level
 def getNextLevel(level, level_search_base_LP, total_variables):
   if level == None: return None
@@ -557,7 +476,8 @@ def getNextLevel(level, level_search_base_LP, total_variables):
 
   return current_level
 
-#Inputs: A level, represented by an array of integers ordered in decreasing order, and the total number of variables to consider
+#Inputs: A level, represented by an array of integers ordered in decreasing order, 
+# the LP containing base information for level search, and the total number of variables to consider
 #Purpose: Takes a level and tries to find the previous existing level
 def getPreviousLevel(level, level_search_base_LP, total_variables):
   if level == [0] or level == None: return None
@@ -602,8 +522,8 @@ def getPreviousLevel(level, level_search_base_LP, total_variables):
   return current_level
 
 
-#TODO shorten this Inputs: The compound whose function is inconsistent, an LP with the original LP, the curated observations, the iftvs_LP, the nodes_LP and the node_levels LP,
-#and lastly  the level of the inconsistent function and total unique variables it uses
+#Inputs: The compound whose function is inconsistent, the level of that function, the total number of variables to consider,
+# an LP with the original LP, the curated observations, and the LP containing base information for level search
 #Purpose: Search for a viable candidate using function levels
 def levelSearch(func, func_level, total_variables, original_LP, curated_LP, level_search_base_LP):
 
@@ -644,6 +564,7 @@ def levelSearch(func, func_level, total_variables, original_LP, curated_LP, leve
 
 
 #-----Functions that solve LPs with clingo-----
+#Input: The LP containing information regarding the inconsistent functions
 #Purpose: Obtains inconsistent functions, the variables and total number of variables of each function
 def generateInconsistentFunctionsAndTotalVars(incst_LP):
   clingo_args = ["0"]
@@ -692,18 +613,20 @@ def generateNodes(iftvs_LP):
   printStatistics(ctl.statistics)
   return nodes
 
-#Inputs: The compound with the inconsistent function and the LPs with the original functions minus the inconsistent function, and the generated nodes
-#Purpose: Filters out nodes that produce 1s when 0s are expected
-def filterNodes(func, incst_LP, original_LP, nodes_LP):
+#Inputs: The compound with the inconsistent function and the LPs with the curated observations,
+# the original functions minus the inconsistent function, and the generated nodes
+#Purpose: Filters out nodes that produce 1s when 0s are expected (using these nodes in functions would be guaranteed)
+# to produce wrong results)
+def filterNodes(func, curated_LP, original_LP, nodes_LP):
   clingo_args = ["0", f"-c compound={func}"]
   if nodefilter_debug_toggled:
     clingo_args.append("--output-debug=text")
 
   ctl = clingo.Control(arguments=clingo_args)
 
-  ctl.add("base", [], program=incst_LP)
+  ctl.add("base", [], program=curated_LP)
   ctl.add("base", [], program=original_LP)
-  ctl.add("base",[], program=nodes_LP)
+  ctl.add("base", [], program=nodes_LP)
 
   if toggle_stable_state:
     ctl.load(ss_filternode_path)
@@ -724,6 +647,7 @@ def filterNodes(func, incst_LP, original_LP, nodes_LP):
   printStatistics(ctl.statistics)
   return nodes
 
+#Input: The generated nodes LP
 #Purpose: Generates edges between nodes
 def generateEdges(nodes_LP):
   clingo_args = ["0"]
@@ -787,45 +711,10 @@ def generateFuncLevel(iftvs_LP, func_LP):
   
   return levels
 
-#Inputs: Level to test
-#Purpose: Used to test if level traversal is working as expected
-def generateLevelCandidatesTest(level):
-  candidates = []
-  ''' 4 vars  
-  candidates.append([0])
-  candidates.append([1,1])
-  candidates.append([1,1,1])
-  candidates.append([1,1,1,1])
-  candidates.append([2,1])
-  candidates.append([2,1,1])
-  candidates.append([2,2])
-  candidates.append([2,2,1])
-  candidates.append([2,2,2])
-  candidates.append([2,2,2,2])
-  candidates.append([2,2,2,2,2])
-  candidates.append([2,2,2,2,2,2])
-  candidates.append([3,1])
-  candidates.append([3,2,2])
-  candidates.append([3,2,2,2])
-  candidates.append([3,3,2])
-  candidates.append([3,3,3,3])
-  '''
-
-  '''3 vars'''
-  candidates.append([0])
-  candidates.append([1,1])
-  candidates.append([1,1,1])
-  candidates.append([2,1])
-  candidates.append([2,2,2])
-
-
-  if level in candidates:
-    return True
-  else:
-    return False
-
-#TODO Inputs:
-#TODO Purpose:
+#Inputs: LPs containing the base information that level search requires, the desired levelof function to generate,
+# and (optionally, if all candidates are to be generated) the inconsistent compound, the original model minus that compound's function,
+# the curated observations and, lastly, a boolean specifying whether all candidates are to be generated or not  
+#Purpose: Creates function candidates with the same level as level_LP
 def generateLevelCandidates(level_search_base_LP, level_LP, func=None, original_LP=None, curated_LP=None, all_candidates=False):
   clingo_args = []
 
