@@ -1,4 +1,4 @@
-import argparse, logging, clingo
+import argparse, logging, clingo, time
 from aux_scripts.level_search import *
 from aux_scripts.repair_prints import *
 from math import comb
@@ -88,13 +88,11 @@ ss_filter_path = "encodings/repairs/filtering/func/ss_func_filter.lp"
 sync_filter_path = "encodings/repairs/filtering/func/sync_func_filter.lp"
 async_filter_path = "encodings/repairs/filtering/func/async_func_filter.lp"
 
-
 #Mode flags 
 toggle_filtering = True
 toggle_stable_state = True
 toggle_sync = False
 toggle_async = False
-
 
 #Parser (will only be used if command-line usage is enabled above)
 parser = None
@@ -105,6 +103,9 @@ logging.basicConfig()
 global_logger = logging.getLogger("global")
 global_logger.setLevel(logging.DEBUG)
 
+#Variables for statistics
+levels_searched = 0
+clingo_cumulative_level_search_time = 0
 
 
 #-----Auxiliary Functions-----
@@ -314,6 +315,8 @@ def getLevelLP(level):
 def getNextLevel(level, level_search_base_LP, total_variables):
   if level == None: return None
 
+  global levels_searched
+
   current_level = level.copy()
 
   if current_level == [0]: #level [0] always has [1,1] as next level
@@ -327,6 +330,7 @@ def getNextLevel(level, level_search_base_LP, total_variables):
     if(len(current_level) != max_clauses):
       current_level.append(1) #start by calculating the next level by trying to add a new clause with 1 missing variable
       exists = generateLevelCandidates(level_search_base_LP, getLevelLP(current_level))
+      levels_searched += 1
 
     if exists:
       return current_level
@@ -351,12 +355,15 @@ def getNextLevel(level, level_search_base_LP, total_variables):
           current_level = next_level
 
           exists = generateLevelCandidates(level_search_base_LP, getLevelLP(current_level))
+          levels_searched += 1
 
   return current_level
 
 #Inputs: level, the level obtained from lowering the last term's number of missing variables to 1, the LP containing base information for level search, and the total number of variables
 #Purpose: Calculates what the highest level is taking the given level as a starting point, using a binary search
 def getLevelBinarySearch(level, level_search_base_LP, total_variables):
+
+  global levels_searched
 
   minimum_level = level.copy()
   maximum_level = minimum_level.copy()
@@ -368,6 +375,7 @@ def getLevelBinarySearch(level, level_search_base_LP, total_variables):
     maximum_level.append(maximum_level[-1])
 
   exists = generateLevelCandidates(level_search_base_LP, getLevelLP(minimum_level))
+  levels_searched += 1
 
   if not exists: #if the smallest level possible doesn't exist, return the minimum and exists = False
     return minimum_level, False
@@ -386,6 +394,7 @@ def getLevelBinarySearch(level, level_search_base_LP, total_variables):
     mid_level = maximum_level[:total_mid_terms]
 
     exists = generateLevelCandidates(level_search_base_LP, getLevelLP(mid_level))
+    levels_searched += 1
 
     previous_min = minimum_term_number
     previous_max = maximum_term_number
@@ -403,6 +412,8 @@ def getLevelBinarySearch(level, level_search_base_LP, total_variables):
 def getPreviousLevel(level, level_search_base_LP, total_variables):
   if level == [0] or level == None: return None
 
+  global levels_searched
+
   current_level = level.copy()
   exists = False
 
@@ -415,14 +426,15 @@ def getPreviousLevel(level, level_search_base_LP, total_variables):
 
       if len(remove_clause) == 1 and remove_clause[0] == 1: #if we only have one clause left and that clause has level 1, then we've reached the last level
         exists = generateLevelCandidates(level_search_base_LP, getLevelLP([0]))
-        #print([0])
+        levels_searched += 1
+
         if not exists:
           return None
         else:
           return [0]
       
       exists = generateLevelCandidates(level_search_base_LP, getLevelLP(remove_clause))
-      #print(remove_clause)
+      levels_searched += 1
 
       if exists:
         return remove_clause
@@ -444,7 +456,7 @@ def getPreviousLevel(level, level_search_base_LP, total_variables):
           current_level.append(current_level[-1])
 
         exists = generateLevelCandidates(level_search_base_LP, getLevelLP(current_level))
-        #print(current_level)
+        levels_searched += 1
 
   return current_level
 
@@ -476,15 +488,12 @@ def levelSearch(func, func_level, total_variables, original_LP, curated_LP, leve
 
     if not found_candidates:
       
-      #TODO: fix the algorithm, currently we're seaerching for the next existing level and previous existing level and then testing,
-      #TODO what we should be doing is seeing if the immediate next level exists, seeing if the immediate previous level exists, and testing none, one or both levels
-      #TODO depending on which exist, and then go for the immediate next and immediate previous levels from those, repeating the process until we find a candidate
       next_level = getNextLevel(next_level, level_search_base_LP, total_variables)
       previous_level = getPreviousLevel(previous_level, level_search_base_LP, total_variables)
 
-      print("Trying next level: ", next_level)
-      print("Trying previous level: ", previous_level )
-      print()
+      #print("Trying next level: ", next_level)
+      #print("Trying previous level: ", previous_level )
+      #print()
 
       if next_level == None and previous_level == None: #If we have run out of levels, no candidates could be found
         return None
@@ -715,7 +724,7 @@ def generateEdges(nodes_LP):
   ctl = clingo.Control(arguments=clingo_args)
 
   ctl.load(edgegen_path)
-  ctl.add("base",[],program=nodes_LP)
+  ctl.add("base", [], program=nodes_LP)
 
   print("Starting edge generation \u23F1")
   ctl.ground([("base", [])])
@@ -804,6 +813,9 @@ def generateLevelCandidates(level_search_base_LP, level_LP, func=None, original_
     for model in handle:
       functions.append(str(model).split(" "))
   
+  global clingo_cumulative_level_search_time
+  clingo_cumulative_level_search_time += float(ctl.statistics["summary"]["times"]["total"])
+  
   return functions
 
 
@@ -853,8 +865,17 @@ if iftvs_LP:
         #LP containing LPs with variables, nodes, edges and node levels
         level_search_base_LP = combineLPs([iftvs_LP[func], nodes_LP, edges_LP, node_levels_LP])
 
+        start_time = time.time()
         functions, level = levelSearch(func, formatFuncLevel(func_level), total_vars[func], original_LP[0], curated_LP, level_search_base_LP)
+        end_time = time.time()
         processFunctions(functions)
+
+        print("<Level Search Statistics>")
+        print(f"Total level search time taken: {end_time-start_time}s")
+        print(f"Clingo total solving time: {clingo_cumulative_level_search_time}s")
+        print(f"Levels searched: {levels_searched}")
+
+        print()
 
         print("Original function level: ",formatFuncLevel(func_level))
         print("Closest candidate(s) function level: ", level)
