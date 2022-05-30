@@ -307,6 +307,191 @@ def getLevelLP(level):
   return clause_levels_LP
 
 
+#-----Level search functions-----
+#Inputs: A level, represented by an array of integers ordered in decreasing order, 
+# the LP containing base information for level search, and the total number of variables to consider
+#Purpose: Takes a level and tries to find the next existing level
+def getNextLevel(level, level_search_base_LP, total_variables):
+  if level == None: return None
+
+  current_level = level.copy()
+
+  if current_level == [0]: #level [0] always has [1,1] as next level
+      current_level = [1]
+
+  exists = False
+
+  max_clauses = comb(total_variables, total_variables - current_level[0])
+     
+  while not exists:
+    if(len(current_level) != max_clauses):
+      current_level.append(1) #start by calculating the next level by trying to add a new clause with 1 missing variable
+      exists = generateLevelCandidates(level_search_base_LP, getLevelLP(current_level))
+
+    if exists:
+      return current_level
+    
+    else: #if adding a new clause did not produce an existing level, then try to increment the level of an existing clause
+      if not exists: 
+        clause_to_increase_idx = findIdxOfLowestClause(current_level)
+
+        if clause_to_increase_idx == 0: #if we're increasing the first clause
+          next_level = [current_level[0] + 1]
+          current_level = next_level
+
+          if current_level[0] == total_variables: #if the first clause has as many missing variables as the number of total variables, then we have exhausted all levels
+            return None
+
+          max_clauses = comb(total_variables, total_variables - current_level[0])
+        
+        else:
+          next_level = current_level[:clause_to_increase_idx + 1] #copy everything from the first clause to the clause to be incremented
+          next_level[clause_to_increase_idx] += 1
+
+          current_level = next_level
+
+          exists = generateLevelCandidates(level_search_base_LP, getLevelLP(current_level))
+
+  return current_level
+
+#Inputs: level, the level obtained from lowering the last term's number of missing variables to 1, the LP containing base information for level search, and the total number of variables
+#Purpose: Calculates what the highest level is taking the given level as a starting point, using a binary search
+def getLevelBinarySearch(level, level_search_base_LP, total_variables):
+
+  minimum_level = level.copy()
+  maximum_level = minimum_level.copy()
+  base_term_number = len(level) - 1 #number of terms before the last term
+
+  max_clauses = comb(total_variables, total_variables - maximum_level[0])
+
+  while len(maximum_level) != max_clauses:
+    maximum_level.append(maximum_level[-1])
+
+  exists = generateLevelCandidates(level_search_base_LP, getLevelLP(minimum_level))
+
+  if not exists: #if the smallest level possible doesn't exist, return the minimum and exists = False
+    return minimum_level, False
+
+  previous_min = None
+  previous_max = None
+  minimum_term_number = len(minimum_level) - base_term_number
+  maximum_term_number = len(maximum_level) - base_term_number
+  mid_level = None
+
+  while previous_min != minimum_term_number or previous_max != maximum_term_number: #while there are still changes
+
+    mid_term_number = round((maximum_term_number + minimum_term_number) / 2)
+
+    total_mid_terms = base_term_number + mid_term_number
+    mid_level = maximum_level[:total_mid_terms]
+
+    exists = generateLevelCandidates(level_search_base_LP, getLevelLP(mid_level))
+
+    previous_min = minimum_term_number
+    previous_max = maximum_term_number
+    if exists: #minimum needs to be raised
+      minimum_term_number = mid_term_number
+
+    else: #maximum needs to be lowered
+      maximum_term_number = mid_term_number
+  
+  return mid_level, exists
+
+#Inputs: A level, represented by an array of integers ordered in decreasing order, 
+# the LP containing base information for level search, and the total number of variables to consider
+#Purpose: Takes a level and tries to find the previous existing level
+def getPreviousLevel(level, level_search_base_LP, total_variables):
+  if level == [0] or level == None: return None
+
+  current_level = level.copy()
+  exists = False
+
+  while not exists:
+    remove_clause = current_level.copy()
+    
+    #start by calculating the previous level by trying to remove the last clause if it has only 1 missing variable
+    if remove_clause[-1] == 1:
+      remove_clause.pop()
+
+      if len(remove_clause) == 1 and remove_clause[0] == 1: #if we only have one clause left and that clause has level 1, then we've reached the last level
+        exists = generateLevelCandidates(level_search_base_LP, getLevelLP([0]))
+        #print([0])
+        if not exists:
+          return None
+        else:
+          return [0]
+      
+      exists = generateLevelCandidates(level_search_base_LP, getLevelLP(remove_clause))
+      #print(remove_clause)
+
+      if exists:
+        return remove_clause
+      
+      else:
+        current_level = remove_clause
+
+    else: #if we were unable to remove the last clause, then decrease its level
+      
+      current_level[-1] -= 1
+      #add the maximum amount of clauses with the level of the new lowest clause
+      max_clauses = comb(total_variables, total_variables - current_level[0])
+
+      if max_clauses != len(current_level) and current_level[-1] == 1:
+        current_level, exists = getLevelBinarySearch(current_level, level_search_base_LP, total_variables)
+
+      else: 
+        while len(current_level) != max_clauses:
+          current_level.append(current_level[-1])
+
+        exists = generateLevelCandidates(level_search_base_LP, getLevelLP(current_level))
+        #print(current_level)
+
+  return current_level
+
+
+#Inputs: The compound whose function is inconsistent, the level of that function, the total number of variables to consider,
+# an LP with the original LP, the curated observations, and the LP containing base information for level search
+#Purpose: Search for a viable candidate using function levels
+def levelSearch(func, func_level, total_variables, original_LP, curated_LP, level_search_base_LP):
+
+  found_candidates = None
+  found_candidates_level = None
+  next_level = func_level
+  previous_level = func_level
+
+  while not found_candidates:
+    
+    if next_level == previous_level: #first iteration
+      found_candidates = generateLevelCandidates(level_search_base_LP, getLevelLP(next_level), func, original_LP, curated_LP, all_candidates=True)
+      found_candidates_level = next_level
+
+    else:
+      if next_level:
+        found_candidates = generateLevelCandidates(level_search_base_LP, getLevelLP(next_level), func, original_LP, curated_LP, all_candidates=True)
+        found_candidates_level = next_level
+
+      if not found_candidates and previous_level:
+        found_candidates = generateLevelCandidates(level_search_base_LP, getLevelLP(previous_level), func, original_LP, curated_LP, all_candidates=True)
+        found_candidates_level = previous_level
+
+    if not found_candidates:
+      
+      #TODO: fix the algorithm, currently we're seaerching for the next existing level and previous existing level and then testing,
+      #TODO what we should be doing is seeing if the immediate next level exists, seeing if the immediate previous level exists, and testing none, one or both levels
+      #TODO depending on which exist, and then go for the immediate next and immediate previous levels from those, repeating the process until we find a candidate
+      next_level = getNextLevel(next_level, level_search_base_LP, total_variables)
+      previous_level = getPreviousLevel(previous_level, level_search_base_LP, total_variables)
+
+      print("Trying next level: ", next_level)
+      print("Trying previous level: ", previous_level )
+      print()
+
+      if next_level == None and previous_level == None: #If we have run out of levels, no candidates could be found
+        return None
+
+  return found_candidates, found_candidates_level
+
+
 
 #-----Functions that process output from clingo-----
 #Input: The generated iftv output from clingo
@@ -433,198 +618,6 @@ def processFunctions(functions):
 
   else: 
     print("No function candidates could be found \u274C") 
-
-#Inputs: A level, represented by an array of integers ordered in decreasing order, 
-# the LP containing base information for level search, and the total number of variables to consider
-#Purpose: Takes a level and tries to find the next existing level
-def getNextLevel(level, level_search_base_LP, total_variables):
-  if level == None: return None
-
-  current_level = level.copy()
-  exists = False
-
-  while not exists:
-    add_clause = current_level.copy()
-    add_clause.append(1) #start by calculating the next level by trying to add a new clause with 1 missing variable
-    #TODO Do more testing here. For 6 variables, 4,4,4,4,4,1 should be a viable level, e.g for abcdef: ab; ac; ad; ae; af; bcdef.
-    #TODO also ensure all levels that need to be checked are being checked (4,4,4,4,4,4) is not the maximum, it should have 15 clauses total...
-    exists = generateLevelCandidates(level_search_base_LP, getLevelLP(add_clause))
-    #print(add_clause)
-
-
-    #if that level does not exist but the second last clause has more than 1 missing variable, try to incrementally approach the new clause's 
-    #number of missing variables to that number
-    while not exists and add_clause[-1] < add_clause[-2]:  
-        add_clause[-1] += 1
-        exists = generateLevelCandidates(level_search_base_LP, getLevelLP(add_clause))
-        #print(add_clause)
-
-
-    if exists:
-      return add_clause
-    
-    else: #if adding a new clause did not produce an existing level, then try to increment the level of an existing clause
-      if not exists: 
-        clause_to_increase_idx = findIdxOfLowestClause(current_level)
-
-        next_level = current_level[:clause_to_increase_idx + 1] #copy everything from the first clause to the clause to be incremented
-        next_level[clause_to_increase_idx] += 1
-
-        current_level = next_level
-        if current_level[0] == total_variables: #if the first clause has as many missing variables as the number of total variables, then we have exhausted all levels
-          return None
-
-        exists = generateLevelCandidates(level_search_base_LP, getLevelLP(current_level))
-        #print(current_level)
-
-
-  return current_level
-
-#TODO bugfix, a lower level is being returned than the one found without the binary search
-def getLevelBinarySearch(level, total_variables):
-
-  minimum_level = level.copy()
-  maximum_level = minimum_level.copy()
-  base_term_number = len(level) - 1 #number of terms before the last term
-
-  max_clauses = comb(total_variables, total_variables - maximum_level[0])
-
-  while len(maximum_level) != max_clauses:
-    maximum_level.append(maximum_level[-1])
-
-  exists = generateLevelCandidates(level_search_base_LP, getLevelLP(minimum_level))
-  #print("BINARY MIN:", minimum_level)
-
-
-  if not exists: #if the smallest level possible doesn't exist, remove the last term and return exists = False
-    minimum_level.pop()
-    return minimum_level, False
-
-  previous_min = None
-  previous_max = None
-  minimum_term_number = len(minimum_level) - base_term_number
-  maximum_term_number = len(maximum_level) - base_term_number
-  mid_level = None
-
-  while previous_min != minimum_term_number or previous_max != maximum_term_number: #while there are still changes
-    #print("MAX TERM:", maximum_term_number)
-    #print("MAX TERM PREV:", previous_max)
-    #print("MIN TERM:", minimum_term_number)
-    #print("MIN TERM PREV:", previous_min)
-
-    mid_term_number = round((maximum_term_number + minimum_term_number) / 2)
-    #print("MID TERM:", mid_term_number)
-
-
-    total_mid_terms = base_term_number + mid_term_number
-    mid_level = maximum_level[:total_mid_terms]
-
-    exists = generateLevelCandidates(level_search_base_LP, getLevelLP(mid_level))
-    #print("BINARY MID:", mid_level)
-
-    previous_min = minimum_term_number
-    previous_max = maximum_term_number
-    if exists: #minimum needs to be raised
-      #print("EXISTS")
-      minimum_term_number = mid_term_number
-
-    else: #maximum needs to be lowered
-      #print("DOES NOT EXIST")
-      maximum_term_number = mid_term_number
-  
-  return mid_level, exists
-
-#Inputs: A level, represented by an array of integers ordered in decreasing order, 
-# the LP containing base information for level search, and the total number of variables to consider
-#Purpose: Takes a level and tries to find the previous existing level
-def getPreviousLevel(level, level_search_base_LP, total_variables):
-  if level == [0] or level == None: return None
-
-  current_level = level.copy()
-  exists = False
-
-  while not exists:
-    remove_clause = current_level.copy()
-    
-    #start by calculating the previous level by trying to remove the last clause if it has only 1 missing variable
-    if remove_clause[-1] == 1:
-      remove_clause.pop()
-
-      if len(remove_clause) == 1 and remove_clause[0] == 1: #if we only have one clause left and that clause has level 1, then we've reached the last level
-        exists = generateLevelCandidates(level_search_base_LP, getLevelLP([0]))
-        #print([0])
-        if not exists:
-          return None
-        else:
-          return [0]
-      
-      exists = generateLevelCandidates(level_search_base_LP, getLevelLP(remove_clause))
-      #print(remove_clause)
-
-      if exists:
-        return remove_clause
-      
-      else:
-        current_level = remove_clause
-
-    else: #if we were unable to remove the last clause, then decrease its level
-      
-      current_level[-1] -= 1
-      #add the maximum amount of clauses with the level of the new lowest clause
-      max_clauses = comb(total_variables, total_variables - current_level[0])
-
-      BINARY_DEBUG = True
-      if BINARY_DEBUG and max_clauses != len(current_level) and current_level[-1] == 1:
-        current_level, exists = getLevelBinarySearch(current_level, total_variables)
-
-      else: 
-        while len(current_level) != max_clauses:
-          current_level.append(current_level[-1])
-
-        exists = generateLevelCandidates(level_search_base_LP, getLevelLP(current_level))
-        #print(current_level)
-
-  return current_level
-
-
-#Inputs: The compound whose function is inconsistent, the level of that function, the total number of variables to consider,
-# an LP with the original LP, the curated observations, and the LP containing base information for level search
-#Purpose: Search for a viable candidate using function levels
-def levelSearch(func, func_level, total_variables, original_LP, curated_LP, level_search_base_LP):
-
-  found_candidates = None
-  found_candidates_level = None
-  next_level = func_level
-  previous_level = func_level
-
-  while not found_candidates:
-    
-    if next_level == previous_level: #first iteration
-      found_candidates = generateLevelCandidates(level_search_base_LP, getLevelLP(next_level), func, original_LP, curated_LP, all_candidates=True)
-      found_candidates_level = next_level
-
-    else:
-      if next_level:
-        found_candidates = generateLevelCandidates(level_search_base_LP, getLevelLP(next_level), func, original_LP, curated_LP, all_candidates=True)
-        found_candidates_level = next_level
-
-      if not found_candidates and previous_level:
-        found_candidates = generateLevelCandidates(level_search_base_LP, getLevelLP(previous_level), func, original_LP, curated_LP, all_candidates=True)
-        found_candidates_level = previous_level
-
-    if not found_candidates:
-      
-      next_level = getNextLevel(next_level, level_search_base_LP, total_variables)
-      previous_level = getPreviousLevel(previous_level, level_search_base_LP, total_variables)
-
-      print("Trying next level: ", next_level)
-      print("Trying previous level: ", previous_level )
-      print()
-
-      if next_level == None and previous_level == None: #If we have run out of levels, no candidates could be found
-        return None
-
-  return found_candidates, found_candidates_level
 
 
 
@@ -870,4 +863,3 @@ if iftvs_LP:
         
 
     printFuncRepairEnd(func)
-  
