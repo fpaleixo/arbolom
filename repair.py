@@ -870,16 +870,9 @@ if iftvs_LP:
         end_time = time.time()
         processFunctions(functions)
 
-        print("<Level Search Statistics>")
-        print(f"Total level search time taken: {end_time-start_time}s")
-        print(f"Clingo total solving time: {clingo_cumulative_level_search_time}s")
-        print(f"Levels searched: {levels_searched}")
+        printLevelSearchStatistics(end_time-start_time, clingo_cumulative_level_search_time, levels_searched, 
+          formatFuncLevel(func_level), level, total_vars[func])
 
-        print()
-
-        print("Original function level: ",formatFuncLevel(func_level))
-        print("Closest candidate(s) function level: ", level)
-        print("Total variables: ", total_vars[func])
         printFuncEnd()
         
 

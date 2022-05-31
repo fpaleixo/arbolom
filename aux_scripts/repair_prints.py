@@ -45,3 +45,15 @@ def printFuncStart():
 #Purpose: Prints the final function generation phase message
 def printFuncEnd():
   print("\n\033[1;32m ----FUNCTION GENERATION END----\033[0;37;40m")
+
+def printLevelSearchStatistics(total_time, clingo_cumulative_level_search_time, levels_searched, func_level, candidate_level, total_vars):
+  print("<Level Search Statistics>")
+  print(f"Total level search time taken: {total_time}s")
+  print(f"Clingo total solving time: {clingo_cumulative_level_search_time}s")
+  print(f"Levels searched: {levels_searched}")
+
+  print()
+
+  print("Original function level: ", func_level)
+  print("Closest candidate(s) function level: ", candidate_level)
+  print("Total variables: ", total_vars)
