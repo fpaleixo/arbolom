@@ -13,6 +13,19 @@ For a local installation, Python 3.8 or above is required, alongside the [clingo
 
 Instructions and examples on how to run each script can be found in the [notebook](https://github.com/fpaleixo/arbolom/blob/main/ARBoLoM.ipynb) file.
 
+## Quick Testing
+For quick testing, the models in the [simple_models](https://github.com/fpaleixo/arbolom/blob/main/simple_models) folder may be used. These are small, hand-made examples of hypothethical biological networks. Due to their compact nature, one can use them to perform quick tests with the scripts, or to manually verify the correctness of the results produced by said scripts.
+
+Generally, the models will be used in the following fashion:
+- One of the models is chosen to perform tests on. 
+- The corruption.py script can then be used to create a "wrong" version of this model.
+- conversion.py is ran on both models, to convert them to .lp format.
+- gen_observations.py is ran on the original .lp model, to generate observations that can be used to check the correctness of the wrong model.
+- consistency_checking.py is then ran on the wrong .lp model, using the observations generated from the original model. This script will tell you if the model is consistent with the given observations or not.
+- In case it is not, repair.py can be used to repair the inconsistent model.
+
+(At a later date, a single script should be implemented to automatically convert, check the consistency of, and repair a model written in the .bnet format, given a set of observations in .lp format).
+   
 
 ## Task Progress
 
