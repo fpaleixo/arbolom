@@ -36,6 +36,20 @@ python .\repair.py -f simple_models/lp/corrupted/11/11-corrupted-f.lp -o simple_
 
 #8 variables
 python .\repair.py -f real_models/lp/corrupted/SP_1cell/SP_1cell-corrupted-f.lp -o real_models/lp/observations/tseries/sync/SP_1cell-obs.lp -i real_models/lp/corrupted/SP_1cell/inconsistencies/SP_1cell-corrupted-f-sync_inconsistency.lp -sync
+
+
+NO SOLUTIONS
+#5 variables
+python .\repair.py -f simple_models/lp/corrupted/8/8-corrupted-f-nosol.lp -o simple_models/lp/observations/tseries/sync/8-obs.lp -i simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-nosol-sync_inconsistency.lp -sync
+
+#6 variables
+python .\repair.py -f real_models/lp/corrupted/boolean_cell_cycle/boolean_cell_cycle-corrupted-f-nosol.lp -o real_models/lp/observations/tseries/sync/boolean_cell_cycle-obs.lp -i real_models/lp/corrupted/boolean_cell_cycle/inconsistencies/boolean_cell_cycle-corrupted-f-nosol-sync_inconsistency.lp -sync
+
+#7 variables
+python .\repair.py -i simple_models/lp/corrupted/11/inconsistencies/11-corrupted-f-nosol-sync_inconsistency.lp -o simple_models/lp/observations/tseries/sync/11-obs.lp -f simple_models/lp/corrupted/11/11-corrupted-f-nosol.lp -sync
+
+#8 variables
+python .\repair.py -f real_models/lp/corrupted/SP_1cell/SP_1cell-corrupted-f-nosol.lp -o real_models/lp/observations/tseries/sync/SP_1cell-obs.lp -i real_models/lp/corrupted/SP_1cell/inconsistencies/SP_1cell-corrupted-f-nosol-sync_inconsistency.lp -sync
 '''
 
 
@@ -421,7 +435,7 @@ def getPreviousLevel(level, level_search_base_LP, total_variables):
     remove_clause = current_level.copy()
     
     #start by calculating the previous level by trying to remove the last clause if it has only 1 missing variable
-    if remove_clause[-1] == 1:
+    if remove_clause[-1] == 1 and len(remove_clause) != 1: #if the length is 1, we're at level [1] and thus should go to [0]
       remove_clause.pop()
 
       if len(remove_clause) == 1 and remove_clause[0] == 1: #if we only have one clause left and that clause has level 1, then we've reached the last level
@@ -848,7 +862,10 @@ if iftvs_LP:
       if toggle_filtering:
         printNodeFilterStart()
         filtered_nodes = filterNodes(func, curated_LP, original_LP[0], nodes_LP)
-        nodes_LP = processFilteredNodes(filtered_nodes)
+        if filtered_nodes:
+          nodes_LP = processFilteredNodes(filtered_nodes)
+        else:
+          print("No nodes respected the observations (FINISH SEARCH RIGHT HERE AT A LATER DATE; for now proceed with all nodes unfiltered for the sake of performance measuring)")
         printNodeFilterEnd()
 
       printEdgeStart()
@@ -866,13 +883,19 @@ if iftvs_LP:
         level_search_base_LP = combineLPs([iftvs_LP[func], nodes_LP, edges_LP, node_levels_LP])
 
         start_time = time.time()
-        functions, level = levelSearch(func, formatFuncLevel(func_level), total_vars[func], original_LP[0], curated_LP, level_search_base_LP)
+        level_search_result = levelSearch(func, formatFuncLevel(func_level), total_vars[func], original_LP[0], curated_LP, level_search_base_LP)
         end_time = time.time()
-        processFunctions(functions)
 
-        printLevelSearchStatistics(end_time-start_time, clingo_cumulative_level_search_time, levels_searched, 
-          formatFuncLevel(func_level), level, total_vars[func])
+        if level_search_result:
+          functions = level_search_result[0]
+          level = level_search_result[1]
+          processFunctions(functions)
 
+          printLevelSearchStatistics(end_time-start_time, clingo_cumulative_level_search_time, levels_searched, 
+            formatFuncLevel(func_level), total_vars[func],level)
+        else:
+          printLevelSearchStatistics(end_time-start_time,clingo_cumulative_level_search_time,levels_searched,
+            formatFuncLevel(func_level), total_vars[func])
         printFuncEnd()
         
 

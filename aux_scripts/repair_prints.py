@@ -46,7 +46,7 @@ def printFuncStart():
 def printFuncEnd():
   print("\n\033[1;32m ----FUNCTION GENERATION END----\033[0;37;40m")
 
-def printLevelSearchStatistics(total_time, clingo_cumulative_level_search_time, levels_searched, func_level, candidate_level, total_vars):
+def printLevelSearchStatistics(total_time, clingo_cumulative_level_search_time, levels_searched, func_level, total_vars, candidate_level=False):
   print("<Level Search Statistics>")
   print(f"Total level search time taken: {total_time}s")
   print(f"Clingo total solving time: {clingo_cumulative_level_search_time}s")
@@ -55,5 +55,8 @@ def printLevelSearchStatistics(total_time, clingo_cumulative_level_search_time, 
   print()
 
   print("Original function level: ", func_level)
-  print("Closest candidate(s) function level: ", candidate_level)
+  if candidate_level:
+    print("Closest candidate(s) function level: ", candidate_level)
+  else:
+    print("No candidates could be found.")
   print("Total variables: ", total_vars)
