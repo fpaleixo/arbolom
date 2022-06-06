@@ -60,3 +60,11 @@ def printLevelSearchStatistics(total_time, clingo_cumulative_level_search_time, 
   else:
     print("No candidates could be found.")
   print("Total variables: ", total_vars)
+
+def printFunctionStatistics(total_time, clingo_cumulative_level_search_time, total_vars):
+  print("<Function Search Statistics>")
+  print(f"Total level search time taken: {total_time}s")
+  print(f"Clingo total solving time: {clingo_cumulative_level_search_time}s")
+  print("Total variables: ", total_vars)
+
+

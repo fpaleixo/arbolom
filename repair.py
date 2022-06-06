@@ -95,7 +95,7 @@ node_levelgen_path = "encodings/repairs/auxiliary/node_levels.lp"
 func_level_path = "encodings/repairs/auxiliary/function_level.lp"
 
 #Paths of encodings for generating functions
-funcgen_path = "encodings/repairs/func_generator.lp"
+funcgen_path = "encodings/repairs/func_generator_new_sync.lp"
 
 #Paths of encodings for filtering generated functions
 ss_filter_path = "encodings/repairs/filtering/func/ss_func_filter.lp"
@@ -833,6 +833,40 @@ def generateLevelCandidates(level_search_base_LP, level_LP, func=None, original_
   return functions
 
 
+def generateFunctions(generate_functions_LP, func, original_LP, curated_LP):
+  clingo_args = ["0", f"-c compound={func}"]
+    
+  ctl = clingo.Control(arguments=clingo_args)
+
+  ctl.add("base", [], program=generate_functions_LP)
+  ctl.add("base", [], program=original_LP)
+  ctl.add("base", [], program=curated_LP) 
+
+  ctl.load(funcgen_path)
+
+  ''' TODO IMPLEMENT
+  if toggle_filtering:
+    if toggle_stable_state:
+      ctl.load(ss_filter_path)
+    elif toggle_sync:
+      ctl.load(sync_filter_path)
+    elif toggle_async:
+      ctl.load(async_filter_path)
+  ''' 
+
+  ctl.ground([("base", [])])
+  functions = []
+
+  with ctl.solve(yield_=True) as handle:
+    for model in handle:
+      functions = str(model).split(" ")
+  
+  global clingo_cumulative_level_search_time
+  clingo_cumulative_level_search_time += float(ctl.statistics["summary"]["times"]["total"])
+  
+  return functions
+
+
 
 #-----Main-----
 if cmd_enabled:
@@ -879,6 +913,7 @@ if iftvs_LP:
         func_level = generateFuncLevel(iftvs_LP[func], original_LP[1])
         node_levels_LP = getNodeLevelsLP(node_levels)
 
+        '''
         #LP containing LPs with variables, nodes, edges and node levels
         level_search_base_LP = combineLPs([iftvs_LP[func], nodes_LP, edges_LP, node_levels_LP])
 
@@ -896,6 +931,14 @@ if iftvs_LP:
         else:
           printLevelSearchStatistics(end_time-start_time,clingo_cumulative_level_search_time,levels_searched,
             formatFuncLevel(func_level), total_vars[func])
+        '''
+        generate_functions_LP = combineLPs([iftvs_LP[func], nodes_LP, edges_LP, node_levels_LP])
+        start_time = time.time()
+        functions = generateFunctions(generate_functions_LP, func, original_LP[0], curated_LP)
+        end_time = time.time()
+        print(functions)
+
+        printFunctionStatistics(end_time-start_time, clingo_cumulative_level_search_time, total_vars[func])
         printFuncEnd()
         
 

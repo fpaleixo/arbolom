@@ -2,18 +2,26 @@
 #const compound = c.
 
 %Define
-%If one of a node's variables has value 0 for experiment E at time step T, 
-%then for that same experiment and time step the node will also have value 0
-node_inactive(E,T,N) :- node_(N), node_variable(N,V), curated_observation(E,T,V,0).
+%If one of a node's variable has value 0 for experiment E at time step T, 
+%then for that same experiment and time step the node will also have value 0 (if that variable is an activator)
+node_inactive(E,T,N) :- node_(N), node_variable(N,V), curated_observation(E,T,V,0), edge(V,compound,0).
+%Variant for variables that are inhibitors
+node_inactive(E,T,N) :- node_(N), node_variable(N,V), curated_observation(E,T,V,1), edge(V,compound,1).
 
 %Nodes that aren't inactive at time step T of experiment E must be active
-node_active(E,T,N) :- not node_inactive(E,T,N).
+node_active(E,T,N) :- not node_inactive(E,T,N), node_(N), curated_observation(E,T,_,_).
 
 %Every observation in which the given compound is active needs to be covered by some node
-1 {function_candidate(N) : node_active(E,T,N)} 1 :- curated_observation(E,T,compound,1).
+1 {function_candidate(N) : node_active(E,T-1,N)} 1 :- curated_observation(E,T,compound,1), T > 0.
 
 %If a variable is a part of a function candidate node N, then that variable is present
 present(V) :- function_candidate(N), node_variable(N,V).
+
+%Total number of candidate nodes (used for optimization)
+total_candidates(T) :- T = #count{N : function_candidate(N)}.
+
+%Sum of the levels of all candidate nodes
+total_candidate_level(TL) :- TL = #sum{L,N : function_candidate(N), node_level(N,L)}. 
 
 
 %Test
@@ -29,6 +37,7 @@ present(V) :- function_candidate(N), node_variable(N,V).
 
 
 %Optimize
-%TODO Optimize for the most general function possible (i.e. highest number of terms, lowest number of variables per term 
-%TODO -- for the lowest number of variables, we can use still use the notion of level. The higher the level of a term, the lowest number of variables in that term.)
+%Optimize for the most general function possible (i.e. highest number of terms, highest level possible (the higher the level, the fewer variables per node))
+#maximize{T : total_candidates(T)}.
+#maximize{TL: total_candidate_level(TL)}.
 
