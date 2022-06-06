@@ -42,10 +42,10 @@ NO SOLUTIONS
 #5 variables
 python .\repair.py -f simple_models/lp/corrupted/8/8-corrupted-f-nosol.lp -o simple_models/lp/observations/tseries/sync/8-obs.lp -i simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-nosol-sync_inconsistency.lp -sync
 
-#6 variables
+#6 variables - FIX EXAMPLE
 python .\repair.py -f real_models/lp/corrupted/boolean_cell_cycle/boolean_cell_cycle-corrupted-f-nosol.lp -o real_models/lp/observations/tseries/sync/boolean_cell_cycle-obs.lp -i real_models/lp/corrupted/boolean_cell_cycle/inconsistencies/boolean_cell_cycle-corrupted-f-nosol-sync_inconsistency.lp -sync
 
-#7 variables
+#7 variables - FIX EXAMPLE
 python .\repair.py -i simple_models/lp/corrupted/11/inconsistencies/11-corrupted-f-nosol-sync_inconsistency.lp -o simple_models/lp/observations/tseries/sync/11-obs.lp -f simple_models/lp/corrupted/11/11-corrupted-f-nosol.lp -sync
 
 #8 variables
