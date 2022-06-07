@@ -832,7 +832,6 @@ def generateLevelCandidates(level_search_base_LP, level_LP, func=None, original_
   
   return functions
 
-
 def generateFunctions(generate_functions_LP, func, original_LP, curated_LP):
   clingo_args = ["0", f"-c compound={func}"]
     

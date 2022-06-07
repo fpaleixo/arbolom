@@ -26,23 +26,21 @@ missing_variable(V) :- variable(V), not present(V).
 %If we have missing variables, add a random candidate with that variable
 1 {variable_candidate(V,N) : node_variable(N,V)} 1 :- missing_variable(V).
 
-%Sum of the levels of all node candidates (used for optimization)
-total_candidate_level(TL) :- TL = #sum{L,N : node_candidate(N), node_level(N,L)}. 
+%Both node candidates as well as variable candidates are part of our final candidate
+final_candidate(N) :- node_candidate(N).
+final_candidate(N) :- variable_candidate(V,N).
 
 
 %Test
 %Terms in a function cannot contain any other terms in that function (BCF)
-:- node_candidate(N1), node_candidate(N2), edge_(N1,N2).
-:- variable_candidate(_,N1), variable_candidate(_,N2), edge_(N1,N2).
-:- node_candidate(N1), variable_candidate(_,N2), edge_(N1,N2).
+:- final_candidate(N1), final_candidate(N2), edge_(N1,N2).
 
 
 %Display
-#show node_candidate/1.
-#show variable_candidate/2.
+#show final_candidate/1.
 
 
 %Optimize
-%Optimize for the  highest level possible (the higher the level, the fewer variables per node, so the more general the node)
-#maximize{TL: total_candidate_level(TL)}.
+%Optimize for the minimum number of final nodes
+#minimize{1,N : final_candidate(N)}.
 
