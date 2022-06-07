@@ -93,7 +93,9 @@ node_levelgen_path = "encodings/repairs/auxiliary/node_levels.lp"
 
 #Paths of encodings for generating functions
 ss_func_generator_path = "encodings/repairs/func_generator_new_sstate.lp"
-tseries_func_generator_path = "encodings/repairs/func_generator_new_tseries.lp"
+sync_func_generator_path = "encodings/repairs/func_generator_new_sync.lp"
+async_func_generator_path = "encodings/repairs/func_generator_new_async.lp"
+
 
 #Mode flags 
 toggle_filtering = True
@@ -540,9 +542,11 @@ def generateFunctions(generate_functions_LP, func, original_LP, curated_LP):
 
   if toggle_stable_state:
     ctl.load(ss_func_generator_path)
+  elif toggle_sync:
+    ctl.load(sync_func_generator_path)
   else:
-    ctl.load(tseries_func_generator_path)
-
+    ctl.load(async_func_generator_path)
+    
   ctl.ground([("base", [])])
   functions = []
 

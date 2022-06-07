@@ -12,10 +12,10 @@ node_inactive(E,T,N) :- node_(N), node_variable(N,V), curated_observation(E,T,V,
 node_inactive(E,T,N) :- node_(N), node_variable(N,V), curated_observation(E,T,V,1), edge(V,compound,1).
 
 %Nodes that aren't inactive at time step T of experiment E must be active
-node_active(E,T,N) :- not node_inactive(E,T,N), node_(N), curated_observation(E,T,_,_).
+node_active(E,T+1,N) :- not node_inactive(E,T,N), node_(N), curated_observation(E,T,_,_).
 
 %Every observation in which the given compound is active needs to be covered by some node
-1 {node_candidate(N) : node_active(E,T-1,N)} 1 :- curated_observation(E,T,compound,1), T > 0.
+1 {node_candidate(N) : node_active(E,T,N)} 1 :- curated_observation(E,T,compound,1), T > 0.
 
 %If a variable is a part of a function candidate node N, then that variable is present
 present(V) :- node_candidate(N), node_variable(N,V).
