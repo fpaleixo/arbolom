@@ -28,13 +28,13 @@ python .\repair.py -f simple_models/lp/corrupted/8/8-corrupted-f.lp -o simple_mo
 python .\repair.py -f simple_models/lp/corrupted/8/8-corrupted-f.lp -o simple_models/lp/observations/tseries/sync/8-obs.lp -i simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-sync_inconsistency.lp -sync
 python .\repair.py -f simple_models/lp/corrupted/8/8-corrupted-f.lp -o simple_models/lp/observations/tseries/async/8-obs.lp -i simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-async_inconsistency.lp -async
 
-#6 variables
+#6 variables - ADD EXAMPLES FOR STABLE AND ASYNC
 python .\repair.py -f real_models/lp/corrupted/boolean_cell_cycle/boolean_cell_cycle-corrupted-f.lp -o real_models/lp/observations/tseries/sync/boolean_cell_cycle-obs.lp -i real_models/lp/corrupted/boolean_cell_cycle/inconsistencies/boolean_cell_cycle-corrupted-f-sync_inconsistency.lp -sync
 
-#7 variables
+#7 variables - ADD EXAMPLES FOR STABLE AND ASYNC
 python .\repair.py -f simple_models/lp/corrupted/11/11-corrupted-f.lp -o simple_models/lp/observations/tseries/sync/11-obs.lp -i simple_models/lp/corrupted/11/inconsistencies/11-corrupted-f-sync_inconsistency.lp -sync
 
-#8 variables
+#8 variables - ADD EXAMPLES FOR STABLE AND ASYNC
 python .\repair.py -f real_models/lp/corrupted/SP_1cell/SP_1cell-corrupted-f.lp -o real_models/lp/observations/tseries/sync/SP_1cell-obs.lp -i real_models/lp/corrupted/SP_1cell/inconsistencies/SP_1cell-corrupted-f-sync_inconsistency.lp -sync
 
 
@@ -88,13 +88,10 @@ async_filternode_path = "encodings/repairs/filtering/node/async_node_filter.lp"
 #Paths of encodings for generating edges between nodes
 edgegen_path = "encodings/repairs/edge_generator.lp"
 
-#Path of encoding that gives node levels
-node_levelgen_path = "encodings/repairs/auxiliary/node_levels.lp"
-
 #Paths of encodings for generating functions
-ss_func_generator_path = "encodings/repairs/func_generator_new_sstate.lp"
-sync_func_generator_path = "encodings/repairs/func_generator_new_sync.lp"
-async_func_generator_path = "encodings/repairs/func_generator_new_async.lp"
+ss_func_generator_path = "encodings/repairs/function_generators/func_generator_new_sstate.lp"
+sync_func_generator_path = "encodings/repairs/function_generators/func_generator_new_sync.lp"
+async_func_generator_path = "encodings/repairs/function_generators/func_generator_new_async.lp"
 
 
 #Mode flags 

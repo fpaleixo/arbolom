@@ -1,11 +1,6 @@
 %Generates candidate functions using observations.
 #const compound = c.
 
-%TODO we have to take into account that in async mode, only one function is applied at every time step.
-%TODO so that means that we only need to verify the observations where the function of the compound was applied.
-%TODO we know the function was applied when we go from the compound having value 0 at time step T, to
-%TODO having value 1 at time step T+1.
-
 %Define
 %Time must occur in some rule head
 time(T) :- curated_observation(_,T,_,_).
@@ -20,7 +15,7 @@ node_inactive(E,T,N) :- node_(N), node_variable(N,V), curated_observation(E,T,V,
 node_active(E,T,N) :- not node_inactive(E,T,N), node_(N), curated_observation(E,T,_,_).
 
 %Every observation in which the given compound is active needs to be covered by some node
-1{node_candidate(E,T,N) : node_active(E,T-1,N)}1 :- curated_observation(E,T,compound,1), T > 0.
+1 {node_candidate(E,T,N) : node_active(E,T-1,N)} 1 :- curated_observation(E,T,compound,1), T > 0.
 
 %If a variable is a part of a function candidate node N, then that variable is present
 present(V) :- node_candidate(E,T,N), node_variable(N,V).
