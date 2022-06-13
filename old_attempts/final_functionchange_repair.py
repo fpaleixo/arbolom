@@ -1,8 +1,7 @@
 import argparse, logging, clingo, time
-from aux_scripts.level_search import *
-from aux_scripts.repair_prints import *
+from aux_scripts.level_search_functionchange import *
+from aux_scripts.repair_prints_functionchange import *
 
-#--Work in progress--
 #Usage: $python repair.py -f (FILENAME) -o (OBSERVATIONS) -i (INCONSISTENCIES) -stable -sync -async
 #Optional flags:
 #-stable -> Performs repairs using stable state observations (default).
@@ -13,40 +12,43 @@ from aux_scripts.repair_prints import *
 #OBSERVATIONS -> Path of file containing observations written in lp. 
 #INCONSISTENCIES -> Path of file containing inconsistencies obtained from the consistency checking phase.
 
+#! DEPRECATED
+#! DEPRECATED
+#! DEPRECATED
 
 #-----Testing shortcuts (to be removed at a later date)----
 '''
 #3 variables
-python .\repair.py -f simple_models/lp/corrupted/3/3-corrupted-f.lp -o simple_models/lp/observations/sstate/3-obs.lp -i simple_models/lp/corrupted/3/inconsistencies/3-corrupted-f-stable_inconsistency.lp -stable
-python .\repair.py -f simple_models/lp/corrupted/3/3-corrupted-f.lp -o simple_models/lp/observations/tseries/sync/3-obs.lp -i simple_models/lp/corrupted/3/inconsistencies/3-corrupted-f-sync_inconsistency.lp -sync
-python .\repair.py -f simple_models/lp/corrupted/3/3-corrupted-f.lp -o simple_models/lp/observations/tseries/async/3-obs.lp -i simple_models/lp/corrupted/3/inconsistencies/3-corrupted-f-async_inconsistency.lp -async
+python .\old_attempts/final_functionchange_repair.py -f simple_models/lp/corrupted/3/3-corrupted-f.lp -o simple_models/lp/observations/sstate/3-obs.lp -i simple_models/lp/corrupted/3/inconsistencies/3-corrupted-f-stable_inconsistency.lp -stable
+python .\old_attempts/final_functionchange_repair.py -f simple_models/lp/corrupted/3/3-corrupted-f.lp -o simple_models/lp/observations/tseries/sync/3-obs.lp -i simple_models/lp/corrupted/3/inconsistencies/3-corrupted-f-sync_inconsistency.lp -sync
+python .\old_attempts/final_functionchange_repair.py -f simple_models/lp/corrupted/3/3-corrupted-f.lp -o simple_models/lp/observations/tseries/async/3-obs.lp -i simple_models/lp/corrupted/3/inconsistencies/3-corrupted-f-async_inconsistency.lp -async
 
 #5 variables
-python .\repair.py -f simple_models/lp/corrupted/8/8-corrupted-f.lp -o simple_models/lp/observations/sstate/8-obs.lp -i simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-stable_inconsistency.lp -stable
-python .\repair.py -f simple_models/lp/corrupted/8/8-corrupted-f.lp -o simple_models/lp/observations/tseries/sync/8-obs.lp -i simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-sync_inconsistency.lp -sync
-python .\repair.py -f simple_models/lp/corrupted/8/8-corrupted-f.lp -o simple_models/lp/observations/tseries/async/8-obs.lp -i simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-async_inconsistency.lp -async
+python .\old_attempts/final_functionchange_repair.py -f simple_models/lp/corrupted/8/8-corrupted-f.lp -o simple_models/lp/observations/sstate/8-obs.lp -i simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-stable_inconsistency.lp -stable
+python .\old_attempts/final_functionchange_repair.py -f simple_models/lp/corrupted/8/8-corrupted-f.lp -o simple_models/lp/observations/tseries/sync/8-obs.lp -i simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-sync_inconsistency.lp -sync
+python .\old_attempts/final_functionchange_repair.py -f simple_models/lp/corrupted/8/8-corrupted-f.lp -o simple_models/lp/observations/tseries/async/8-obs.lp -i simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-async_inconsistency.lp -async
 
 #6 variables
 (no stable examples for boolean cell cycle)
-python .\repair.py -f real_models/lp/corrupted/boolean_cell_cycle/boolean_cell_cycle-corrupted-f.lp -o real_models/lp/observations/tseries/sync/boolean_cell_cycle-obs.lp -i real_models/lp/corrupted/boolean_cell_cycle/inconsistencies/boolean_cell_cycle-corrupted-f-sync_inconsistency.lp -sync
-python .\repair.py -f real_models/lp/corrupted/boolean_cell_cycle/boolean_cell_cycle-corrupted-f.lp -o real_models/lp/observations/tseries/async/boolean_cell_cycle-obs.lp -i real_models/lp/corrupted/boolean_cell_cycle/inconsistencies/boolean_cell_cycle-corrupted-f-async_inconsistency.lp -async
+python .\old_attempts/final_functionchange_repair.py -f real_models/lp/corrupted/boolean_cell_cycle/boolean_cell_cycle-corrupted-f.lp -o real_models/lp/observations/tseries/sync/boolean_cell_cycle-obs.lp -i real_models/lp/corrupted/boolean_cell_cycle/inconsistencies/boolean_cell_cycle-corrupted-f-sync_inconsistency.lp -sync
+python .\old_attempts/final_functionchange_repair.py -f real_models/lp/corrupted/boolean_cell_cycle/boolean_cell_cycle-corrupted-f.lp -o real_models/lp/observations/tseries/async/boolean_cell_cycle-obs.lp -i real_models/lp/corrupted/boolean_cell_cycle/inconsistencies/boolean_cell_cycle-corrupted-f-async_inconsistency.lp -async
 
 #7 variables
-python .\repair.py -i simple_models/lp/corrupted/11/inconsistencies/11-corrupted-f2-stable_inconsistency.lp -o simple_models/lp/observations/sstate/11-obs.lp -f simple_models/lp/corrupted/11/11-corrupted-f2.lp -stable
-python .\repair.py -f simple_models/lp/corrupted/11/11-corrupted-f.lp -o simple_models/lp/observations/tseries/sync/11-obs.lp -i simple_models/lp/corrupted/11/inconsistencies/11-corrupted-f-sync_inconsistency.lp -sync
-python .\repair.py -f simple_models/lp/corrupted/11/11-corrupted-f.lp -o simple_models/lp/observations/tseries/async/11-obs.lp -i simple_models/lp/corrupted/11/inconsistencies/11-corrupted-f-async_inconsistency.lp -async
+python .\old_attempts/final_functionchange_repair.py -i simple_models/lp/corrupted/11/inconsistencies/11-corrupted-f2-stable_inconsistency.lp -o simple_models/lp/observations/sstate/11-obs.lp -f simple_models/lp/corrupted/11/11-corrupted-f2.lp -stable
+python .\old_attempts/final_functionchange_repair.py -f simple_models/lp/corrupted/11/11-corrupted-f.lp -o simple_models/lp/observations/tseries/sync/11-obs.lp -i simple_models/lp/corrupted/11/inconsistencies/11-corrupted-f-sync_inconsistency.lp -sync
+python .\old_attempts/final_functionchange_repair.py -f simple_models/lp/corrupted/11/11-corrupted-f.lp -o simple_models/lp/observations/tseries/async/11-obs.lp -i simple_models/lp/corrupted/11/inconsistencies/11-corrupted-f-async_inconsistency.lp -async
 
 #8 variables
 (no stable examples for sp1 cell)
-python .\repair.py -f real_models/lp/corrupted/SP_1cell/SP_1cell-corrupted-f.lp -o real_models/lp/observations/tseries/sync/SP_1cell-obs.lp -i real_models/lp/corrupted/SP_1cell/inconsistencies/SP_1cell-corrupted-f-sync_inconsistency.lp -sync
+python .\old_attempts/final_functionchange_repair.py -f real_models/lp/corrupted/SP_1cell/SP_1cell-corrupted-f.lp -o real_models/lp/observations/tseries/sync/SP_1cell-obs.lp -i real_models/lp/corrupted/SP_1cell/inconsistencies/SP_1cell-corrupted-f-sync_inconsistency.lp -sync
 (no async examples)
 
 NO SOLUTIONS
 #5 variables
-python .\repair.py -f simple_models/lp/corrupted/8/8-corrupted-f-nosol.lp -o simple_models/lp/observations/tseries/sync/8-obs.lp -i simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-nosol-sync_inconsistency.lp -sync
+python .\old_attempts/final_functionchange_repair.py -f simple_models/lp/corrupted/8/8-corrupted-f-nosol.lp -o simple_models/lp/observations/tseries/sync/8-obs.lp -i simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-nosol-sync_inconsistency.lp -sync
 
 #8 variables
-python .\repair.py -f real_models/lp/corrupted/SP_1cell/SP_1cell-corrupted-f-nosol.lp -o real_models/lp/observations/tseries/sync/SP_1cell-obs.lp -i real_models/lp/corrupted/SP_1cell/inconsistencies/SP_1cell-corrupted-f-nosol-sync_inconsistency.lp -sync
+python .\old_attempts/final_functionchange_repair.py -f real_models/lp/corrupted/SP_1cell/SP_1cell-corrupted-f-nosol.lp -o real_models/lp/observations/tseries/sync/SP_1cell-obs.lp -i real_models/lp/corrupted/SP_1cell/inconsistencies/SP_1cell-corrupted-f-nosol-sync_inconsistency.lp -sync
 '''
 
 
@@ -72,23 +74,23 @@ obsv_path = "simple_models/lp/observations/tseries/sync/8-obs.lp"
 incst_path = "simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-sync_inconsistency.lp"
 
 #Paths of encodings for obtaining inconsistent functions and total variables of each
-iftv_path = "encodings/repairs/iftv.lp"
+iftv_path = "old_attempts/encodings/repairs/functionchange/iftv.lp"
 
 #Paths of encodings for generating nodes
-nodegen_path = "encodings/repairs/node_generator.lp"
+nodegen_path = "old_attempts/encodings/repairs/functionchange/node_generator.lp"
 
 #Paths of encodings for filtering generated nodes
-ss_filternode_path = "encodings/repairs/filtering/node/ss_node_filter.lp"
-sync_filternode_path = "encodings/repairs/filtering/node/sync_node_filter.lp"
-async_filternode_path = "encodings/repairs/filtering/node/async_node_filter.lp"
+ss_filternode_path = "old_attempts/encodings/repairs/functionchange/filtering/node/ss_node_filter.lp"
+sync_filternode_path = "old_attempts/encodings/repairs/functionchange/filtering/node/sync_node_filter.lp"
+async_filternode_path = "old_attempts/encodings/repairs/functionchange/filtering/node/async_node_filter.lp"
 
 #Paths of encodings for generating edges between nodes
-edgegen_path = "encodings/repairs/edge_generator.lp"
+edgegen_path = "old_attempts/encodings/repairs/functionchange/edge_generator.lp"
 
 #Paths of encodings for generating functions
-ss_func_generator_path = "encodings/repairs/function_generators/func_generator_new_sstate.lp"
-sync_func_generator_path = "encodings/repairs/function_generators/func_generator_new_sync.lp"
-async_func_generator_path = "encodings/repairs/function_generators/func_generator_new_async.lp"
+ss_func_generator_path = "old_attempts/encodings/repairs/functionchange/function_generators/func_generator_new_sstate.lp"
+sync_func_generator_path = "old_attempts/encodings/repairs/functionchange/function_generators/func_generator_new_sync.lp"
+async_func_generator_path = "old_attempts/encodings/repairs/functionchange/function_generators/func_generator_new_async.lp"
 
 
 #Mode flags 
@@ -526,8 +528,6 @@ def generateFunctions(generate_functions_LP, func, original_LP, curated_LP):
 if cmd_enabled:
   parseArgs()
 
-#TODO make this IFTV part clearer after edge flip and compound addition/removal is complete
-#TODO Get inconsistent functions, variables and total variables 
 printIFTVStart()
 incst_LP, curated_LP = getInconsistenciesAndCuratedLP()
 
