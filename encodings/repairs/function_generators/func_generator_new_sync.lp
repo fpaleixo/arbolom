@@ -42,7 +42,6 @@ final_candidate(N) :- variable_candidate(V,N).
 :- final_candidate(N), node_active(E,T-1,N), curated_observation(E,T,compound,0), T > 0.
 
 
-
 %Display
 #show final_candidate/1.
 #show activator/1.
