@@ -551,6 +551,7 @@ if iftvs_LP:
     if nodes_LP:
 
       #Node filtering
+      '''
       printNodeFilterStart()
       filtered_nodes = filterNodes(func, curated_LP, original_LP[0], nodes_LP)
       if filtered_nodes:
@@ -559,6 +560,7 @@ if iftvs_LP:
         nodes_LP = None
         print("Node filtering couldn't find any nodes. No nodes respected the observations.")
       printNodeFilterEnd()
+      '''
 
       if nodes_LP:
         #Edge generation
