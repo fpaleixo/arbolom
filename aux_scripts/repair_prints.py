@@ -22,14 +22,6 @@ def printNodeStart():
 def printNodeEnd():
   print("\n\033[1;32m ----NODE GENERATION END----\033[0;37;40m\n")
 
-#Purpose: Prints the initial node filter phase message
-def printNodeFilterStart():
-  print("\033[1;32m ----NODE FILTER START----\033[0;37;40m")
-
-#Purpose: Prints the final node filter phase message
-def printNodeFilterEnd():
-  print("\n\033[1;32m ----NODE FILTER END----\033[0;37;40m\n")
-
 #Purpose: Prints the initial edge generation phase message
 def printEdgeStart():
   print("\033[1;32m ----EDGE GENERATION START----\033[0;37;40m")

@@ -41,7 +41,12 @@ python .\repair.py -f simple_models/lp/corrupted/11/11-corrupted-f.lp -o simple_
 python .\repair.py -f real_models/lp/corrupted/SP_1cell/SP_1cell-corrupted-f.lp -o real_models/lp/observations/tseries/sync/SP_1cell-obs.lp -i real_models/lp/corrupted/SP_1cell/inconsistencies/SP_1cell-corrupted-f-sync_inconsistency.lp -sync
 (no async examples)
 
-NO SOLUTIONS
+#All functions inconsistent
+python .\repair.py -f simple_models/lp/corrupted/6/6-corrupted-fe.lp -o simple_models/lp/observations/sstate/6-obs.lp -i simple_models/lp/corrupted/6/inconsistencies/6-corrupted-fe-stable_inconsistency.lp -stable
+python .\repair.py -f simple_models/lp/corrupted/6/6-corrupted-fe.lp -o simple_models/lp/observations/tseries/sync/6-obs.lp -i simple_models/lp/corrupted/6/inconsistencies/6-corrupted-fe-sync_inconsistency.lp -sync
+python .\repair.py -f simple_models/lp/corrupted/6/6-corrupted-fe.lp -o simple_models/lp/observations/tseries/async/6-obs.lp -i simple_models/lp/corrupted/6/inconsistencies/6-corrupted-fe-async_inconsistency.lp -async
+
+#NO SOLUTIONS
 #5 variables
 python .\repair.py -f simple_models/lp/corrupted/8/8-corrupted-f-nosol.lp -o simple_models/lp/observations/tseries/sync/8-obs.lp -i simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-nosol-sync_inconsistency.lp -sync
 
@@ -332,29 +337,6 @@ def processNodes(nodes):
   else: 
     print("No nodes could be found \u274C")
 
-#Input: The generated nodes output from clingo
-#Purpose: Processes clingo's node generation output by creating an LP with them, identifying each node
-def processFilteredNodes(nodes):
-  if not nodes:
-    print("No answers sets could be found	\u2755 there must be something wrong with the encoding...")
-
-  elif nodes[0]:
-
-    nodes_LP = getFilteredNodesLP(nodes)
-
-    total_nodes = len(nodes)
-    if(total_nodes < 100):
-      print("<Filtered nodes>")
-      print(nodes_LP,end="")
-    else:
-      print("Too many nodes to print...!")
-    print(f"Total nodes: {total_nodes}")
-
-    return nodes_LP
-
-  else: 
-    print("All nodes were filtered out... \u274C")
-
 #Input: The generated edges output from clingo
 #Purpose: Processes clingo's edge generation output by creating an LP with them
 def processEdges(edges):
@@ -427,40 +409,6 @@ def generateNodes(iftvs_LP):
       nodes.append(str(model).split(" "))
 
   print("Finished node generation \U0001F3C1")
-  printStatistics(ctl.statistics)
-  return nodes
-
-#Inputs: The compound with the inconsistent function and the LPs with the curated observations,
-# the original functions minus the inconsistent function, and the generated nodes
-#Purpose: Filters out nodes that produce 1s when 0s are expected (using these nodes in functions would be guaranteed)
-# to produce wrong results)
-def filterNodes(func, curated_LP, original_LP, nodes_LP):
-  clingo_args = ["0", f"-c compound={func}"]
-  if nodefilter_debug_toggled:
-    clingo_args.append("--output-debug=text")
-
-  ctl = clingo.Control(arguments=clingo_args)
-
-  ctl.add("base", [], program=curated_LP)
-  ctl.add("base", [], program=original_LP)
-  ctl.add("base", [], program=nodes_LP)
-
-  if toggle_stable_state:
-    ctl.load(ss_filternode_path)
-  elif toggle_sync:
-    ctl.load(sync_filternode_path)
-  elif toggle_async:
-    ctl.load(async_filternode_path)
-
-  print("Starting node filtering \u23F1")
-  ctl.ground([("base", [])])
-  nodes = []
-
-  with ctl.solve(yield_=True) as handle:
-    for model in handle:
-      nodes.append(str(model).split(" "))
-
-  print("Finished node filtering \U0001F3C1")
   printStatistics(ctl.statistics)
   return nodes
 
@@ -549,37 +497,23 @@ if iftvs_LP:
     printNodeEnd()
 
     if nodes_LP:
+      #Edge generation
+      printEdgeStart()
+      edges = generateEdges(nodes_LP)
+      edges_LP = processEdges(edges)
+      printEdgeEnd()
 
-      #Node filtering
-      '''
-      printNodeFilterStart()
-      filtered_nodes = filterNodes(func, curated_LP, original_LP[0], nodes_LP)
-      if filtered_nodes:
-        nodes_LP = processFilteredNodes(filtered_nodes)
-      else:
-        nodes_LP = None
-        print("Node filtering couldn't find any nodes. No nodes respected the observations.")
-      printNodeFilterEnd()
-      '''
+      if edges_LP:
+        printFuncStart()
 
-      if nodes_LP:
-        #Edge generation
-        printEdgeStart()
-        edges = generateEdges(nodes_LP)
-        edges_LP = processEdges(edges)
-        printEdgeEnd()
+        #Function generation
+        generate_functions_LP = combineLPs([iftvs_LP[func], nodes_LP, edges_LP])
+        start_time = time.time()
+        functions = generateFunctions(generate_functions_LP, func, original_LP[0], curated_LP)
+        end_time = time.time()
+        print(functions)
 
-        if edges_LP:
-          printFuncStart()
-
-          #Function generation
-          generate_functions_LP = combineLPs([iftvs_LP[func], nodes_LP, edges_LP])
-          start_time = time.time()
-          functions = generateFunctions(generate_functions_LP, func, original_LP[0], curated_LP)
-          end_time = time.time()
-          print(functions)
-
-          printFunctionStatistics(end_time-start_time, clingo_cumulative_level_search_time, total_vars[func])
-          printFuncEnd()
-        
+        printFunctionStatistics(end_time-start_time, clingo_cumulative_level_search_time, total_vars[func])
+        printFuncEnd()
+      
     printFuncRepairEnd(func)
