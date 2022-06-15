@@ -1,5 +1,5 @@
 import argparse, logging, clingo, time
-from aux_scripts.level_search import *
+from math import comb
 from aux_scripts.repair_prints import *
 
 #--Work in progress--
@@ -81,6 +81,7 @@ iftv_path = "encodings/repairs/iftv.lp"
 
 #Paths of encodings for generating nodes
 nodegen_path = "encodings/repairs/node_generator.lp"
+nodegen_new_path = "encodings/repairs/node_generator_new.lp"
 
 #Paths of encodings for generating edges between nodes
 edgegen_path = "encodings/repairs/edge_generator.lp"
@@ -407,6 +408,33 @@ def generateNodes(iftvs_LP):
   printStatistics(ctl.statistics)
   return nodes
 
+#Purpose: Generates all nodes containing the possible variable conjunctions
+def generateNodesNew(iftvs_LP):
+  clingo_args = []
+  if nodegen_debug_toggled:
+    clingo_args.append("--output-debug=text")
+
+  ctl = clingo.Control(arguments=clingo_args)
+
+  ctl.load(model_path)
+  ctl.load(nodegen_new_path)
+  ctl.add("base",[],program=iftvs_LP)
+
+  print("Starting new node generation \u23F1")
+  ctl.ground([("base", [])], context=Context)
+  nodes = []
+
+  with ctl.solve(yield_=True) as handle:
+    for model in handle:
+      nodes = str(model).split(" ")
+
+  print("Finished new node generation \U0001F3C1")
+  
+  printStatistics(ctl.statistics)
+  print(nodes)
+
+  return nodes
+
 #Input: The generated nodes LP
 #Purpose: Generates edges between nodes
 def generateEdges(nodes_LP):
@@ -465,6 +493,19 @@ def generateFunctions(generate_functions_LP, func, original_LP, curated_LP):
 
 
 
+#---Auxiliary clingo Functions---
+class Context:
+  #Input: tv - total variables
+  #Purpose: calculate the total number of nodes that can be generated from the number of variables given
+  def calculateTotalNodes(tv):
+    N = clingo.Number
+    total = 0
+    for i in range(1, tv.number + 1):
+      total += comb(tv.number, i)
+    return N(total)
+
+
+
 #-----Main-----
 if cmd_enabled:
   parseArgs()
@@ -489,8 +530,10 @@ if iftvs_LP:
     printNodeStart()
     nodes = generateNodes(iftvs_LP[func])
     nodes_LP = processNodes(nodes)
+    nodes_new = generateNodesNew(iftvs_LP[func])
     printNodeEnd()
 
+'''
     if nodes_LP:
       #Edge generation
       printEdgeStart()
@@ -512,3 +555,4 @@ if iftvs_LP:
         printFuncEnd()
       
     printFuncRepairEnd(func)
+'''
