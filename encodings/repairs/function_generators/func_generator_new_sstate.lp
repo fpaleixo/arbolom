@@ -5,6 +5,10 @@
 %A regulator can either be an inhibitor or an activator, but not both
 1 {activator(V); inhibitor(V)} 1 :- variable(V).
 
+%Keep track of which variables had their sign changed
+sign_changed(V) :- edge(V,compound,0), inhibitor(V).
+sign_changed(V) :- edge(V,compound,1), activator(V).
+
 %If one of a node's variable has value 0 for experiment E at time step T, 
 %then for that same experiment and time step the node will also have value 0 (if that variable is an activator)
 node_inactive(E,N) :- node_(N), node_variable(N,V), curated_observation(E,V,0), activator(V).
@@ -49,3 +53,5 @@ final_candidate(N) :- variable_candidate(V,N).
 %Optimize for the minimum number of final nodes
 #minimize{1,N : final_candidate(N)}.
 
+%Optimize for the minimum changes of regulator signs
+#minimize{1@2,V : sign_changed(V)}.
