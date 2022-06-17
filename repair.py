@@ -92,7 +92,23 @@ sync_func_generator_path = "encodings/repairs/function_generators/func_generator
 async_func_generator_path = "encodings/repairs/function_generators/func_generator_new_async.lp"
 
 
+#Experimental paths
+#Path of encoding to generate regulator configurations
+exp_regulator_configuration_path = "encodings/repairs/experimental/regulator_configuration_generator.lp"
+#Paths of encodings for generating nodes
+exp_nodegen_path = "encodings/repairs/experimental/node_generator.lp"
+
+#Paths of encodings for generating edges between nodes
+exp_edgegen_path = "encodings/repairs/edge_generator.lp"
+
+#Paths of encodings for generating functions
+exp_ss_func_generator_path = "encodings/repairs/function_generators/func_generator_new_sstate.lp"
+exp_sync_func_generator_path = "encodings/repairs/function_generators/func_generator_new_sync.lp"
+exp_async_func_generator_path = "encodings/repairs/function_generators/func_generator_new_async.lp"
+
+
 #Mode flags 
+experimental_mode = True
 toggle_filtering = True
 toggle_stable_state = True
 toggle_sync = False
@@ -283,6 +299,26 @@ def getOriginalModelLP(func):
 
   return original_LP, inconsistent_func_LP
 
+#Experimental
+def getConfigurationsLP(configurations):
+  conf_id = 1
+  result = ""
+  for conf in configurations:
+    result += f"configuration({conf_id}).\n"
+    for atom in conf:
+      argument = atom.split(')')[0].split('(')[1]
+      if "variable" in atom:
+        result += f"configuration_variable({conf_id},{argument}).\n"
+
+      elif "compound_number" in atom:
+        result += f"configuration_variable_number({conf_id},{argument}).\n"
+
+
+    conf_id += 1
+    result += "\n"
+
+  result += f"total_configurations({len(configurations)}).\n"
+  return result
 
 
 #-----Functions that process output from clingo-----
@@ -356,6 +392,23 @@ def processEdges(edges):
   else: 
     print("No edges could be found \u274C")
 
+#Experimental
+def processConfigurations(configurations):
+  if not configurations:
+    print("No answers sets could be found	\u2755 there must be something wrong with the encoding...")
+
+  else:
+    configurations_LP = getConfigurationsLP(configurations)
+
+    total_configurations = len(configurations)
+    if(total_configurations < 100):
+      print("<Resulting total configurations>")
+      print(configurations_LP)
+    else:
+      print("Too many configurations to print...!")
+    print(f"Total configurations: {total_configurations}")
+
+    return configurations_LP
 
 
 #-----Functions that solve LPs with clingo-----
@@ -491,6 +544,47 @@ def generateFunctions(generate_functions_LP, func, original_LP, curated_LP):
   
   return functions
 
+#Experimental
+def generateRegulatorConfigurations():
+  clingo_args = ["0"]
+
+  ctl = clingo.Control(arguments=clingo_args)
+
+  ctl.load(model_path)
+  ctl.load(exp_regulator_configuration_path)
+
+  print("Starting configuration generation \u23F1")
+  ctl.ground([("base", [])])
+  configs = []
+
+  with ctl.solve(yield_=True) as handle:
+    for model in handle:
+      configs.append(str(model).split(" "))
+
+  print("Finished configuration generation \U0001F3C1")
+  printStatistics(ctl.statistics)
+  return configs
+
+def generateNodesExperimental(configurations_LP):
+  clingo_args = ["0"]
+
+  ctl = clingo.Control(arguments=clingo_args)
+
+  ctl.add("base", [], program=configurations_LP)
+  ctl.load(exp_nodegen_path)
+
+  print("Starting node generation \u23F1")
+  ctl.ground([("base", [])])
+  nodes = []
+
+  with ctl.solve(yield_=True) as handle:
+    for model in handle:
+      nodes.append(str(model).split(" "))
+
+  print("Finished node generation \U0001F3C1")
+  printStatistics(ctl.statistics)
+  print("Total size:", len(nodes))
+  return nodes
 
 
 #---Auxiliary clingo Functions---
@@ -510,49 +604,65 @@ class Context:
 if cmd_enabled:
   parseArgs()
 
-#TODO make this IFTV part clearer after edge flip and compound addition/removal is complete
-#TODO Get inconsistent functions, variables and total variables 
-printIFTVStart()
-incst_LP, curated_LP = getInconsistenciesAndCuratedLP()
+if not experimental_mode:  
 
-iftvs = generateInconsistentFunctionsAndTotalVars(incst_LP)
-iftvs_LP, total_vars = processIFTVs(iftvs)
-printIFTVEnd()
+  #TODO make this IFTV part clearer after edge flip and compound addition/removal is complete
+  #TODO Get inconsistent functions, variables and total variables 
+  printIFTVStart()
+  incst_LP, curated_LP = getInconsistenciesAndCuratedLP()
 
-if iftvs_LP:
-  for func in iftvs_LP.keys():
+  iftvs = generateInconsistentFunctionsAndTotalVars(incst_LP)
+  iftvs_LP, total_vars = processIFTVs(iftvs)
+  printIFTVEnd()
 
-    printFuncRepairStart(func)
+  if iftvs_LP:
+    for func in iftvs_LP.keys():
 
-    original_LP = getOriginalModelLP(func)
+      printFuncRepairStart(func)
 
-    #Node generation
-    printNodeStart()
-    nodes = generateNodes(iftvs_LP[func])
-    nodes_LP = processNodes(nodes)
-    nodes_new = generateNodesNew(iftvs_LP[func])
-    printNodeEnd()
+      original_LP = getOriginalModelLP(func)
 
-'''
-    if nodes_LP:
-      #Edge generation
-      printEdgeStart()
-      edges = generateEdges(nodes_LP)
-      edges_LP = processEdges(edges)
-      printEdgeEnd()
+      #Node generation
+      printNodeStart()
+      nodes = generateNodes(iftvs_LP[func])
+      nodes_LP = processNodes(nodes)
+      nodes_new = generateNodesNew(iftvs_LP[func])
+      printNodeEnd()
 
-      if edges_LP:
-        printFuncStart()
+  '''
+      if nodes_LP:
+        #Edge generation
+        printEdgeStart()
+        edges = generateEdges(nodes_LP)
+        edges_LP = processEdges(edges)
+        printEdgeEnd()
 
-        #Function generation
-        generate_functions_LP = combineLPs([iftvs_LP[func], nodes_LP, edges_LP])
-        start_time = time.time()
-        functions = generateFunctions(generate_functions_LP, func, original_LP[0], curated_LP)
-        end_time = time.time()
-        print(functions)
+        if edges_LP:
+          printFuncStart()
 
-        printFunctionStatistics(end_time-start_time, clingo_cumulative_level_search_time, total_vars[func])
-        printFuncEnd()
-      
-    printFuncRepairEnd(func)
-'''
+          #Function generation
+          generate_functions_LP = combineLPs([iftvs_LP[func], nodes_LP, edges_LP])
+          start_time = time.time()
+          functions = generateFunctions(generate_functions_LP, func, original_LP[0], curated_LP)
+          end_time = time.time()
+          print(functions)
+
+          printFunctionStatistics(end_time-start_time, clingo_cumulative_level_search_time, total_vars[func])
+          printFuncEnd()
+        
+      printFuncRepairEnd(func)
+  '''
+
+else: #Experimental mode, all possible regulator configurations are generated 
+
+  printIFTVStart()
+  configurations = generateRegulatorConfigurations()
+  configurations_LP = processConfigurations(configurations)
+  printIFTVEnd()
+
+  printNodeStart()
+  nodes = generateNodesExperimental(configurations_LP)
+  #print(nodes)
+  printNodeEnd()
+
+  
