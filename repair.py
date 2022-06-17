@@ -2,6 +2,10 @@ import argparse, logging, clingo, time
 from math import comb
 from aux_scripts.repair_prints import *
 
+#TODO implement missing features in the new func generator encodings/repairs/smart/node_generators/node_generator_sync.lp
+#TODO implement generators for stable state and async modes
+#TODO clean up unused functions and encodings
+
 #--Work in progress--
 #Usage: $python repair.py -f (FILENAME) -o (OBSERVATIONS) -i (INCONSISTENCIES) -stable -sync -async
 #Optional flags:
@@ -107,8 +111,13 @@ exp_sync_func_generator_path = "encodings/repairs/function_generators/func_gener
 exp_async_func_generator_path = "encodings/repairs/function_generators/func_generator_new_async.lp"
 
 
+#Smart paths
+smart_func_generator_sync_path = "encodings/repairs/smart/node_generators/node_generator_sync.lp"
+
 #Mode flags 
-experimental_mode = True
+regular_mode = False
+smart_mode = True
+experimental_mode = False
 toggle_filtering = True
 toggle_stable_state = True
 toggle_sync = False
@@ -586,6 +595,33 @@ def generateNodesExperimental(configurations_LP):
   print("Total size:", len(nodes))
   return nodes
 
+#Smart
+def generateFunctionsSmart(func, curated_LP):
+  clingo_args = ["0", f"-c compound={func}"]
+    
+  ctl = clingo.Control(arguments=clingo_args)
+
+  ctl.add("base", [], program=curated_LP)
+  ctl.load(model_path) 
+
+  print(curated_LP)
+  #TODO add paths for async and stable
+  if toggle_stable_state:
+    ctl.load(smart_func_generator_sync_path)
+  elif toggle_sync:
+    ctl.load(smart_func_generator_sync_path)
+  else:
+    ctl.load(smart_func_generator_sync_path)
+    
+  ctl.ground([("base", [])])
+  functions = []
+
+  with ctl.solve(yield_=True) as handle:
+    for model in handle:
+      functions = str(model).split(" ")
+
+  printStatistics(ctl.statistics)
+  return functions
 
 #---Auxiliary clingo Functions---
 class Context:
@@ -604,7 +640,7 @@ class Context:
 if cmd_enabled:
   parseArgs()
 
-if not experimental_mode:  
+if regular_mode:  
 
   #TODO make this IFTV part clearer after edge flip and compound addition/removal is complete
   #TODO Get inconsistent functions, variables and total variables 
@@ -653,7 +689,51 @@ if not experimental_mode:
       printFuncRepairEnd(func)
   '''
 
-else: #Experimental mode, all possible regulator configurations are generated 
+elif smart_mode: 
+
+  print("Smart mode engaged. Buckle up... :)")
+
+  printIFTVStart()
+  incst_LP, curated_LP = getInconsistenciesAndCuratedLP()
+
+  iftvs = generateInconsistentFunctionsAndTotalVars(incst_LP)
+  iftvs_LP, total_vars = processIFTVs(iftvs)
+  printIFTVEnd()
+
+  if iftvs_LP:
+    for func in iftvs_LP.keys():
+
+      printFuncRepairStart(func)
+      functions = generateFunctionsSmart(func, curated_LP)
+      print(functions)
+      printFuncRepairEnd(func)
+
+  '''
+      if nodes_LP:
+        #Edge generation
+        printEdgeStart()
+        edges = generateEdges(nodes_LP)
+        edges_LP = processEdges(edges)
+        printEdgeEnd()
+
+        if edges_LP:
+          printFuncStart()
+
+          #Function generation
+          generate_functions_LP = combineLPs([iftvs_LP[func], nodes_LP, edges_LP])
+          start_time = time.time()
+          functions = generateFunctions(generate_functions_LP, func, original_LP[0], curated_LP)
+          end_time = time.time()
+          print(functions)
+
+          printFunctionStatistics(end_time-start_time, clingo_cumulative_level_search_time, total_vars[func])
+          printFuncEnd()
+        
+      printFuncRepairEnd(func)
+  '''
+  
+
+elif experimental_mode: #Experimental mode, all possible regulator configurations are generated 
 
   printIFTVStart()
   configurations = generateRegulatorConfigurations()
@@ -664,5 +744,4 @@ else: #Experimental mode, all possible regulator configurations are generated
   nodes = generateNodesExperimental(configurations_LP)
   #print(nodes)
   printNodeEnd()
-
   
