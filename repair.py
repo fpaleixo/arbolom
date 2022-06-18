@@ -2,8 +2,8 @@ import argparse, logging, clingo, time
 from math import comb
 from aux_scripts.repair_prints import *
 
-#TODO implement missing features in the new func generator encodings/repairs/smart/node_generators/node_generator_sync.lp
 #TODO implement generators for stable state and async modes
+#TODO check correctness of the new approach
 #TODO clean up unused functions and encodings
 
 #--Work in progress--
