@@ -604,7 +604,7 @@ def generateFunctionsSmart(func, curated_LP):
   ctl.add("base", [], program=curated_LP)
   ctl.load(model_path) 
 
-  print(curated_LP)
+  #print(curated_LP)
   #TODO add paths for async and stable
   if toggle_stable_state:
     ctl.load(smart_func_generator_sync_path)
@@ -708,30 +708,6 @@ elif smart_mode:
       print(functions)
       printFuncRepairEnd(func)
 
-  '''
-      if nodes_LP:
-        #Edge generation
-        printEdgeStart()
-        edges = generateEdges(nodes_LP)
-        edges_LP = processEdges(edges)
-        printEdgeEnd()
-
-        if edges_LP:
-          printFuncStart()
-
-          #Function generation
-          generate_functions_LP = combineLPs([iftvs_LP[func], nodes_LP, edges_LP])
-          start_time = time.time()
-          functions = generateFunctions(generate_functions_LP, func, original_LP[0], curated_LP)
-          end_time = time.time()
-          print(functions)
-
-          printFunctionStatistics(end_time-start_time, clingo_cumulative_level_search_time, total_vars[func])
-          printFuncEnd()
-        
-      printFuncRepairEnd(func)
-  '''
-  
 
 elif experimental_mode: #Experimental mode, all possible regulator configurations are generated 
 
