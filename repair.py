@@ -51,11 +51,11 @@ python .\repair.py -f simple_models/lp/corrupted/6/6-corrupted-fe.lp -o simple_m
 python .\repair.py -f simple_models/lp/corrupted/6/6-corrupted-fe.lp -o simple_models/lp/observations/tseries/async/6-obs.lp -i simple_models/lp/corrupted/6/inconsistencies/6-corrupted-fe-async_inconsistency.lp -async
 
 #NO SOLUTIONS
-#5 variables
-python .\repair.py -f simple_models/lp/corrupted/8/8-corrupted-f-nosol.lp -o simple_models/lp/observations/tseries/sync/8-obs.lp -i simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-nosol-sync_inconsistency.lp -sync
+#6 variables
+python .\repair.py -f real_models/lp/corrupted/boolean_cell_cycle/boolean_cell_cycle-corrupted-f.lp -o real_models/lp/observations/tseries/sync/impossible/boolean_cell_cycle-impossible_obs.lp -i testing/impossible_inconsistencies/boolean_cell_cycle-corrupted-f-sync_inconsistency.lp -sync 
 
 #8 variables
-python .\repair.py -f real_models/lp/corrupted/SP_1cell/SP_1cell-corrupted-f.lp -o real_models/lp/observations/tseries/sync/impossible/SP_1cell-impossible_obs.lp -i testing/impossible_inconsistencies/SP_1cell/inconsistencies/SP_1cell-corrupted-f-sync_inconsistency.lp -sync
+python .\repair.py -f real_models/lp/corrupted/SP_1cell/SP_1cell-corrupted-f.lp -o real_models/lp/observations/tseries/sync/impossible/SP_1cell-impossible_obs.lp -i testing/impossible_inconsistencies/SP_1cell-corrupted-f-sync_inconsistency.lp -sync
 '''
 
 
