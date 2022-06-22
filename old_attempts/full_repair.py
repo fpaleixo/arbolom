@@ -1,16 +1,12 @@
-import argparse, logging, clingo, time
-from math import comb
-from aux_scripts.repair_prints import *
+import argparse, logging, clingo
+from aux_scripts.repair_prints_fullrepair import *
 
-#TODO insert more ICs to eliminate non-optimal models
-#TODO simplify encoding edge case
-#TODO improve maximum node upper bounds
-#TODO implement generators for stable state and async modes
-#TODO check correctness of each generator
-#TODO measure performance using heavier models
+#!DEPRECATED
+#!DEPRECATED
+#!DEPRECATED
 
 #--Work in progress--
-#Usage: $python repair.py -f (FILENAME) -o (OBSERVATIONS) -i (INCONSISTENCIES) -stable -sync -async
+#Usage: $python old_attempts/full_repair.py -f (FILENAME) -o (OBSERVATIONS) -i (INCONSISTENCIES) -stable -sync -async
 #Optional flags:
 #-stable -> Performs repairs using stable state observations (default).
 #-sync -> Performs repairs using synchronous observations.
@@ -24,41 +20,41 @@ from aux_scripts.repair_prints import *
 #-----Testing shortcuts (to be removed at a later date)----
 '''
 #3 variables
-python .\repair.py -f simple_models/lp/corrupted/3/3-corrupted-f.lp -i simple_models/lp/corrupted/3/inconsistencies/3-corrupted-f-stable_inconsistency.lp -stable
-python .\repair.py -f simple_models/lp/corrupted/3/3-corrupted-f.lp -i simple_models/lp/corrupted/3/inconsistencies/3-corrupted-f-sync_inconsistency.lp -sync
-python .\repair.py -f simple_models/lp/corrupted/3/3-corrupted-f.lp -i simple_models/lp/corrupted/3/inconsistencies/3-corrupted-f-async_inconsistency.lp -async
+python .\old_attempts/full_repair.py -f simple_models/lp/corrupted/3/3-corrupted-f.lp -i simple_models/lp/corrupted/3/inconsistencies/3-corrupted-f-stable_inconsistency.lp -stable
+python .\old_attempts/full_repair.py -f simple_models/lp/corrupted/3/3-corrupted-f.lp -i simple_models/lp/corrupted/3/inconsistencies/3-corrupted-f-sync_inconsistency.lp -sync
+python .\old_attempts/full_repair.py -f simple_models/lp/corrupted/3/3-corrupted-f.lp -i simple_models/lp/corrupted/3/inconsistencies/3-corrupted-f-async_inconsistency.lp -async
 
 #5 variables
-python .\repair.py -f simple_models/lp/corrupted/8/8-corrupted-f.lp -i simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-stable_inconsistency.lp -stable
-python .\repair.py -f simple_models/lp/corrupted/8/8-corrupted-f.lp -i simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-sync_inconsistency.lp -sync
-python .\repair.py -f simple_models/lp/corrupted/8/8-corrupted-f.lp -i simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-async_inconsistency.lp -async
+python .\old_attempts/full_repair.py -f simple_models/lp/corrupted/8/8-corrupted-f.lp -i simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-stable_inconsistency.lp -stable
+python .\old_attempts/full_repair.py -f simple_models/lp/corrupted/8/8-corrupted-f.lp -i simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-sync_inconsistency.lp -sync
+python .\old_attempts/full_repair.py -f simple_models/lp/corrupted/8/8-corrupted-f.lp -i simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-async_inconsistency.lp -async
 
 #6 variables
 (no stable examples for boolean cell cycle)
-python .\repair.py -f real_models/lp/corrupted/boolean_cell_cycle/boolean_cell_cycle-corrupted-f.lp -i real_models/lp/corrupted/boolean_cell_cycle/inconsistencies/boolean_cell_cycle-corrupted-f-sync_inconsistency.lp -sync
-python .\repair.py -f real_models/lp/corrupted/boolean_cell_cycle/boolean_cell_cycle-corrupted-f.lp -i real_models/lp/corrupted/boolean_cell_cycle/inconsistencies/boolean_cell_cycle-corrupted-f-async_inconsistency.lp -async
+python .\old_attempts/full_repair.py -f real_models/lp/corrupted/boolean_cell_cycle/boolean_cell_cycle-corrupted-f.lp -i real_models/lp/corrupted/boolean_cell_cycle/inconsistencies/boolean_cell_cycle-corrupted-f-sync_inconsistency.lp -sync
+python .\old_attempts/full_repair.py -f real_models/lp/corrupted/boolean_cell_cycle/boolean_cell_cycle-corrupted-f.lp -i real_models/lp/corrupted/boolean_cell_cycle/inconsistencies/boolean_cell_cycle-corrupted-f-async_inconsistency.lp -async
 
 #7 variables
-python .\repair.py -i simple_models/lp/corrupted/11/inconsistencies/11-corrupted-f2-stable_inconsistency.lp -f simple_models/lp/corrupted/11/11-corrupted-f2.lp -stable
-python .\repair.py -f simple_models/lp/corrupted/11/11-corrupted-f.lp -i simple_models/lp/corrupted/11/inconsistencies/11-corrupted-f-sync_inconsistency.lp -sync
-python .\repair.py -f simple_models/lp/corrupted/11/11-corrupted-f.lp -i simple_models/lp/corrupted/11/inconsistencies/11-corrupted-f-async_inconsistency.lp -async
+python .\old_attempts/full_repair.py -i simple_models/lp/corrupted/11/inconsistencies/11-corrupted-f2-stable_inconsistency.lp -f simple_models/lp/corrupted/11/11-corrupted-f2.lp -stable
+python .\old_attempts/full_repair.py -f simple_models/lp/corrupted/11/11-corrupted-f.lp -i simple_models/lp/corrupted/11/inconsistencies/11-corrupted-f-sync_inconsistency.lp -sync
+python .\old_attempts/full_repair.py -f simple_models/lp/corrupted/11/11-corrupted-f.lp -i simple_models/lp/corrupted/11/inconsistencies/11-corrupted-f-async_inconsistency.lp -async
 
 #8 variables
 (no stable examples for sp1 cell)
-python .\repair.py -f real_models/lp/corrupted/SP_1cell/SP_1cell-corrupted-f.lp -i real_models/lp/corrupted/SP_1cell/inconsistencies/SP_1cell-corrupted-f-sync_inconsistency.lp -sync
+python .\old_attempts/full_repair.py -f real_models/lp/corrupted/SP_1cell/SP_1cell-corrupted-f.lp -i real_models/lp/corrupted/SP_1cell/inconsistencies/SP_1cell-corrupted-f-sync_inconsistency.lp -sync
 (no async examples)
 
 #All functions inconsistent
-python .\repair.py -f simple_models/lp/corrupted/6/6-corrupted-fe.lp -i simple_models/lp/corrupted/6/inconsistencies/6-corrupted-fe-stable_inconsistency.lp -stable
-python .\repair.py -f simple_models/lp/corrupted/6/6-corrupted-fe.lp -i simple_models/lp/corrupted/6/inconsistencies/6-corrupted-fe-sync_inconsistency.lp -sync
-python .\repair.py -f simple_models/lp/corrupted/6/6-corrupted-fe.lp -i simple_models/lp/corrupted/6/inconsistencies/6-corrupted-fe-async_inconsistency.lp -async
+python .\old_attempts/full_repair.py -f simple_models/lp/corrupted/6/6-corrupted-fe.lp -i simple_models/lp/corrupted/6/inconsistencies/6-corrupted-fe-stable_inconsistency.lp -stable
+python .\old_attempts/full_repair.py -f simple_models/lp/corrupted/6/6-corrupted-fe.lp -i simple_models/lp/corrupted/6/inconsistencies/6-corrupted-fe-sync_inconsistency.lp -sync
+python .\old_attempts/full_repair.py -f simple_models/lp/corrupted/6/6-corrupted-fe.lp -i simple_models/lp/corrupted/6/inconsistencies/6-corrupted-fe-async_inconsistency.lp -async
 
 #NO SOLUTIONS
 #6 variables
-python .\repair.py -f real_models/lp/corrupted/boolean_cell_cycle/boolean_cell_cycle-corrupted-f.lp -i testing/impossible_inconsistencies/boolean_cell_cycle-corrupted-f-sync_inconsistency.lp -sync 
+python .\old_attempts/full_repair.py -f real_models/lp/corrupted/boolean_cell_cycle/boolean_cell_cycle-corrupted-f.lp -i testing/impossible_inconsistencies/boolean_cell_cycle-corrupted-f-sync_inconsistency.lp -sync 
 
 #8 variables
-python .\repair.py -f real_models/lp/corrupted/SP_1cell/SP_1cell-corrupted-f.lp -i testing/impossible_inconsistencies/SP_1cell-corrupted-f-sync_inconsistency.lp -sync
+python .\old_attempts/full_repair.py -f real_models/lp/corrupted/SP_1cell/SP_1cell-corrupted-f.lp -i testing/impossible_inconsistencies/SP_1cell-corrupted-f-sync_inconsistency.lp -sync
 '''
 
 
@@ -81,10 +77,10 @@ model_path = "simple_models/lp/corrupted/8/8-corrupted-f.lp"
 incst_path = "simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-sync_inconsistency.lp"
 
 #Paths of encodings for obtaining inconsistent functions and total variables of each
-iftv_path = "encodings/repairs/iftv.lp"
+iftv_path = "old_attempts/encodings/repairs/fullrepair/iftv.lp"
 
 #Paths of encodings for generating functions
-smart_func_generator_sync_path = "encodings/repairs/repairs_sync.lp"
+smart_func_generator_sync_path = "old_attempts/encodings/repairs/fullrepair/repairs_sync.lp"
 
 #Mode flags 
 toggle_stable_state = True
@@ -267,8 +263,6 @@ def generateFunctions(func, curated_LP):
   ctl.add("base", [], program=curated_LP)
   ctl.load(model_path) 
 
-  #print(curated_LP)
-  #TODO add paths for async and stable
   if toggle_stable_state:
     ctl.load(smart_func_generator_sync_path)
   elif toggle_sync:
