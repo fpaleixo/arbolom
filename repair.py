@@ -2,7 +2,6 @@ import argparse, logging, clingo, time
 from math import comb
 from aux_scripts.repair_prints import *
 
-#TODO implement generators for stable state and async modes
 #TODO check correctness of each generator
 #TODO measure performance using heavier models
 
