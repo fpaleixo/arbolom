@@ -2,9 +2,6 @@ import argparse, logging, clingo, time
 from math import comb
 from aux_scripts.repair_prints import *
 
-#TODO insert more ICs to eliminate non-optimal models
-#TODO simplify encoding edge case
-#TODO improve maximum node upper bounds
 #TODO implement generators for stable state and async modes
 #TODO check correctness of each generator
 #TODO measure performance using heavier models
@@ -84,7 +81,9 @@ incst_path = "simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-sync_in
 iftv_path = "encodings/repairs/iftv.lp"
 
 #Paths of encodings for generating functions
-smart_func_generator_sync_path = "encodings/repairs/repairs_sync.lp"
+repair_encoding_stable_path = "encodings/repairs/repairs_stable.lp"
+repair_encoding_sync_path = "encodings/repairs/repairs_sync.lp"
+repair_encoding_async_path = "encodings/repairs/repairs_async.lp"
 
 #Mode flags 
 toggle_stable_state = True
@@ -267,14 +266,12 @@ def generateFunctions(func, curated_LP):
   ctl.add("base", [], program=curated_LP)
   ctl.load(model_path) 
 
-  #print(curated_LP)
-  #TODO add paths for async and stable
   if toggle_stable_state:
-    ctl.load(smart_func_generator_sync_path)
+    ctl.load(repair_encoding_stable_path)
   elif toggle_sync:
-    ctl.load(smart_func_generator_sync_path)
+    ctl.load(repair_encoding_sync_path)
   else:
-    ctl.load(smart_func_generator_sync_path)
+    ctl.load(repair_encoding_async_path)
     
   ctl.ground([("base", [])])
   functions = []

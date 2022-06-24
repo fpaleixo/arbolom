@@ -18,26 +18,29 @@ sign_changed(C) :- edge(C,compound,0), inhibitor(C).
 sign_changed(C) :- edge(C,compound,1), activator(C).
 
 %*--Node creation--*%
+%In async mode, we only need to justify active compound observations
+%that originate from activations of the compounds' function (i.e. transitions from 0 to 1)
+relevant_curated_observation(E,T,compound,1) :- curated_observation(E,T,compound,1), curated_observation(E,T-1,compound,0).
+
 %Determine distinct observations that happen before active observations 
-%TODO improve this so that only two active observations with the exact same state are compared, as opposed to any two active observations
-distinct_observations(E1,T1,E2,T2) :- curated_observation(E1,T1,compound,1), curated_observation(E2,T2,compound,1), 
+distinct_observations(E1,T1,E2,T2) :- relevant_curated_observation(E1,T1,compound,1), relevant_curated_observation(E2,T2,compound,1), 
   curated_observation(E1,T1-1,COMPOUND,S1), curated_observation(E2,T2-1,COMPOUND,S2), S1 != S2, T1 > 0, T2 > 0.
 
 %If the observations that happen before any two given active observations are not distinct, then one is a duplicate of the other
 %(two rules are required to ensure that the first observation is never marked as a duplicate, only the ones after it)
-duplicate_observation(E2,T2) :- curated_observation(E1,T1,compound,1), curated_observation(E2,T2,compound,1), 
+duplicate_observation(E2,T2) :- relevant_curated_observation(E1,T1,compound,1), relevant_curated_observation(E2,T2,compound,1), 
   not distinct_observations(E1,T1,E2,T2), E2 > E1, T1 > 0, T2 > 0.
-duplicate_observation(E,T2) :- curated_observation(E,T1,compound,1), curated_observation(E,T2,compound,1), 
+duplicate_observation(E,T2) :- relevant_curated_observation(E,T1,compound,1), relevant_curated_observation(E,T2,compound,1), 
   not distinct_observations(E,T1,E,T2), T2 > T1, T1 > 0, T2 > 0.
 
 %The highest number of nodes we'll consider is equal to the number of unique active observations,
 %since at most we'll need one node per unique active observation to render the model consistent
 %(it may be that one node can explain several active observations)
-maximum_nodes(ACTIVE_OBSERVATIONS) :- ACTIVE_OBSERVATIONS = #count{E,T,compound,1 : curated_observation(E,T,compound,1), not duplicate_observation(E,T)}.
+maximum_nodes(ACTIVE_OBSERVATIONS) :- ACTIVE_OBSERVATIONS = #count{E,T,compound,1 : relevant_curated_observation(E,T,compound,1), not duplicate_observation(E,T)}.
 
 %If we have at least some observation where the compound is active at a T > 0,
 %then we have active observations
-active_observations :- curated_observation(_,T,compound,1), time(T), T > 0.
+active_observations :- relevant_curated_observation(_,T,compound,1), time(T), T > 0.
 
 %If we have no active observations, then we will use 1 node maximum to explain the observations.
 %If 1 node isn't enough to produce a function that's restrictive enough, then no such function exists
@@ -62,11 +65,11 @@ node_active(E,T,N) :- not node_inactive(E,T,N), node_(N), curated_observation(E,
 
 %If the compound is active at time T, there must be at least one node active at time T-1 
 %(the at least one restriction is enforced via minimization -- see lines 83 & 105)
-{candidate_node(E,T,N) : node_active(E,T-1,N)} 1 :- curated_observation(E,T,compound,1), T > 0, not duplicate_observation(E,T).
+{candidate_node(E,T,N) : node_active(E,T-1,N)} 1 :- relevant_curated_observation(E,T,compound,1), T > 0, not duplicate_observation(E,T).
 candidate_node(N) :- candidate_node(E,T,N).
 
 %Determine all observations that are covered by the selected nodes
-node_observation_coverage(N,E,T) :- curated_observation(E,T,compound,1), T > 0, not duplicate_observation(E,T), candidate_node(N), node_active(E,T-1,N).
+node_observation_coverage(N,E,T) :- relevant_curated_observation(E,T,compound,1), T > 0, not duplicate_observation(E,T), candidate_node(N), node_active(E,T-1,N).
 
 %If two candidate nodes cover different active observations, then their behavior is distinct
 distinct_behavior(N1,N2) :- candidate_node(N1), candidate_node(N2), N1 < N2, node_observation_coverage(N1,E,T), not node_observation_coverage(N2,E,T).
@@ -95,14 +98,13 @@ bcf_broken :- candidate_node(N1), candidate_node(N2), N1 != N2, node_varno(N1,N1
 
 %*--No solution determination--*%
 no_solution :- {candidate_node(N)} = 0.
-no_solution :- curated_observation(E,T,compound,1), not duplicate_observation(E,T), not candidate_node(E,T,_), T > 0.
-no_solution :- node_active(E,T-1,1), curated_observation(E,T,compound,0), T > 0, not active_observations.
+no_solution :- relevant_curated_observation(E,T,compound,1), not duplicate_observation(E,T), not candidate_node(E,T,_), T > 0.
 
 
 %Test
 %We're only interested in generating nodes that can be used to explain the observations,
 %which is not possible for a node to do if it is active when we expect it to be inactive
-:- node_active(E,T-1,N), curated_observation(E,T,compound,0), T > 0, active_observations.
+:- node_active(E,T-1,N), relevant_curated_observation(E,T-1,compound,1), curated_observation(E,T,compound,0), T > 0, active_observations.
 
 %If two candidate nodes share the same behavior, then the solution is not optimal
 :- candidate_node(N1), candidate_node(N2), N1 < N2, not distinct_behavior(N1,N2).
@@ -112,7 +114,6 @@ no_solution :- node_active(E,T-1,1), curated_observation(E,T,compound,0), T > 0,
 
 %We are only interested in considering nodes that have some regulator
 :- node_(N), not node_regulator(N,_).
-
 
 %Display
 final_node_regulator(N,C) :- candidate_node(N), node_regulator(N,C).
