@@ -1,6 +1,7 @@
 %Generates the best candidate function according to the minimization criteria (one-shot)
 #const compound = c.
 
+%TODO fix this encoding, impossible inconsistencies are being solved when they shouldn't be
 %Define
 %*--Preliminaries--*%
 %Time must occur in some rule head
@@ -140,6 +141,9 @@ final_inhibitor(C) :- final_node_regulator(N,C), inhibitor(C).
 #show final_activator/1.
 #show final_inhibitor/1.
 #show final_node_regulator/2.
+
+#show unique_active_state/2.
+#show active_observation/2.
 
 %Optimize
 %Optimize for minimizing the occurence of the no_solution predicate (highest priority)
