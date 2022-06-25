@@ -42,14 +42,14 @@ inconsistent(E,T,N,1) :- changed_node(E,T-1,N), active(E,T,N), curated_observati
 %If compound N is inactive but there is an observation stating it should be active, then the model is inconsistent
 inconsistent(E,T,N,0) :- changed_node(E,T-1,N), not active(E,T,N), curated_observation(E,T,N,1), T > 0.
 
-%In asynchronous mode, only one node state may change at each time step (without counting input nodes)
-inconsistent(E,T,N1,N2) :- changed_node(E,T,N1), changed_node(E,T,N2), N1 != N2.
-
 
 %Test
 %Input nodes need to take values consistent with the observations (when they exist)
 :- curated_observation(E,T,N,0), active(E,T,N), input_node(N).
 :- curated_observation(E,T,N,1), not active(E,T,N), input_node(N).
+
+%In asynchronous mode, only one node state may change at each time step (without counting input nodes)
+:- changed_node(E,T,N1), changed_node(E,T,N2), N1 != N2.
 
 
 %Display

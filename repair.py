@@ -6,14 +6,13 @@ from aux_scripts.repair_prints import *
 #TODO measure performance using heavier models
 
 #--Work in progress--
-#Usage: $python repair.py -f (FILENAME) -o (OBSERVATIONS) -i (INCONSISTENCIES) -stable -sync -async
+#Usage: $python repair.py -f (FILENAME) -i (INCONSISTENCIES) -stable -sync -async
 #Optional flags:
 #-stable -> Performs repairs using stable state observations (default).
 #-sync -> Performs repairs using synchronous observations.
 #-async -> Performs repairs using asynchronous observations.
 #Variables:
 #FILENAME -> Path of file containing Boolean model in the BCF format written in lp.
-#OBSERVATIONS -> Path of file containing observations written in lp. 
 #INCONSISTENCIES -> Path of file containing inconsistencies obtained from the consistency checking phase.
 
 
@@ -52,12 +51,9 @@ python .\repair.py -f simple_models/lp/corrupted/6/6-corrupted-fe.lp -i simple_m
 #NO SOLUTIONS
 #6 variables
 python .\repair.py -f real_models/lp/corrupted/boolean_cell_cycle/boolean_cell_cycle-corrupted-f.lp -i testing/impossible_inconsistencies/boolean_cell_cycle-corrupted-f-sync_inconsistency.lp -sync 
-python .\repair.py -f real_models/lp/corrupted/boolean_cell_cycle/boolean_cell_cycle-corrupted-f.lp -i testing/impossible_inconsistencies/boolean_cell_cycle-corrupted-f-async_inconsistency.lp -async 
 
 #8 variables
 python .\repair.py -f real_models/lp/corrupted/SP_1cell/SP_1cell-corrupted-f.lp -i testing/impossible_inconsistencies/SP_1cell-corrupted-f-sync_inconsistency.lp -sync
-python .\repair.py -f real_models/lp/corrupted/SP_1cell/SP_1cell-corrupted-f.lp -i testing/impossible_inconsistencies/SP_1cell-corrupted-f-async_inconsistency.lp -async
-
 '''
 
 
@@ -80,7 +76,7 @@ model_path = "simple_models/lp/corrupted/8/8-corrupted-f.lp"
 incst_path = "simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-sync_inconsistency.lp"
 
 #Paths of encodings for obtaining inconsistent functions and total variables of each
-iftv_path = "encodings/repairs/iftv.lp"
+iftv_path = "encodings/repairs/auxiliary/iftv.lp"
 
 #Paths of encodings for generating functions
 repair_encoding_stable_path = "encodings/repairs/repairs_stable.lp"

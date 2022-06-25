@@ -1,5 +1,6 @@
-%Generates the best candidate function according to the minimization criteria (one-shot)
+%Generates the best candidate function for stable state observations
 #const compound = c.
+
 %Define
 %*--Preliminaries--*%
 %Get the original regulators from the inconsistent model

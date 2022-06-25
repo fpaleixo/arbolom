@@ -1,4 +1,4 @@
-%Generates the best candidate function according to the minimization criteria (one-shot)
+%Generates the best candidate function for synchronous observations
 #const compound = c.
 
 %Define
