@@ -80,7 +80,8 @@ iftv_path = "encodings/repairs/auxiliary/iftv.lp"
 
 #Paths of encodings for generating functions
 repair_encoding_stable_path = "encodings/repairs/repairs_stable.lp"
-repair_encoding_sync_path = "encodings/repairs/repairs_sync.lp"
+#repair_encoding_sync_path = "encodings/repairs/repairs_sync.lp"
+repair_encoding_sync_path = "encodings/repairs/simplified/repairs_sync_simplified.lp"
 repair_encoding_async_path = "encodings/repairs/repairs_async.lp"
 
 #Mode flags 
