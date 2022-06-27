@@ -42,12 +42,10 @@ node(v9).
 
 %Regulators of v1
 edge(v39, v1, 1).
-edge(v30, v1, 0).
 
 %Regulatory function of v1
 function(v1, 1).
 term(v1, 1, v39).
-term(v1, 1, v32).
 
 %Regulators of v2
 edge(v1, v2, 0).
