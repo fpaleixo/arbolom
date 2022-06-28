@@ -21,9 +21,7 @@ node(v8).
 node(v9).
 
 %Regulators of v1
-edge(v1, v1, 0).
-edge(v2, v1, 0).
-edge(v3, v1, 0).
+edge(v3, v1, 1).
 edge(v4, v1, 0).
 edge(v5, v1, 0).
 edge(v6, v1, 0).
@@ -34,9 +32,7 @@ edge(v10, v1, 0).
 
 %Regulatory function of v1
 function(v1, 1).
-term(v1, 1, v1).
 term(v1, 1, v10).
-term(v1, 1, v2).
 term(v1, 1, v3).
 term(v1, 1, v4).
 term(v1, 1, v5).
@@ -46,29 +42,21 @@ term(v1, 1, v8).
 term(v1, 1, v9).
 
 %Regulators of v2
-edge(v1, v2, 0).
-edge(v2, v2, 0).
-edge(v3, v2, 0).
-edge(v4, v2, 0).
-edge(v5, v2, 0).
+edge(v5, v2, 1).
 edge(v6, v2, 0).
-edge(v7, v2, 0).
+edge(v7, v2, 1).
 edge(v8, v2, 0).
-edge(v9, v2, 0).
+edge(v9, v2, 1).
 edge(v10, v2, 0).
 
 %Regulatory function of v2
-function(v2, 5).
-term(v2, 1, v1).
-term(v2, 1, v2).
-term(v2, 2, v3).
-term(v2, 2, v4).
-term(v2, 3, v5).
-term(v2, 3, v6).
-term(v2, 4, v7).
-term(v2, 4, v8).
-term(v2, 5, v10).
-term(v2, 5, v9).
+function(v2, 3).
+term(v2, 1, v5).
+term(v2, 1, v6).
+term(v2, 2, v7).
+term(v2, 2, v8).
+term(v2, 3, v10).
+term(v2, 3, v9).
 
 %Regulators of v3
 edge(v1, v3, 0).
@@ -124,22 +112,15 @@ term(v4, 1, v9).
 edge(v1, v5, 0).
 edge(v2, v5, 0).
 edge(v3, v5, 0).
-edge(v4, v5, 0).
+edge(v4, v5, 1).
 edge(v5, v5, 0).
-edge(v6, v5, 0).
+edge(v6, v5, 1).
 edge(v7, v5, 0).
-edge(v8, v5, 0).
-edge(v9, v5, 0).
-edge(v10, v5, 0).
-edge(v11, v5, 0).
-edge(v12, v5, 0).
+edge(v8, v5, 1).
 
 %Regulatory function of v5
 function(v5, 1).
 term(v5, 1, v1).
-term(v5, 1, v10).
-term(v5, 1, v11).
-term(v5, 1, v12).
 term(v5, 1, v2).
 term(v5, 1, v3).
 term(v5, 1, v4).
@@ -147,27 +128,19 @@ term(v5, 1, v5).
 term(v5, 1, v6).
 term(v5, 1, v7).
 term(v5, 1, v8).
-term(v5, 1, v9).
 
 %Regulators of v6
-edge(v1, v6, 0).
+edge(v1, v6, 1).
 edge(v2, v6, 1).
-edge(v3, v6, 0).
+edge(v3, v6, 1).
 edge(v4, v6, 1).
 edge(v5, v6, 1).
-edge(v6, v6, 0).
-edge(v7, v6, 0).
+edge(v6, v6, 1).
+edge(v7, v6, 1).
 edge(v8, v6, 1).
-edge(v9, v6, 1).
-edge(v10, v6, 1).
-edge(v11, v6, 1).
-edge(v12, v6, 0).
-edge(v13, v6, 0).
-edge(v14, v6, 1).
-edge(v15, v6, 1).
 
 %Regulatory function of v6
-function(v6, 5).
+function(v6, 3).
 term(v6, 1, v1).
 term(v6, 1, v2).
 term(v6, 1, v3).
@@ -176,38 +149,24 @@ term(v6, 2, v5).
 term(v6, 3, v6).
 term(v6, 3, v7).
 term(v6, 3, v8).
-term(v6, 4, v10).
-term(v6, 4, v11).
-term(v6, 4, v9).
-term(v6, 5, v12).
-term(v6, 5, v13).
-term(v6, 5, v14).
-term(v6, 5, v15).
 
 %Regulators of v7
-edge(v1, v7, 0).
+edge(v1, v7, 1).
 edge(v2, v7, 1).
-edge(v3, v7, 0).
-edge(v16, v7, 0).
+edge(v3, v7, 1).
+edge(v16, v7, 1).
 edge(v4, v7, 1).
 edge(v5, v7, 1).
 edge(v17, v7, 1).
-edge(v6, v7, 0).
-edge(v7, v7, 0).
+edge(v6, v7, 1).
 edge(v8, v7, 1).
-edge(v18, v7, 0).
-edge(v9, v7, 1).
+edge(v18, v7, 1).
 edge(v10, v7, 1).
 edge(v11, v7, 1).
 edge(v19, v7, 1).
-edge(v12, v7, 0).
-edge(v13, v7, 0).
-edge(v14, v7, 1).
-edge(v15, v7, 1).
-edge(v20, v7, 0).
 
 %Regulatory function of v7
-function(v7, 5).
+function(v7, 4).
 term(v7, 1, v1).
 term(v7, 1, v16).
 term(v7, 1, v2).
@@ -217,62 +176,17 @@ term(v7, 2, v4).
 term(v7, 2, v5).
 term(v7, 3, v18).
 term(v7, 3, v6).
-term(v7, 3, v7).
 term(v7, 3, v8).
 term(v7, 4, v10).
 term(v7, 4, v11).
 term(v7, 4, v19).
-term(v7, 4, v9).
-term(v7, 5, v12).
-term(v7, 5, v13).
-term(v7, 5, v14).
-term(v7, 5, v15).
-term(v7, 5, v20).
 
 %Regulators of v8
-edge(v1, v8, 1).
-edge(v2, v8, 1).
-edge(v3, v8, 1).
-edge(v16, v8, 1).
-edge(v4, v8, 1).
-edge(v5, v8, 1).
-edge(v17, v8, 1).
-edge(v6, v8, 0).
-edge(v7, v8, 0).
-edge(v8, v8, 0).
-edge(v18, v8, 0).
-edge(v9, v8, 0).
-edge(v10, v8, 0).
-edge(v11, v8, 0).
-edge(v19, v8, 0).
-edge(v12, v8, 0).
-edge(v13, v8, 0).
-edge(v14, v8, 0).
-edge(v15, v8, 0).
-edge(v20, v8, 0).
+edge(v2, v8, 0).
 
 %Regulatory function of v8
-function(v8, 5).
-term(v8, 1, v1).
-term(v8, 1, v16).
+function(v8, 1).
 term(v8, 1, v2).
-term(v8, 1, v3).
-term(v8, 2, v17).
-term(v8, 2, v4).
-term(v8, 2, v5).
-term(v8, 3, v18).
-term(v8, 3, v6).
-term(v8, 3, v7).
-term(v8, 3, v8).
-term(v8, 4, v10).
-term(v8, 4, v11).
-term(v8, 4, v19).
-term(v8, 4, v9).
-term(v8, 5, v12).
-term(v8, 5, v13).
-term(v8, 5, v14).
-term(v8, 5, v15).
-term(v8, 5, v20).
 
 %Regulators of v9
 edge(v3, v9, 0).

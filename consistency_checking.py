@@ -1,5 +1,8 @@
 import os, argparse, logging, clingo
 
+#TODO change default save directory to that of the inconsistent model
+#TODO change custom save directory to save exactly on the specified path, without creating additional folders
+
 #Usage: $python consistency_checking.py -f (FILENAME) -o (OBSERVATIONS) -stable -sync -async -s (SAVE_DIRECTORY)
 #Optional flags:
 #-stable -> Performs consistency checking using stable state observations (default).

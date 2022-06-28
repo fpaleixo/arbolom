@@ -1,9 +1,5 @@
-import argparse, logging, clingo, time
-from math import comb
+import argparse, logging, clingo
 from aux_scripts.repair_prints import *
-
-#TODO check correctness of each generator
-#TODO measure performance using heavier models
 
 #--Work in progress--
 #Usage: $python repair.py -f (FILENAME) -i (INCONSISTENCIES) -stable -sync -async

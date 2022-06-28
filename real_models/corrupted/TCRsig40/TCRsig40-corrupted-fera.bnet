@@ -1,0 +1,40 @@
+ap1, fos
+cd45, cd45
+cd8, cd8
+cre, 
+creb, 
+ca, ip3 | sek
+calcin, ca
+dag, plcg_a
+erk, mek | ccbl | !dag
+fos, (erk&!jun)
+fyn, tcrbind | cd45 | tcrlig
+gads, !cd45
+grb2sos, 
+ikk, (cd45&cre)
+ip3, cre
+ikb, 
+itk, !ap1
+jnk, sek
+jun, 
+lat, zap70
+lck, !pagcsk | cd8 | !jnk
+mek, raf
+nfat, !cd45
+nfkb, 
+pagcsk, !tcrbind
+pkcth, dag | !ca | fos
+plcg_a, (zap70&plcg_b&rlk&!ap1&jnk)
+plcg_b, lat
+raf, 
+ras, (rasgrp1&!ikb)
+rasgrp1, pkcth
+rlk, lck
+rsk, sek
+sek, pkcth
+slp76, 
+tcrbind, 
+tcrlig, !mek
+tcrphos, ap1
+zap70, !ccbl
+ccbl, zap70

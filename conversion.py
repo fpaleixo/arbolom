@@ -162,13 +162,16 @@ for fname in glob.glob(os.path.join(read_folder, filename)):
     func_dict = {}
     
     for regfun in lines:
-      full = [c.strip() for c in regfun.split(',')]
-      global_logger.debug("Read function: "+str(full))
+      if regfun == '': #ignore blank lines
+        continue
+      else:
+        full = [c.strip() for c in regfun.split(',')]
+        global_logger.debug("Read function: "+str(full))
 
-      implicants = [i.replace(" ", "").strip("()") for i in full[1].split('|')]
-      global_logger.debug("Implicants of "+full[0]+": "+str(implicants))
+        implicants = [i.replace(" ", "").strip("()") for i in full[1].split('|')]
+        global_logger.debug("Implicants of "+full[0]+": "+str(implicants))
 
-      func_dict[full[0]] = implicants  #each compound is a key; the value is the corresponding list of prime implicants
+        func_dict[full[0]] = implicants  #each compound is a key; the value is the corresponding list of prime implicants
 
     saveLPToFile(func_dict)
 
