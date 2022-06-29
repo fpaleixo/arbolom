@@ -1,4 +1,4 @@
-%Generates the best candidate function for synchronous observations
+%Generates the optimal candidate function for synchronous observations, according to selected optimization criteria
 #const compound = c.
 
 %Define
@@ -17,7 +17,7 @@ original_regulator(C) :- edge(C,compound,_).
 sign_changed(C) :- edge(C,compound,0), inhibitor(C).
 sign_changed(C) :- edge(C,compound,1), activator(C).
 
-%*--Identification of identical observation states--*%
+%*--Identification of unique positive observations--*%
 %Positive observations are observations where the compound is active
 positive_observation(E,T) :- curated_observation(E,T,compound,1), T > 0.
 
@@ -25,34 +25,39 @@ positive_observation(E,T) :- curated_observation(E,T,compound,1), T > 0.
 %then we have positive observations
 positive_observations :- positive_observation(_,_).
 
-%If two positive observations have at least one compound in differing states, they are distinct
-distinct_positive_observations(E1,T1,E2,T2) :- positive_observation(E1,T1), positive_observation(E2,T2), 
+%If two positive observations have at least one compound in differing states, they are not equal
+unequal_positive_observations(E1,T1,E2,T2) :- positive_observation(E1,T1), positive_observation(E2,T2), 
   curated_observation(E1,T1,COMPOUND,S1), curated_observation(E2,T2,COMPOUND,S2), E2 > E1, S1 != S2, T1 > 0, T2 > 0.
-distinct_positive_observations(E,T1,E,T2) :- positive_observation(E,T1), positive_observation(E,T2), 
+unequal_positive_observations(E,T1,E,T2) :- positive_observation(E,T1), positive_observation(E,T2), 
   curated_observation(E1,T1,COMPOUND,S1), curated_observation(E2,T2,COMPOUND,S2), T2 > T1, S1 != S2, T1 > 0, T2 > 0.
 
 %Two positive observations with no compounds in differing states are equal
 equal_positive_observations(E1,T1,E2,T2) :- positive_observation(E1,T1), positive_observation(E2,T2), 
-  not distinct_positive_observations(E1,T1,E2,T2), T1 > 0, T2 > 0, E2 > E1.
+  not unequal_positive_observations(E1,T1,E2,T2), T1 > 0, T2 > 0, E2 > E1.
 equal_positive_observations(E,T1,E,T2) :- positive_observation(E,T1), positive_observation(E,T2), 
-  not distinct_positive_observations(E,T1,E,T2), T1 > 0, T2 > 0, T2 > T1.
+  not unequal_positive_observations(E,T1,E,T2), T1 > 0, T2 > 0, T2 > T1.
 
-%If two equal positive observations have previous observations that are not equal to one another, then we have distinct model states
-distinct_state_equal_observations(E1,T1,E2,T2) :- equal_positive_observations(E1,T1,E2,T2), 
+%If two equal positive observations originate from previous observations that are not equal to one another, then
+%explaining one observation does not ensure that we can explain the other, and as such
+%we cannot consider that the positive observations are duplicated
+non_duplicate_equal_observations(E1,T1,E2,T2) :- equal_positive_observations(E1,T1,E2,T2), 
   curated_observation(E1,T1-1,COMPOUND,S1), curated_observation(E2,T2-1,COMPOUND,S2), S1 != S2.
 
-%If two equal positive observations have previous observations that are also equal, then both describe the same state
-duplicate_state(E2,T2) :- equal_positive_observations(E1,T1,E2,T2), not distinct_state_equal_observations(E1,T1,E2,T2).
+%If two equal positive observations come from previous observations that are also equal, then if we
+%are able to explain one of the observations we can automatically explain the other, and thus we can say that the
+%second one is duplicated
+duplicate_observation(E2,T2) :- equal_positive_observations(E1,T1,E2,T2), not non_duplicate_equal_observations(E1,T1,E2,T2).
 
-%If a positive observation does not belong to a duplicate state, then it is unique
-unique_positive_state(E,T) :- positive_observation(E,T), not duplicate_state(E,T).
+%If a positive observation has not been marked as a duplicate, then it is unique and we must
+%ensure that some node covers it in some next rule
+unique_positive_observation(E,T) :- positive_observation(E,T), not duplicate_observation(E,T).
 
 %*--Node creation--*%
 %The highest number of nodes we'll consider is equal to the number of unique positive observations,
 %since at most we'll need one node per unique positive observation to render the model consistent
 %(it may be that one node can explain several positive observations)
 maximum_node_number(POSITIVE_OBSERVATIONS_COUNT) :- positive_observations,
-  POSITIVE_OBSERVATIONS_COUNT = #count{E,T,compound,1 : unique_positive_state(E,T)}.
+  POSITIVE_OBSERVATIONS_COUNT = #count{E,T,compound,1 : unique_positive_observation(E,T)}.
 
 %If we have no positive observations, then we will use 1 node maximum to explain the observations
 %If 1 node isn't enough to produce a function that's restrictive enough, then no such function exists
@@ -65,7 +70,7 @@ possible_node_ID(1..MN) :- maximum_node_number(MN).
 %Generate the node IDs of the final solution
 1 {node_ID(1..MN)} MN :- maximum_node_number(MN).
 
-%Distribute regulators between the generated nodes
+%Distribute regulators across the generated nodes
 {node_regulator(N,C) : node_ID(N)} :- node(C).
 
 %*--Choosing the candidate nodes--*%
@@ -80,7 +85,7 @@ timestep_positive_node(E,T,N) :- not timestep_negative_node(E,T,N), node_ID(N), 
 
 %Determine all positive observations that are covered by the selected nodes (i.e. positive observations that can
 %be obtained by those nodes, since the nodes are active in the timestep prior to those observations)
-node_positive_observation_coverage(N,E,T) :- unique_positive_state(E,T), node_ID(N), timestep_positive_node(E,T-1,N).
+node_positive_observation_coverage(N,E,T) :- unique_positive_observation(E,T), node_ID(N), timestep_positive_node(E,T-1,N).
 
 %If two candidate nodes cover different positive observations, then their behavior is distinct
 nodes_distinct_coverage(N1,N2) :- node_ID(N1), node_ID(N2), N1 < N2, 
@@ -97,7 +102,7 @@ missing_regulator(C) :- original_regulator(C), not present_regulator(C).
 extra_regulator(C) :- not original_regulator(C), present_regulator(C).
  
 %*--Verifying whether the rule that no node can contain another node has been broken (BCF)--*%
-%Calculate the number of variables per candidate node
+%Calculate the number of regulators per candidate node
 node_regulator_number(N,N_VARNO) :- N_VARNO = #count{ C : node_regulator(N,C) }, node_ID(N).
 
 %If the number of variables in one node is equal to the number of variables that it has in common with another node,
@@ -118,7 +123,7 @@ bcf_broken :- node_ID(N1), node_ID(N2), N1 != N2, node_regulator_number(N1,N1_VA
 :- timestep_positive_node(E,T-1,N), curated_observation(E,T,compound,0), T > 0.
 
 %Every positive observation must be covered by some node
-:- unique_positive_state(E,T), not node_positive_observation_coverage(_,E,T).
+:- unique_positive_observation(E,T), not node_positive_observation_coverage(_,E,T).
 
 %If two candidate nodes share the same behavior, then the solution is not optimal
 :- node_ID(N1), node_ID(N2), N1 < N2, not nodes_distinct_coverage(N1,N2).
