@@ -71,8 +71,12 @@ model_path = "simple_models/lp/corrupted/8/8-corrupted-f.lp"
 #Paths of encodings with inconsistencies
 incst_path = "simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-sync_inconsistency.lp"
 
-#Paths of encodings for obtaining inconsistent functions and total variables of each
+#Path of the encodings to obtain inconsistent functions and total variables of each of those functions
 iftv_path = "encodings/repairs/auxiliary/iftv.lp"
+
+#Path of the encoding to identify unique positive observations
+unique_positive_observations_path = "encodings/repairs/auxiliary/unique_positive_observations.lp"
+#unique_positive_observations_path = "encodings/repairs/auxiliary/upo.lp"
 
 #Paths of encodings for generating functions
 repair_encoding_stable_path = "encodings/repairs/repairs_stable.lp"
@@ -259,6 +263,7 @@ def generateFunctions(func, curated_LP):
   ctl = clingo.Control(arguments=clingo_args)
 
   ctl.add("base", [], program=curated_LP)
+  ctl.load(unique_positive_observations_path)
   ctl.load(model_path) 
 
   if toggle_stable_state:
