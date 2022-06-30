@@ -2,22 +2,16 @@
 #const compound = c.
 
 %Define
-%*--Preliminaries--*%
-%Time must occur in some rule head
-time(T) :- curated_observation(_,T,_,_).
-
-%Get the original regulators from the inconsistent model
-original_regulator(C) :- edge(C,compound,_).
-
-%*--Regulator signs--*%
+%*--Assigning regulator signs--*%
 %A compound can either be an inhibitor or an activator, but not both
 1 {activator(C); inhibitor(C)} 1 :- node(C).
 
 %Keep track of which original regulators had their sign changed
+%(Used in minimization #)
 sign_changed(C) :- edge(C,compound,0), inhibitor(C).
 sign_changed(C) :- edge(C,compound,1), activator(C).
 
-%*--Node creation--*%
+%*--Creating nodes--*%
 %The highest number of nodes we'll consider is equal to the number of unique positive observations,
 %since at most we'll need one node per unique positive observation to render the model consistent
 %(it may be that one node can explain several positive observations)
@@ -29,11 +23,17 @@ maximum_node_number(POSITIVE_OBSERVATIONS_COUNT) :- positive_observations,
 %(since considering more nodes would never allow us to create more restrictive fuctions, only more general ones)
 maximum_node_number(1) :- not positive_observations.
 
-%Define all possible IDs for nodes
+%Define all possible IDs for nodes (used in IC #1)
 possible_node_ID(1..MN) :- maximum_node_number(MN).
 
-%Distribute regulators across nodes
-1 {node_regulator(1..MN,C) : maximum_node_number(MN), node(C)} :- unique_positive_observation(E,T).
+%If a compound is active in the time step before a positive observation, then it is a potential regulator
+%that could be used to explain that observation
+observation_potential_regulator(E,T,C) :- curated_observation(E,T-1,C,1), activator(C), unique_positive_observation(E,T).
+%Variant for inhibitors
+observation_potential_regulator(E,T,C) :- curated_observation(E,T-1,C,0), inhibitor(C), unique_positive_observation(E,T).
+
+%Distribute potential regulators across nodes
+1 {node_regulator(1..MN,C) : maximum_node_number(MN), observation_potential_regulator(E,T,C)} :- unique_positive_observation(E,T).
 
 %If we have no positive observations, we only need to assign regulators to a single node
 1 {node_regulator(1,C) : node(C)} :- not positive_observations.
@@ -41,7 +41,7 @@ possible_node_ID(1..MN) :- maximum_node_number(MN).
 %Project node IDs into their own predicate
 node_ID(N) :- node_regulator(N,_).
 
-%*--Choosing the candidate nodes--*%
+%*--Assessing node behavior--*%
 %If one of a node's variables has value 0 for experiment E at time step T, 
 %then for that same experiment and time step the node will also have value 0 (if that variable is an activator)
 timestep_negative_node(E,T,N) :- node_ID(N), node_regulator(N,C), curated_observation(E,T,C,0), activator(C).
@@ -56,17 +56,21 @@ timestep_positive_node(E,T,N) :- not timestep_negative_node(E,T,N), node_ID(N), 
 node_positive_observation_coverage(N,E,T) :- unique_positive_observation(E,T), node_ID(N), timestep_positive_node(E,T-1,N).
 
 %If two candidate nodes cover different positive observations, then their behavior is distinct
+%(used in integrity constraint #4)
 nodes_distinct_coverage(N1,N2) :- node_ID(N1), node_ID(N2), N1 < N2, 
   node_positive_observation_coverage(N1,E,T), not node_positive_observation_coverage(N2,E,T).
 
-%*--Marking missing/extra regulators--*%
-%If a regulator is part of a node N, then that regulator is present
+%*--Identifying missing/extra regulators--*%
+%An original_regulator C is a regulator that is present in the original inconsistent function
+original_regulator(C) :- edge(C,compound,_).
+
+%If a regulator C is present in node N, then we define it as a present_regulator
 present_regulator(C) :- node_ID(N), node_regulator(N,C).
 
-%If one of the original regulators is not present in any node, mark it as missing
+%If an original regulator C is not present in any node, we define it as a missing_regulator
 missing_regulator(C) :- original_regulator(C), not present_regulator(C).
 
-%If one of the new regulators is not present in the original set, mark it as an extra
+%If a present regulator C is not one of the original regulators, we define it as an extra_regulator
 extra_regulator(C) :- not original_regulator(C), present_regulator(C).
  
 %*--Verifying whether the rule that no node can contain another node has been broken (BCF)--*%
@@ -80,20 +84,20 @@ bcf_broken :- node_ID(N1), node_ID(N2), N1 != N2, node_regulator_number(N1,N1_VA
 
 
 %Test
-%Nodes must be created with ordered IDs (symmetry breaking)
+%1-Nodes must be created with ordered IDs (symmetry breaking)
 :- node_ID(N2), not node_ID(N1), possible_node_ID(N1), N2 > N1.
 
-%We're only interested in generating nodes that can be used to explain the observations,
+%2-We're only interested in generating nodes that can be used to explain the observations,
 %which is not possible for a node to do if it is active when we expect it to be inactive
 :- timestep_positive_node(E,T-1,N), curated_observation(E,T,compound,0), T > 0.
 
-%Every positive observation must be covered by some node
+%3-Every positive observation must be covered by some node
 :- unique_positive_observation(E,T), not node_positive_observation_coverage(_,E,T).
 
-%If two candidate nodes share the same behavior, then the solution is not optimal
+%4-If two candidate nodes share the same behavior, then the solution is not optimal
 :- node_ID(N1), node_ID(N2), N1 < N2, not nodes_distinct_coverage(N1,N2).
 
-%The BCF cannot be broken (nodes cannot contain other nodes)
+%5-The BCF cannot be broken (nodes cannot contain other nodes)
 :- bcf_broken.
 
 
@@ -108,12 +112,12 @@ final_inhibitor(C) :- final_node_regulator(N,C), inhibitor(C).
 #show final_node_regulator/2.
 
 %Optimize
-%Optimize for the minimum number of final nodes (highest priority)
+%1-Optimize for the minimum number of final nodes (highest priority)
 #minimize{1@3,N : node_ID(N)}.
 
-%Optimize for the minimum changes to regulators
+%2-Optimize for the minimum changes to regulators
 #minimize{1@2,C : missing_regulator(C)}.
 #minimize{1@2,C : extra_regulator(C)}.
 
-%Optimize for the minimum changes to regulator signs (lowest priority)
+%3-Optimize for the minimum changes to regulator signs (lowest priority)
 #minimize{1@1,C : sign_changed(C)}.
