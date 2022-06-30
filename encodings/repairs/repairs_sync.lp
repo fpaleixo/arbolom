@@ -29,14 +29,17 @@ maximum_node_number(POSITIVE_OBSERVATIONS_COUNT) :- positive_observations,
 %(since considering more nodes would never allow us to create more restrictive fuctions, only more general ones)
 maximum_node_number(1) :- not positive_observations.
 
-%Define all possible node IDs (needed to ensure integrity constraint #1 has no unsafe variables)
+%Define all possible IDs for nodes
 possible_node_ID(1..MN) :- maximum_node_number(MN).
 
-%Generate the node IDs of the final solution
-1 {node_ID(1..MN)} MN :- maximum_node_number(MN).
+%Distribute regulators across nodes
+1 {node_regulator(1..MN,C) : maximum_node_number(MN), node(C)} :- unique_positive_observation(E,T).
 
-%Distribute regulators across the generated nodes
-{node_regulator(N,C) : node_ID(N)} :- node(C).
+%If we have no positive observations, we only need to assign regulators to a single node
+1 {node_regulator(1,C) : node(C)} :- not positive_observations.
+
+%Project node IDs into their own predicate
+node_ID(N) :- node_regulator(N,_).
 
 %*--Choosing the candidate nodes--*%
 %If one of a node's variables has value 0 for experiment E at time step T, 
@@ -77,11 +80,8 @@ bcf_broken :- node_ID(N1), node_ID(N2), N1 != N2, node_regulator_number(N1,N1_VA
 
 
 %Test
-%Nodes must be created in ordered of IDs (symmetry breaking)
+%Nodes must be created with ordered IDs (symmetry breaking)
 :- node_ID(N2), not node_ID(N1), possible_node_ID(N1), N2 > N1.
-
-%We are only interested in considering nodes that have some regulator
-:- node_ID(N), not node_regulator(N,_).
 
 %We're only interested in generating nodes that can be used to explain the observations,
 %which is not possible for a node to do if it is active when we expect it to be inactive
@@ -106,7 +106,6 @@ final_inhibitor(C) :- final_node_regulator(N,C), inhibitor(C).
 #show final_activator/1.
 #show final_inhibitor/1.
 #show final_node_regulator/2.
-
 
 %Optimize
 %Optimize for the minimum number of final nodes (highest priority)

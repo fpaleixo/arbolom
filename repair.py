@@ -301,7 +301,7 @@ if cmd_enabled:
 
       printFuncRepairStart(func)
       functions = generateFunctions(func, curated_LP)
-      print(functions)
+      printRepairedLP(func, functions)
       printFuncRepairEnd(func)
 
 
