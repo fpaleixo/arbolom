@@ -3,22 +3,22 @@
 
 %Define
 %*--Assigning regulator signs--*%
-%A compound can either be an inhibitor or an activator, but not both
+%A compound C can either be an inhibitor or an activator, but not both
 1 {activator(C); inhibitor(C)} 1 :- node(C).
 
-%Keep track of which original regulators had their sign changed
-%(Used in minimization #)
+%Keep track of which original regulators C had their sign changed
+%(used in minimization #3)
 sign_changed(C) :- edge(C,compound,0), inhibitor(C).
 sign_changed(C) :- edge(C,compound,1), activator(C).
 
 %*--Creating nodes--*%
 %The highest number of nodes we'll consider is equal to the number of unique positive observations,
 %since at most we'll need one node per unique positive observation to render the model consistent
-%(it may be that one node can explain several positive observations)
+%(we may use less, since it can happen that one node is able explain several positive observations)
 maximum_node_number(POSITIVE_OBSERVATIONS_COUNT) :- positive_observations,
   POSITIVE_OBSERVATIONS_COUNT = #count{E,T,compound,1 : unique_positive_observation(E,T)}.
 
-%If we have no positive observations, then we will use 1 node maximum to explain the observations
+%If we have no positive observations, then we will use 1 node maximum to explain the observations.
 %If 1 node isn't enough to produce a function that's restrictive enough, then no such function exists
 %(since considering more nodes would never allow us to create more restrictive fuctions, only more general ones)
 maximum_node_number(1) :- not positive_observations.
@@ -26,13 +26,13 @@ maximum_node_number(1) :- not positive_observations.
 %Define all possible IDs for nodes (used in IC #1)
 possible_node_ID(1..MN) :- maximum_node_number(MN).
 
-%If a compound is active in the time step before a positive observation, then it is a potential regulator
+%If a compound C is active in the time step before a positive observation, then it is a potential regulator
 %that could be used to explain that observation
 observation_potential_regulator(E,T,C) :- curated_observation(E,T-1,C,1), activator(C), unique_positive_observation(E,T).
 %Variant for inhibitors
 observation_potential_regulator(E,T,C) :- curated_observation(E,T-1,C,0), inhibitor(C), unique_positive_observation(E,T).
 
-%Distribute potential regulators across nodes
+%Distribute potential regulators C for a given observation E,T across nodes
 1 {node_regulator(1..MN,C) : maximum_node_number(MN), observation_potential_regulator(E,T,C)} :- unique_positive_observation(E,T).
 
 %If we have no positive observations, we only need to assign regulators to a single node
@@ -42,17 +42,17 @@ observation_potential_regulator(E,T,C) :- curated_observation(E,T-1,C,0), inhibi
 node_ID(N) :- node_regulator(N,_).
 
 %*--Assessing node behavior--*%
-%If one of a node's variables has value 0 for experiment E at time step T, 
+%If one of a node N's regulators has value 0 for experiment E at time step T, 
 %then for that same experiment and time step the node will also have value 0 (if that variable is an activator)
 timestep_negative_node(E,T,N) :- node_ID(N), node_regulator(N,C), curated_observation(E,T,C,0), activator(C).
 %Variant for variables that are inhibitors
 timestep_negative_node(E,T,N) :- node_ID(N), node_regulator(N,C), curated_observation(E,T,C,1), inhibitor(C).
 
-%Nodes that aren't negative (i.e. nodes with value 0) at time step T of experiment E must be positive (i.e. nodes with value 1)
+%Nodes that aren't negative (i.e. have value 0) at time step T of experiment E must be positive (i.e. have value 1)
 timestep_positive_node(E,T,N) :- not timestep_negative_node(E,T,N), node_ID(N), curated_observation(E,T,_,_).
 
 %Determine all positive observations that are covered by the selected nodes (i.e. positive observations that can
-%be obtained by those nodes, since the nodes are active in the timestep prior to those observations)
+%be obtained by those nodes, since the nodes are positive in the timestep prior to those observations)
 node_positive_observation_coverage(N,E,T) :- unique_positive_observation(E,T), node_ID(N), timestep_positive_node(E,T-1,N).
 
 %If two candidate nodes cover different positive observations, then their behavior is distinct
@@ -88,10 +88,10 @@ bcf_broken :- node_ID(N1), node_ID(N2), N1 != N2, node_regulator_number(N1,N1_VA
 :- node_ID(N2), not node_ID(N1), possible_node_ID(N1), N2 > N1.
 
 %2-We're only interested in generating nodes that can be used to explain the observations,
-%which is not possible for a node to do if it is active when we expect it to be inactive
+%which is not possible for a node to do if it is positive when we expect it to be negative
 :- timestep_positive_node(E,T-1,N), curated_observation(E,T,compound,0), T > 0.
 
-%3-Every positive observation must be covered by some node
+%3-Every positive observation must be covered by some positive node
 :- unique_positive_observation(E,T), not node_positive_observation_coverage(_,E,T).
 
 %4-If two candidate nodes share the same behavior, then the solution is not optimal
