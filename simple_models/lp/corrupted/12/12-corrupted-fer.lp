@@ -227,11 +227,49 @@ term(v8, 5, v15).
 term(v8, 5, v20).
 
 %Regulators of v9
+edge(v1, v9, 0).
+edge(v2, v9, 1).
 edge(v3, v9, 0).
+edge(v16, v9, 0).
+edge(v4, v9, 1).
+edge(v5, v9, 1).
+edge(v17, v9, 1).
+edge(v6, v9, 0).
+edge(v9, v9, 0).
+edge(v8, v9, 1).
+edge(v18, v9, 0).
+edge(v9, v9, 1).
+edge(v10, v9, 1).
+edge(v11, v9, 1).
+edge(v19, v9, 1).
+edge(v12, v9, 0).
+edge(v13, v9, 0).
+edge(v14, v9, 1).
+edge(v15, v9, 1).
+edge(v20, v9, 0).
 
 %Regulatory function of v9
-function(v9, 1).
+function(v9, 5).
+term(v9, 1, v1).
+term(v9, 1, v16).
+term(v9, 1, v2).
 term(v9, 1, v3).
+term(v9, 2, v17).
+term(v9, 2, v4).
+term(v9, 2, v5).
+term(v9, 3, v18).
+term(v9, 3, v6).
+term(v9, 3, v9).
+term(v9, 3, v8).
+term(v9, 4, v10).
+term(v9, 4, v11).
+term(v9, 4, v19).
+term(v9, 4, v9).
+term(v9, 5, v12).
+term(v9, 5, v13).
+term(v9, 5, v14).
+term(v9, 5, v15).
+term(v9, 5, v20).
 
 %Regulators of v10
 edge(v4, v10, 0).

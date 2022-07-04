@@ -1,5 +1,7 @@
-import os, sys, argparse, logging, glob, random
+import os, sys, argparse, logging, glob, random, re
 from aux_scripts.common import *
+
+#TODO default save should be in the same directory as the .bnet file, custom save should be in the specified directory
 
 #Usage: $python corruption.py -f (FILENAME) -op (OPERATIONS) -(O)p (PROBABILITY) -s (SAVE_DIRECTORY)
 #Optional flags:
@@ -56,7 +58,7 @@ if(cmd_enabled):
 #Global logger (change logging.(LEVEL) to desired (LEVEL) )
 logging.basicConfig()
 global_logger = logging.getLogger("global")
-global_logger.setLevel(logging.DEBUG)
+global_logger.setLevel(logging.INFO)
 
 #Random seed (seed can be manually fixed to replicate results)
 seed = random.randrange(sys.maxsize)
@@ -132,7 +134,7 @@ def checkLiterals(implicants, literals):
 #Purpose: Parses the arguments for which operations are to be applied and their probabilities.
 def parseArgs():
   logger = logging.getLogger("parser")
-  logger.setLevel(logging.DEBUG)
+  logger.setLevel(logging.INFO)
 
   filepath = args.file_to_corrupt
   operations = args.operations
@@ -368,18 +370,18 @@ def edgeRemove(implicants, chance):
     logger.debug("Rolled: " + str(roll))
 
     if(roll <= chance):
-      logger.debug("Removing regulator "+l)
+      logger.debug("Removing regulator " + l)
       changed_input.append(l)
 
       for i in range(0, len(implicants)): #For each implicant
 
-        replaced = output[i].replace("&"+l, '') #Start by seeing if literal to remove is the last term of a conjunction
-        if(replaced == output[i]):
-          replaced = output[i].replace(l+"&", '') #If it wasn't, then check to see if it is the first term of a conjunction
-
-          if(replaced == output[i]):
-            replaced = output[i].replace(l, '') #If it is neither, then the literal occurs alone and can be removed without leaving behind a trailing &
-        
+        replaced = output[i].replace("&" + l + "&", '&') #Start by seeing if literal to remove is one of the middle terms in the conjunction
+        if replaced == output[i]: 
+          replaced = re.sub(r'&{}\b'.format(l), '', output[i]) #If it wasn't, then check if the literal to remove is the last term of a conjunction
+          if replaced == output[i]:
+            replaced = output[i].replace(l + "&", '') #If it wasn't, then check to see if it is the first term of a conjunction
+            if(replaced == output[i]):
+              replaced = re.sub(r'\b{}\b'.format(l), '', output[i]) #If it is neither, then the literal occurs alone and can be removed without leaving behind a trailing &
         output[i] = replaced
 
   output = primesOnly(output)[1]
@@ -403,17 +405,18 @@ def edgeFlip(implicants, chance):
     logger.debug("Rolled: " + str(roll))
 
     if(roll <= chance):
-      logger.debug("Changing sign of "+l)
+      logger.debug("Changing sign of " + l)
       changed_input.append(l)
       negated = l.count('!')
-      logger.debug(negated)
+      logger.debug("Negated yes/no? " + str(negated))
 
       if(negated%2 != 0): #if the literal is negated
-        output = [i.replace(l, l.replace('!','')) for i in output]
+        output = [re.sub(r'\b{}\b'.format('!'+l), l , i) for i in output]
 
       else:
-        output = [i.replace(l, "!"+l) for i in output]
-        logger.debug("Check it out: " + str(output))
+        output = [re.sub(r'\b{}\b'.format(l), '!'+l , i) for i in output]
+      
+      logger.debug("Changed a sign: " + str(output))
 
   return (changed_input, output)
 

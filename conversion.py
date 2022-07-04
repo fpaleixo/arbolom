@@ -1,6 +1,8 @@
 import os, argparse, logging, glob
 from aux_scripts.common import *
 
+#TODO default save should be in the same directory as the .bnet file, custom save should be in the specified directory
+
 #Usage: $python conversion.py -f (FILENAME) -s (SAVE_DIRECTORY)
 #Optional flags:
 #-s -> Path of directory to save converted file (default is ./lp_models/corrupted/(name_of_file))
