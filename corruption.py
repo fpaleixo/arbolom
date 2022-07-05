@@ -84,7 +84,7 @@ def primesOnly(implicants):
   changed_input = []
 
   for i in range(0, orig_len):
-    if(copy[i]==''): continue #if i has already been marked as a non-prime, go to the next implicant
+    if(copy[i]=='' or original[i] in output): continue #if i has already been marked as a non-prime or is already in the output, go to the next implicant
 
     for j in range(i+1, orig_len):
       if(copy[j]==''): continue #if j has already been marked as a non-prime, go to the next implicant
