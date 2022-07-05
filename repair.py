@@ -44,6 +44,9 @@ python .\repair.py -f simple_models/lp/corrupted/6/6-corrupted-fe.lp -i simple_m
 python .\repair.py -f simple_models/lp/corrupted/6/6-corrupted-fe.lp -i simple_models/lp/corrupted/6/inconsistencies/6-corrupted-fe-sync_inconsistency.lp -sync
 python .\repair.py -f simple_models/lp/corrupted/6/6-corrupted-fe.lp -i simple_models/lp/corrupted/6/inconsistencies/6-corrupted-fe-async_inconsistency.lp -async
 
+#Total of 30 variables, with functions of varying variable number
+.\repair.py -f simple_models/lp/corrupted/13/13-corrupted-fera.lp -i simple_models/lp/corrupted/13/inconsistencies/13-corrupted-fera-sync_inconsistency.lp -sync
+
 #NO SOLUTIONS
 #6 variables
 python .\repair.py -f real_models/lp/corrupted/boolean_cell_cycle/boolean_cell_cycle-corrupted-f.lp -i testing/impossible_inconsistencies/boolean_cell_cycle-corrupted-f-sync_inconsistency.lp -sync 
