@@ -1,20 +1,22 @@
 import os, argparse, logging, clingo
 
-#TODO change default save directory to that of the inconsistent model
-#TODO change custom save directory to save exactly on the specified path, without creating additional folders
-
 #Usage: $python consistency_checking.py -f (FILENAME) -o (OBSERVATIONS) -stable -sync -async -s (SAVE_DIRECTORY)
+
 #Optional flags:
 #-stable -> Performs consistency checking using stable state observations (default).
 #-sync -> Performs consistency checking using synchronous observations.
 #-async -> Performs consistency checking using asynchronous observations.
 #-s -> Path of directory to save inconsistencies, when they exist (default is lp_models/corrupted/(name_of_file))
+
 #Variables:
 #FILENAME -> Path of file containing Boolean model in the BCF format written in lp.
 #OBSERVATIONS -> Path of file containing observations written in lp. 
 
-#Attention: File FILENAME must be in the BCF format and follow the conventions of the .lp files in the lp_models folder (results will be unpredictable otherwise).
-#Observations should also follow the conventions of the files in the obsv folder, inside lp_models.
+#Attention: 
+# File FILENAME must be in the BCF format and follow the conventions of the 
+# .lp files in the lp_models folder (results will be unpredictable otherwise).
+#Observations should also follow the conventions of the files in the 
+# obsv folder, inside lp_models.
 
 
 #-----Configs-----
@@ -45,71 +47,42 @@ async_path = "./encodings/consistency/async_consistency.lp"
 parser = None
 args = None
 if(cmd_enabled):
-  parser = argparse.ArgumentParser(description="Check the consistency of a Boolean logical model in the BCF written in lp, given a set of observations in lp.")
-  parser.add_argument("-f", "--model_to_check", help="Path to model to check the consistency of.")
-  parser.add_argument("-o", "--observations_to_use", help="Path to observations used to check the consistency of the model.")
-  parser.add_argument("-stable", "--stable_state", action='store_true', help="Flag to check the consistency using stable state observations (default).")
-  parser.add_argument("-sync", "--synchronous", action='store_true', help="Flag to check the consistency using synchronous observations (default is stable state).")
-  parser.add_argument("-async", "--asynchronous", action='store_true', help="Flag to check the consistency using asynchronous observations (default is stable state).")
-  parser.add_argument("-s", "--save_directory", help="Path of directory to save inconsistent functions to (if they exist).")
+  parser = argparse.ArgumentParser(description=
+    "Check the consistency of a Boolean logical model in the BCF written in " + 
+    " lp, given a set of observations in lp.")
+  parser.add_argument("-f", "--model_to_check", help=
+    "Path to model to check the consistency of.")
+  parser.add_argument("-o", "--observations_to_use", help=
+    "Path to observations used to check the consistency of the model.")
+  parser.add_argument("-stable", "--stable_state", action='store_true', help=
+    "Flag to check the consistency using stable state observations (default).")
+  parser.add_argument("-sync", "--synchronous", action='store_true', help=
+    "Flag to check the consistency using synchronous observations (default is stable state).")
+  parser.add_argument("-async", "--asynchronous", action='store_true', help=
+    "Flag to check the consistency using asynchronous observations (default is stable state).")
+  parser.add_argument("-s", "--save_directory", help=
+    "Path of directory to save inconsistent functions to (if they exist).")
   args = parser.parse_args()
 
 #Global logger (change logging.(LEVEL) to desired (LEVEL) )
 logging.basicConfig()
 global_logger = logging.getLogger("global")
-global_logger.setLevel(logging.DEBUG)
+global_logger.setLevel(logging.INFO)
 
 
 
 #-----Auxiliary Functions-----
-#Inputs: atoms is a list of atoms obtained from solving with clingo.
-#Purpose: Stores inconsistency atoms in a separate file (to be used by repairs later on).
-def saveInconsistenciesToFile(LP):
-  logger = logging.getLogger("saveIncst")
-  logger.setLevel(logging.INFO)
-
-  global write_folder
-
-  filename = os.path.basename(model_path)
-
-  if toggle_stable_state:
-    filename = filename.replace(".lp", "-stable_inconsistency.lp")
-  elif toggle_sync:
-    filename = filename.replace(".lp", "-sync_inconsistency.lp")
-  else:
-    filename = filename.replace(".lp", "-async_inconsistency.lp")
-
-  logger.debug("Filename: " + str(filename))
-
-  foldername = None
-  if "corrupted" in filename:
-    foldername = filename.split('-')[0]
-    logger.debug("Foldername: " + str(foldername))
-    write_folder = os.path.join(write_folder, foldername, "inconsistencies")
-
-  if not os.path.exists(write_folder):
-    os.makedirs(write_folder)
-    logger.info("Created directory: " + str(write_folder))
-
-  write_fullpath = os.path.join(write_folder,filename)
-
-  logger.debug("Full path: " + str(write_fullpath))
-
-  f = open(write_fullpath, 'w')
-  f.write(LP)
-  f.close()
-
-  logger.info("Saved to: " + str(write_fullpath))
-
-
 #Purpose: Parses the argument regarding which file to generate observations for.
 def parseArgs():
   logger = logging.getLogger("parser")
   logger.setLevel(logging.DEBUG)
 
-  global model_path, write_folder, obsv_path, toggle_stable_state, toggle_sync, toggle_async
+  global model_path, write_folder, obsv_path
+  global toggle_stable_state, toggle_sync, toggle_async
 
   model_path = args.model_to_check
+  write_folder = os.path.dirname(model_path)
+  write_folder = os.path.join(write_folder, "inconsistencies")
 
   logger.debug("Obtained model: " + model_path)
 
@@ -130,22 +103,55 @@ def parseArgs():
     toggle_stable_state = True
     toggle_sync = False
     toggle_async = False
-    logger.debug("Mode used: Stable State \U0001f6d1")
+    logger.info("Mode used: Stable State \U0001f6d1")
 
   elif synchronous:
     toggle_stable_state = False
     toggle_sync = True
     toggle_async = False
-    logger.debug("Mode used: Synchronous \U0001f550")
+    logger.info("Mode used: Synchronous \U0001f550")
 
   elif asynchronous:
     toggle_stable_state = False
     toggle_sync = False
     toggle_async = True
-    logger.debug("Mode used: Asynchronous \U0001f331")
+    logger.info("Mode used: Asynchronous \U0001f331")
 
   return
 
+#Inputs: atoms is a list of atoms obtained from solving with clingo.
+#Purpose: Stores inconsistency atoms in a separate file 
+# (to be used by repairs later on).
+def saveInconsistenciesToFile(LP):
+  logger = logging.getLogger("saveIncst")
+  logger.setLevel(logging.INFO)
+
+  global write_folder
+
+  filename = os.path.basename(model_path)
+
+  if toggle_stable_state:
+    filename = filename.replace(".lp", "-stable_inconsistency.lp")
+  elif toggle_sync:
+    filename = filename.replace(".lp", "-sync_inconsistency.lp")
+  else:
+    filename = filename.replace(".lp", "-async_inconsistency.lp")
+
+  logger.debug("Filename: " + str(filename))
+
+  if not os.path.exists(write_folder):
+    os.makedirs(write_folder)
+    logger.info("Created directory: " + str(write_folder))
+
+  write_fullpath = os.path.join(write_folder, filename)
+
+  logger.debug("Full path: " + str(write_fullpath))
+
+  f = open(write_fullpath, 'w')
+  f.write(LP)
+  f.close()
+
+  logger.info("Saved to: " + str(write_fullpath))
 
 #Inputs: atoms is a list of atoms obtained from solving with clingo.
 #Purpose: Prints the obtained atoms in a more readable manner.
@@ -200,5 +206,4 @@ with ctl.solve(yield_=True) as handle:
   for model in handle:
     atoms = (str(model).split(" "))
 
-#print(atoms)
 isConsistent(atoms)
