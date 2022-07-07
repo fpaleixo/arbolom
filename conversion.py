@@ -16,7 +16,6 @@ from aux_scripts.common import *
 
 
 #-----Configs-----
-
 #Command-line usage
 cmd_enabled = True
 
@@ -73,29 +72,29 @@ def parseArgs():
 
 #Inputs: file is the file to write in, compounds is a list of strings 
 # representing the compounds.
-#Purpose: Adds nodes representing compounds to LP.
-def addNodesToLP(file, compounds):
+#Purpose: Adds predicates representing compounds to LP.
+def addCompoundsToLP(file, compounds):
   file.write("%Compounds\n")
   for c in compounds:
-    file.write("node(" + c + ").\n")
+    file.write("compound(" + c + ").\n")
   file.write("\n")
 
 
 #Inputs: file is the file to write in, item is a tuple where the first element 
 # is the compound of the regulatory function, 
 # and the second element is a list of its implicants.
-#Purpose: Adds the edges representing the regulators of each node to LP.
-def addEdgesToLP(file, item):
+#Purpose: Adds the predicates representing the regulators of each compound to LP.
+def addRegulatorsToLP(file, item):
   if item[1][0]: #if there exist any regulators
     file.write("%Regulators of " + item[0] + "\n")
     all_literals = getAllLiterals(item[1])
 
     for l in all_literals:
       if(l[0]=='!'):
-        file.write("edge(" + l[1:] + ", " + item[0] + ", " + "1).\n")
+        file.write("regulates(" + l[1:] + ", " + item[0] + ", " + "1).\n")
 
       else:
-        file.write("edge(" + l + ", " + item[0] + ", " + "0).\n")
+        file.write("regulates(" + l + ", " + item[0] + ", " + "0).\n")
     file.write("\n")
 
 
@@ -150,12 +149,12 @@ def saveLPToFile(dict):
   if len(all_compounds) == len(list(dict.keys())):
     #If all compounds are present in the map keys, 
     # then the original order is preserved for convenience
-    addNodesToLP(f, list(dict.keys())) 
+    addCompoundsToLP(f, list(dict.keys())) 
   else: 
-    addNodesToLP(f, all_compounds)  
+    addCompoundsToLP(f, all_compounds)  
 
   for function in dict.items():
-    addEdgesToLP(f,function)
+    addRegulatorsToLP(f,function)
     addFunctionToLP(f,function)
   f.close()
 

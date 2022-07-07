@@ -57,16 +57,11 @@ python .\repair.py -f real_models/lp/corrupted/SP_1cell/SP_1cell-corrupted-f.lp 
 
 
 #-----Configs-----
-
 #Command-line usage
 cmd_enabled = True
 
 #Toggle debug modes
 iftv_debug_toggled = False
-nodegen_debug_toggled = False
-nodefilter_debug_toggled = False
-edgegen_debug_toggled = False
-funcgen_debug_toggled = False
 
 #Model path
 model_path = "simple_models/lp/corrupted/8/8-corrupted-f.lp"
@@ -79,12 +74,10 @@ iftv_path = "encodings/repairs/auxiliary/iftv.lp"
 
 #Path of the encoding to identify unique positive observations
 unique_positive_observations_path = "encodings/repairs/auxiliary/unique_positive_observations.lp"
-#unique_positive_observations_path = "encodings/repairs/auxiliary/upo.lp"
 
 #Paths of encodings for generating functions
 repair_encoding_stable_path = "encodings/repairs/repairs_stable.lp"
 repair_encoding_sync_path = "encodings/repairs/repairs_sync.lp"
-#repair_encoding_sync_path = "encodings/repairs/simplified/repairs_sync_simplified.lp"
 repair_encoding_async_path = "encodings/repairs/repairs_async.lp"
 
 #Mode flags 

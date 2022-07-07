@@ -39,8 +39,8 @@ models_to_obtain = "1"
 sync_path = "encodings/observations/sync_observations.lp"
 async_path = "encodings/observations/async_observations.lp"
 
-#Save folder paths
-save_folder = "simple_models/lp/observations/tseries"
+#Write folder paths
+write_folder = "simple_models/lp/observations/tseries"
 
 #Parser (will only be used if command-line usage is enabled above)
 parser = None
@@ -77,11 +77,11 @@ def parseArgs():
   logger = logging.getLogger("parser")
   logger.setLevel(logging.INFO)
 
-  global model_path, save_folder, generate_sync
+  global model_path, write_folder, generate_sync
   global experiments_number, time_steps, models_to_obtain
 
   model_path = args.model_to_observe
-  save_folder = os.path.dirname(model_path)
+  write_folder = os.path.dirname(model_path)
   logger.debug("Obtained file: " + model_path)
 
   asynch = args.asynchronous
@@ -91,14 +91,14 @@ def parseArgs():
 
   if asynch:
     generate_sync = False
-    logger.info("Mode used: Asynchronous.")
+    logger.info("Mode used: Asynchronous \U0001f331")
   
   else: 
-    logger.info("Mode used: Synchronous.")
+    logger.info("Mode used: Synchronous \U0001f550")
 
   if(args.save_directory):
-    save_folder = args.save_directory
-    logger.info("Custom write folder is: "+ save_folder)
+    write_folder = args.save_directory
+    logger.info("Custom write folder is: "+ write_folder)
   
   if experiments:
     experiments_number = experiments
@@ -131,7 +131,7 @@ def saveObsToFile(atoms):
     if not generate_sync:
       filename = os.path.basename(model_path).replace(".lp", "-async-obs.lp")
   
-    origin_path = os.path.join(save_folder, filename)
+    origin_path = os.path.join(write_folder, filename)
     current_path = origin_path
 
     for atom in atoms:

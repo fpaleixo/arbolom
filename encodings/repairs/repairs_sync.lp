@@ -4,12 +4,12 @@
 %Define
 %*--Assigning regulator signs--*%
 %A compound C can either be an inhibitor or an activator, but not both
-1 {activator(C); inhibitor(C)} 1 :- node(C).
+1 {activator(C); inhibitor(C)} 1 :- compound(C).
 
 %Keep track of which original regulators C had their sign changed
 %(used in minimization #3)
-sign_changed(C) :- edge(C,compound,0), inhibitor(C).
-sign_changed(C) :- edge(C,compound,1), activator(C).
+sign_changed(C) :- regulates(C,compound,0), inhibitor(C).
+sign_changed(C) :- regulates(C,compound,1), activator(C).
 
 %*--Creating nodes--*%
 %The highest number of nodes we'll consider is equal to the number of unique positive observations,
@@ -33,7 +33,7 @@ observation_potential_regulator(E,T,C) :- curated_observation(E,T-1,C,0), inhibi
 1 {node_regulator(1..MN,C) : maximum_node_number(MN), observation_potential_regulator(E,T,C)} :- unique_positive_observation(E,T).
 
 %If we have no positive observations, we only need to assign regulators to a single node
-1 {node_regulator(1,C) : node(C)} :- not positive_observations.
+1 {node_regulator(1,C) : compound(C)} :- not positive_observations.
 
 %Project node IDs into their own predicate
 node_ID(N) :- node_regulator(N,_).
@@ -59,7 +59,7 @@ nodes_distinct_coverage(N1,N2) :- node_ID(N1), node_ID(N2), N1 < N2,
 
 %*--Identifying missing/extra regulators--*%
 %An original_regulator C is a regulator that is present in the original inconsistent function
-original_regulator(C) :- edge(C,compound,_).
+original_regulator(C) :- regulates(C,compound,_).
 
 %If a regulator C is present in node N, then we define it as a present_regulator
 present_regulator(C) :- node_regulator(N,C).

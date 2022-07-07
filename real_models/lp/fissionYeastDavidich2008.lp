@@ -1,19 +1,19 @@
 %Compounds
-node(cdc25).
-node(cdc2_cdc13).
-node(cdc2_cdc13_a).
-node(pp).
-node(rum1).
-node(sk).
-node(slp1).
-node(start).
-node(ste9).
-node(wee1_mik1).
+compound(cdc25).
+compound(cdc2_cdc13).
+compound(cdc2_cdc13_a).
+compound(pp).
+compound(rum1).
+compound(sk).
+compound(slp1).
+compound(start).
+compound(ste9).
+compound(wee1_mik1).
 
 %Regulators of cdc25
-edge(cdc2_cdc13, cdc25, 1).
-edge(pp, cdc25, 0).
-edge(cdc25, cdc25, 1).
+regulates(cdc2_cdc13, cdc25, 1).
+regulates(pp, cdc25, 0).
+regulates(cdc25, cdc25, 1).
 
 %Regulatory function of cdc25
 function(cdc25, 3).
@@ -25,9 +25,9 @@ term(cdc25, 3, cdc25).
 term(cdc25, 3, cdc2_cdc13).
 
 %Regulators of cdc2_cdc13
-edge(ste9, cdc2_cdc13, 0).
-edge(rum1, cdc2_cdc13, 0).
-edge(slp1, cdc2_cdc13, 0).
+regulates(ste9, cdc2_cdc13, 0).
+regulates(rum1, cdc2_cdc13, 0).
+regulates(slp1, cdc2_cdc13, 0).
 
 %Regulatory function of cdc2_cdc13
 function(cdc2_cdc13, 1).
@@ -36,11 +36,11 @@ term(cdc2_cdc13, 1, slp1).
 term(cdc2_cdc13, 1, ste9).
 
 %Regulators of cdc2_cdc13_a
-edge(ste9, cdc2_cdc13_a, 0).
-edge(rum1, cdc2_cdc13_a, 0).
-edge(slp1, cdc2_cdc13_a, 0).
-edge(wee1_mik1, cdc2_cdc13_a, 0).
-edge(cdc25, cdc2_cdc13_a, 1).
+regulates(ste9, cdc2_cdc13_a, 0).
+regulates(rum1, cdc2_cdc13_a, 0).
+regulates(slp1, cdc2_cdc13_a, 0).
+regulates(wee1_mik1, cdc2_cdc13_a, 0).
+regulates(cdc25, cdc2_cdc13_a, 1).
 
 %Regulatory function of cdc2_cdc13_a
 function(cdc2_cdc13_a, 1).
@@ -51,18 +51,18 @@ term(cdc2_cdc13_a, 1, ste9).
 term(cdc2_cdc13_a, 1, wee1_mik1).
 
 %Regulators of pp
-edge(slp1, pp, 1).
+regulates(slp1, pp, 1).
 
 %Regulatory function of pp
 function(pp, 1).
 term(pp, 1, slp1).
 
 %Regulators of rum1
-edge(cdc2_cdc13, rum1, 0).
-edge(cdc2_cdc13_a, rum1, 0).
-edge(rum1, rum1, 1).
-edge(sk, rum1, 0).
-edge(pp, rum1, 1).
+regulates(cdc2_cdc13, rum1, 0).
+regulates(cdc2_cdc13_a, rum1, 0).
+regulates(rum1, rum1, 1).
+regulates(sk, rum1, 0).
+regulates(pp, rum1, 1).
 
 %Regulatory function of rum1
 function(rum1, 5).
@@ -88,25 +88,25 @@ term(rum1, 5, rum1).
 term(rum1, 5, sk).
 
 %Regulators of sk
-edge(start, sk, 1).
+regulates(start, sk, 1).
 
 %Regulatory function of sk
 function(sk, 1).
 term(sk, 1, start).
 
 %Regulators of slp1
-edge(cdc2_cdc13_a, slp1, 1).
+regulates(cdc2_cdc13_a, slp1, 1).
 
 %Regulatory function of slp1
 function(slp1, 1).
 term(slp1, 1, cdc2_cdc13_a).
 
 %Regulators of ste9
-edge(cdc2_cdc13, ste9, 0).
-edge(cdc2_cdc13_a, ste9, 0).
-edge(ste9, ste9, 1).
-edge(sk, ste9, 0).
-edge(pp, ste9, 1).
+regulates(cdc2_cdc13, ste9, 0).
+regulates(cdc2_cdc13_a, ste9, 0).
+regulates(ste9, ste9, 1).
+regulates(sk, ste9, 0).
+regulates(pp, ste9, 1).
 
 %Regulatory function of ste9
 function(ste9, 5).
@@ -132,9 +132,9 @@ term(ste9, 5, sk).
 term(ste9, 5, ste9).
 
 %Regulators of wee1_mik1
-edge(cdc2_cdc13, wee1_mik1, 0).
-edge(wee1_mik1, wee1_mik1, 1).
-edge(pp, wee1_mik1, 1).
+regulates(cdc2_cdc13, wee1_mik1, 0).
+regulates(wee1_mik1, wee1_mik1, 1).
+regulates(pp, wee1_mik1, 1).
 
 %Regulatory function of wee1_mik1
 function(wee1_mik1, 3).

@@ -20,7 +20,6 @@ import os, argparse, logging, clingo
 
 
 #-----Configs-----
-
 #Command-line usage
 cmd_enabled = True
 
@@ -172,11 +171,11 @@ def isConsistent(atoms):
 
     if not isConsistent:
       if toggle_stable_state:
-        print("Model is not consistent \u274C Inconsistent (experiment, node, value): ")
+        print("Model is not consistent \u274C Inconsistent (experiment, compound, value): ")
       elif toggle_sync:
-        print("Model is not consistent \u274C Inconsistent (experiment, timestep, node, value): ")
+        print("Model is not consistent \u274C Inconsistent (experiment, timestep, compound, value): ")
       else:
-        print("Model is not consistent \u274C Inconsistent (experiment, timestep, node, value/other node updated at the same time): ")  
+        print("Model is not consistent \u274C Inconsistent (experiment, timestep, compound, value/other compound updated at the same time): ")  
       print(inconsistent_LP)
       saveInconsistenciesToFile(inconsistent_LP + "\n" + observations_LP)
     

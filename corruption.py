@@ -31,7 +31,6 @@ from aux_scripts.common import *
 
 
 #-----Configs-----
-
 #Command-line usage
 cmd_enabled = True
 
