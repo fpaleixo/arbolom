@@ -19,6 +19,9 @@ def printIFTVEnd():
 def printRepairedLP(inconsistent_func, result):
   activators = ""
   inhibitors = ""
+
+  node_max_ID = 1
+  node_ID_map = {} 
   nodes = {}
 
   if not result:
@@ -30,14 +33,21 @@ def printRepairedLP(inconsistent_func, result):
       arguments = atom.split(')')[0].split('(')[1].split(',')
 
       if "activator" in atom:
-        activators += f"edge({arguments[0]}, {inconsistent_func}, 0).\n"
+        activators += f"regulates({arguments[0]}, {inconsistent_func}, 0).\n"
       
       elif "inhibitor" in atom:
-        inhibitors += f"edge({arguments[0]}, {inconsistent_func}, 1).\n"
+        inhibitors += f"regulates({arguments[0]}, {inconsistent_func}, 1).\n"
 
       elif "regulator" in atom:
-        node_ID = arguments[0]
+        unsorted_node_ID = arguments[0]
         regulator = arguments[1]
+
+        #Makes sure nodes are outputted using ordered IDs
+        if unsorted_node_ID not in node_ID_map.keys():
+          node_ID_map[unsorted_node_ID] = node_max_ID
+          node_max_ID += 1
+
+        node_ID = node_ID_map[unsorted_node_ID]
 
         if node_ID in nodes:
           nodes[node_ID].append(regulator)

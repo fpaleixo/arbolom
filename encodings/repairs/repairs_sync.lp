@@ -2,9 +2,23 @@
 #const compound = c.
 
 %Define
+%*--Fixed regulators--*%
+%fixed/2 tells us that regulator C has to be one of the compound's regulators
+fixed_regulator(C) :- fixed(C,compound), compound(C).
+fixed_regulator(C) :- fixed(C,compound,_), compound(C).
+
+%Fixed/3. contains information regarding the sign of a fixed regulator
+fixed_activator(C) :- fixed(C,compound,0), compound(C).
+fixed_inhibitor(C) :- fixed(C,compound,1), compound(C).
+
 %*--Assigning regulator signs--*%
+%Fixed activators and inhibitors already have their regulation behavior defined
+activator(C) :- fixed_activator(C).
+inhibitor(C) :- fixed_inhibitor(C).
+
 %A compound C can either be an inhibitor or an activator, but not both
-1 {activator(C); inhibitor(C)} 1 :- compound(C).
+1 {activator(C); inhibitor(C)} 1 :- compound(C), 
+  not fixed_activator(C), not fixed_inhibitor(C).
 
 %Keep track of which original regulators C had their sign changed
 %(used in minimization #3)
@@ -94,6 +108,9 @@ bcf_broken :- node_ID(N1), node_ID(N2), N1 != N2, node_regulator_number(N1,N1_VA
 %4-The BCF cannot be broken (nodes cannot contain other nodes)
 :- bcf_broken.
 
+%5-Fixed regulators must be present in the final solution
+:- fixed_regulator(C), not node_regulator(_,C).
+
 
 %Display
 regulator_activator(C) :- node_regulator(N,C), activator(C).
@@ -103,6 +120,7 @@ regulator_inhibitor(C) :- node_regulator(N,C), inhibitor(C).
 #show regulator_activator/1.
 #show regulator_inhibitor/1.
 #show node_regulator/2.
+
 
 %Optimize
 %1-Optimize for the minimum number of final nodes (highest priority)

@@ -259,7 +259,7 @@ def generateInconsistentFunctionsAndTotalVars(incst_LP):
 def generateFunctions(func, curated_LP):
   clingo_args = ["0", f"-c compound={func}"]
     
-  ctl = clingo.Control(arguments=clingo_args)
+  ctl = clingo.Control(arguments=clingo_args, logger= lambda a,b: None)
 
   ctl.add("base", [], program=curated_LP)
   ctl.load(unique_positive_observations_path)
