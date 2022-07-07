@@ -23,9 +23,6 @@ maximum_node_number(POSITIVE_OBSERVATIONS_COUNT) :- positive_observations,
 %(since considering more nodes would never allow us to create more restrictive fuctions, only more general ones)
 maximum_node_number(1) :- not positive_observations.
 
-%Define all possible IDs for nodes (used in IC #1)
-possible_node_ID(1..MN) :- maximum_node_number(MN).
-
 %If a compound C is active in the time step before a positive observation, then it is a potential regulator
 %that could be used to explain that observation
 observation_potential_regulator(E,T,C) :- curated_observation(E,T-1,C,1), activator(C), unique_positive_observation(E,T).
@@ -44,19 +41,19 @@ node_ID(N) :- node_regulator(N,_).
 %*--Assessing node behavior--*%
 %If one of a node N's regulators has value 0 for experiment E at time step T, 
 %then for that same experiment and time step the node will also have value 0 (if that variable is an activator)
-timestep_negative_node(E,T,N) :- node_ID(N), node_regulator(N,C), curated_observation(E,T,C,0), activator(C).
+timestep_negative_node(E,T,N) :- node_regulator(N,C), curated_observation(E,T,C,0), activator(C).
 %Variant for variables that are inhibitors
-timestep_negative_node(E,T,N) :- node_ID(N), node_regulator(N,C), curated_observation(E,T,C,1), inhibitor(C).
+timestep_negative_node(E,T,N) :- node_regulator(N,C), curated_observation(E,T,C,1), inhibitor(C).
 
 %Nodes that aren't negative (i.e. have value 0) at time step T of experiment E must be positive (i.e. have value 1)
 timestep_positive_node(E,T,N) :- not timestep_negative_node(E,T,N), node_ID(N), curated_observation(E,T,_,_).
 
 %Determine all positive observations that are covered by the selected nodes (i.e. positive observations that can
 %be obtained by those nodes, since the nodes are positive in the timestep prior to those observations)
-node_positive_observation_coverage(N,E,T) :- unique_positive_observation(E,T), node_ID(N), timestep_positive_node(E,T-1,N).
+node_positive_observation_coverage(N,E,T) :- unique_positive_observation(E,T), timestep_positive_node(E,T-1,N).
 
 %If two candidate nodes cover different positive observations, then their behavior is distinct
-%(used in integrity constraint #4)
+%(used in integrity constraint #3)
 nodes_distinct_coverage(N1,N2) :- node_ID(N1), node_ID(N2), N1 < N2, 
   node_positive_observation_coverage(N1,E,T), not node_positive_observation_coverage(N2,E,T).
 
@@ -65,7 +62,7 @@ nodes_distinct_coverage(N1,N2) :- node_ID(N1), node_ID(N2), N1 < N2,
 original_regulator(C) :- edge(C,compound,_).
 
 %If a regulator C is present in node N, then we define it as a present_regulator
-present_regulator(C) :- node_ID(N), node_regulator(N,C).
+present_regulator(C) :- node_regulator(N,C).
 
 %If an original regulator C is not present in any node, we define it as a missing_regulator
 missing_regulator(C) :- original_regulator(C), not present_regulator(C).
@@ -84,32 +81,28 @@ bcf_broken :- node_ID(N1), node_ID(N2), N1 != N2, node_regulator_number(N1,N1_VA
 
 
 %Test
-%1-Nodes must be created with ordered IDs (symmetry breaking)
-:- node_ID(N2), not node_ID(N1), possible_node_ID(N1), N2 > N1.
-
-%2-We're only interested in generating nodes that can be used to explain the observations,
+%1-We're only interested in generating nodes that can be used to explain the observations,
 %which is not possible for a node to do if it is positive when we expect it to be negative
 :- timestep_positive_node(E,T-1,N), curated_observation(E,T,compound,0), T > 0.
 
-%3-Every positive observation must be covered by some positive node
+%2-Every positive observation must be covered by some positive node
 :- unique_positive_observation(E,T), not node_positive_observation_coverage(_,E,T).
 
-%4-If two candidate nodes share the same behavior, then the solution is not optimal
+%3-If two candidate nodes share the same behavior, then the solution is not optimal
 :- node_ID(N1), node_ID(N2), N1 < N2, not nodes_distinct_coverage(N1,N2).
 
-%5-The BCF cannot be broken (nodes cannot contain other nodes)
+%4-The BCF cannot be broken (nodes cannot contain other nodes)
 :- bcf_broken.
 
 
 %Display
-final_node_regulator(N,C) :- node_ID(N), node_regulator(N,C).
-final_activator(C) :- final_node_regulator(N,C), activator(C).
-final_inhibitor(C) :- final_node_regulator(N,C), inhibitor(C).
+regulator_activator(C) :- node_regulator(N,C), activator(C).
+regulator_inhibitor(C) :- node_regulator(N,C), inhibitor(C).
 
 #show node_ID/1.
-#show final_activator/1.
-#show final_inhibitor/1.
-#show final_node_regulator/2.
+#show regulator_activator/1.
+#show regulator_inhibitor/1.
+#show node_regulator/2.
 
 %Optimize
 %1-Optimize for the minimum number of final nodes (highest priority)
