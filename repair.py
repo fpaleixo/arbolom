@@ -126,6 +126,10 @@ def parseArgs():
   synchronous = args.synchronous
   asynchronous = args.asynchronous
 
+  if not stable and not synchronous and not asynchronous:
+    logger.info("Default mode: Stable State \U0001f6d1")
+    return
+
   if stable:
     toggle_stable_state = True
     toggle_sync = False
@@ -143,7 +147,6 @@ def parseArgs():
     toggle_sync = False
     toggle_async = True
     logger.debug("Mode used: Asynchronous \U0001f331")
-
   return
 
 #---Printing functions---

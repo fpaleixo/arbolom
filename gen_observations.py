@@ -94,7 +94,7 @@ def parseArgs():
     logger.info("Mode used: Asynchronous \U0001f331")
   
   else: 
-    logger.info("Mode used: Synchronous \U0001f550")
+    logger.info("Default mode: Synchronous \U0001f550")
 
   if(args.save_directory):
     write_folder = args.save_directory
@@ -111,7 +111,6 @@ def parseArgs():
   if models:
     models_to_obtain = models
     logger.debug("Overriding answer sets to obtain:  " + models_to_obtain)
-
   return
 
 

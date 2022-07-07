@@ -74,7 +74,7 @@ global_logger.setLevel(logging.INFO)
 #Purpose: Parses the argument regarding which file to generate observations for.
 def parseArgs():
   logger = logging.getLogger("parser")
-  logger.setLevel(logging.DEBUG)
+  logger.setLevel(logging.INFO)
 
   global model_path, write_folder, obsv_path
   global toggle_stable_state, toggle_sync, toggle_async
@@ -98,6 +98,10 @@ def parseArgs():
     obsv_path = obsv
     logger.debug("Obtained observations: " + obsv_path)
 
+  if not stable and not synchronous and not asynchronous:
+    logger.info("Default mode: Stable State \U0001f6d1")
+    return
+
   if stable:
     toggle_stable_state = True
     toggle_sync = False
@@ -115,7 +119,6 @@ def parseArgs():
     toggle_sync = False
     toggle_async = True
     logger.info("Mode used: Asynchronous \U0001f331")
-
   return
 
 #Inputs: atoms is a list of atoms obtained from solving with clingo.
