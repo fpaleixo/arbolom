@@ -1,16 +1,18 @@
 import os, argparse, logging, glob
 from aux_scripts.common import *
 
-#TODO default save should be in the same directory as the .bnet file, custom save should be in the specified directory
-
 #Usage: $python conversion.py -f (FILENAME) -s (SAVE_DIRECTORY)
+
 #Optional flags:
 #-s -> Path of directory to save converted file (default is ./lp_models/corrupted/(name_of_file))
+
 #Variables: 
 #FILENAME -> Path of file containing Boolean model in the BCF format to convert to ASP.
 #SAVE_DIRECTORY -> Path of directory to save converted model to.
 
-#Attention: Input files must be in the BCF format and follow the conventions of the .bnet files in the simple_models folder (results will be unpredictable otherwise)
+#Attention: 
+# Input files must be in the BCF format and follow the conventions of 
+# the .bnet files in the simple_models folder (results will be unpredictable otherwise)
 
 
 #-----Configs-----
@@ -27,9 +29,12 @@ filename = '5.bnet'
 parser = None
 args = None
 if(cmd_enabled):
-  parser = argparse.ArgumentParser(description="Convert a Boolean logical model written in the BCF format to a logic program.")
-  parser.add_argument("-f", "--file_to_convert", help="Path to file to be converted.")
-  parser.add_argument("-s", "--save_directory", help="Path of directory to save converted model to.")
+  parser = argparse.ArgumentParser(description=
+    "Convert a Boolean logical model written in the BCF format to a logic program.")
+  parser.add_argument("-f", "--file_to_convert", help=
+    "Path to file to be converted.")
+  parser.add_argument("-s", "--save_directory", help=
+    "Path of directory to save converted model to.")
   args = parser.parse_args()
 
 #Global logger (change logging.(LEVEL) to desired (LEVEL) )
@@ -52,6 +57,7 @@ def parseArgs():
 
   filename = os.path.basename(filepath)
   read_folder = os.path.dirname(filepath)
+  write_folder = read_folder
 
   if(args.save_directory):
     write_folder = args.save_directory
@@ -65,7 +71,8 @@ def parseArgs():
 
 #-----ASP Predicates-related operations-----
 
-#Inputs: file is the file to write in, compounds is a list of strings representing the compounds.
+#Inputs: file is the file to write in, compounds is a list of strings 
+# representing the compounds.
 #Purpose: Adds nodes representing compounds to LP.
 def addNodesToLP(file, compounds):
   file.write("%Compounds\n")
@@ -74,7 +81,9 @@ def addNodesToLP(file, compounds):
   file.write("\n")
 
 
-#Inputs: file is the file to write in, item is a tuple where the first element is the compound of the regulatory function, and the second element is a list of its implicants.
+#Inputs: file is the file to write in, item is a tuple where the first element 
+# is the compound of the regulatory function, 
+# and the second element is a list of its implicants.
 #Purpose: Adds the edges representing the regulators of each node to LP.
 def addEdgesToLP(file, item):
   if item[1][0]: #if there exist any regulators
@@ -90,7 +99,9 @@ def addEdgesToLP(file, item):
     file.write("\n")
 
 
-#Inputs: file is the file to write in, item is a tuple where the first element is the compound of the regulatory function, and the second element is a list of its implicants.
+#Inputs: file is the file to write in, item is a tuple where the first element 
+# is the compound of the regulatory function, 
+# and the second element is a list of its implicants.
 #Purpose: Adds regulators of each compound to LP.
 def addFunctionToLP(file, item):
   if item[1][0]: #if there exist any regulators
@@ -102,7 +113,7 @@ def addFunctionToLP(file, item):
       regulators = getRegulatorsOf(item[0],[i])
       
       for r in regulators:
-        file.write("term(" + item[0] + ", " + str(idx+1) + ", " + r + ").\n") #should we store the sign on the edges or on the function itself?
+        file.write("term(" + item[0] + ", " + str(idx+1) + ", " + r + ").\n")
 
     file.write("\n")
 
@@ -110,24 +121,20 @@ def addFunctionToLP(file, item):
 
 #-----Convert to LP operations-----
 
-#Inputs: dict is a dictionary where the keys are compounds and the values are the implicants of each compound, name is the name of the file and path is the directory to place the file in.
+#Inputs: 'dict' is a dictionary where the keys are compounds and the values are 
+# the implicants of each compound.
 #Purpose: Saves a Boolean logical model to an LP file.
-def saveLPToFile(dict, name=False):
+def saveLPToFile(dict):
   logger = logging.getLogger("saveLP")
   logger.setLevel(logging.INFO)
 
-  if not name:
-    name = filename
+  name = filename
 
   logger.debug("Filename: " + str(name))
   logger.debug("Path: " + str(write_folder))
 
   current_path = None
-  if 'corrupted' in name and not args.save_directory:
-    base_filename = name.split('-')[0] 
-    current_path = os.path.join(write_folder, base_filename, name.replace(".bnet", '.lp'))
-  else:
-    current_path = os.path.join(write_folder, name.replace(".bnet", '.lp'))
+  current_path = os.path.join(write_folder, name.replace(".bnet", '.lp'))
 
   if not os.path.exists(os.path.dirname(current_path)):
     os.makedirs(os.path.dirname(current_path))
@@ -141,7 +148,9 @@ def saveLPToFile(dict, name=False):
   logger.debug("All compounds: " + str(all_compounds))
 
   if len(all_compounds) == len(list(dict.keys())):
-    addNodesToLP(f, list(dict.keys())) #If all compounds are present in the map keys then the original order is preserved for convenience
+    #If all compounds are present in the map keys, 
+    # then the original order is preserved for convenience
+    addNodesToLP(f, list(dict.keys())) 
   else: 
     addNodesToLP(f, all_compounds)  
 
@@ -173,7 +182,9 @@ for fname in glob.glob(os.path.join(read_folder, filename)):
         implicants = [i.replace(" ", "").strip("()") for i in full[1].split('|')]
         global_logger.debug("Implicants of "+full[0]+": "+str(implicants))
 
-        func_dict[full[0]] = implicants  #each compound is a key; the value is the corresponding list of prime implicants
+        #each compound is a key; the value is the corresponding 
+        # list of prime implicants
+        func_dict[full[0]] = implicants  
 
     saveLPToFile(func_dict)
 

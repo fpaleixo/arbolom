@@ -48,7 +48,8 @@ e_toggle = True #Edge Sign Flip
 r_toggle = True #Edge Remove
 a_toggle = True #Edge Add
 
-#Chances (probability that corruptions will occur (when set to True), 0 being 0% probability and 1 being 100%)
+#Chances (probability that corruptions will 
+#  occur (when set to True), 0 being 0% probability and 1 being 100%)
 f_chance = 0.2
 e_chance = 0.2
 r_chance = 0.2
@@ -348,7 +349,8 @@ def edgeAdd(func_dict, chance):
   all_compounds = getAllCompounds(func_dict)
   changed = set()
 
-  final_dict = dict.fromkeys(func_dict.keys(),[]) #original keys are copied to preserve key ordering
+  #original keys are copied to preserve key ordering
+  final_dict = dict.fromkeys(func_dict.keys(),[]) 
 
   for c in all_compounds:
     c_implicants = func_dict.get(c,[])
