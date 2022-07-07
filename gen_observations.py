@@ -2,9 +2,11 @@ import os, argparse, logging, clingo, re
 from aux_scripts.common import uniquify
 
 #Usage: $python gen_observations.py -f (FILENAME) -async -e (NUMBER OF EXPERIMENTS) -t (TIME STEPS) -as (NUMBER OF ANSWER SETS) -s (SAVE_DIRECTORY)
+
 #Optional flags:
 #-async ->  Produces observations using the asynchronous mode.
 #-s -> Path of directory to save generated observations (default is lp_models/obsv/tseries/(a)sync/(name_of_file))
+
 #Variables:
 #FILENAME ->  Path of file containing Boolean model in the BCF format written in lp.
 #NUMBER OF EXPERIMENTS ->  The number of experiments (sets of observations) to generate.
@@ -12,7 +14,9 @@ from aux_scripts.common import uniquify
 #NUMBER OF ANSWER SETS ->  The number of answer sets to obtain.
 #SAVE_DIRECTORY -> Path of directory to save generated observations to.
 
-#Attention: Input file must be in the BCF format and follow the conventions of the .lp files in the lp_models folder (results will be unpredictable otherwise)
+#Attention: 
+# Input file must be in the BCF format and follow the conventions of the 
+# .lp files in the lp_models folder (results will be unpredictable otherwise)
 
 
 #-----Configs-----
@@ -37,39 +41,47 @@ async_path = "encodings/observations/async_observations.lp"
 
 #Save folder paths
 save_folder = "simple_models/lp/observations/tseries"
-save_sync = "sync"
-save_async = "async"
 
 #Parser (will only be used if command-line usage is enabled above)
 parser = None
 args = None
 if(cmd_enabled):
-  parser = argparse.ArgumentParser(description="Generate observations for a Boolean logical model in the BCF written in lp.")
-  parser.add_argument("-f", "--model_to_observe", help="Path to model to generate observations for.")
-  parser.add_argument("-async", "--asynchronous", action='store_true', help="Flag to generate asynchronous observations (default is synchronous).")
-  parser.add_argument("-e", "--experiments_number", help="Number of experiments (sets of observations) to generate (default is " + experiments_number + ").")
-  parser.add_argument("-t", "--time_steps", help="Number of time steps to consider in each experiment (default is " + time_steps + ").")
-  parser.add_argument("-as", "--models_to_obtain", help="Number of answer sets to obtain (default is " + models_to_obtain + ").")
-  parser.add_argument("-s", "--save_directory", help="Path of directory to save generated observations to.")
+  parser = argparse.ArgumentParser(description=
+    "Generate observations for a Boolean logical model in the BCF written in lp.")
+  parser.add_argument("-f", "--model_to_observe", help=
+    "Path to model to generate observations for.")
+  parser.add_argument("-async", "--asynchronous", action='store_true', help=
+    "Flag to generate asynchronous observations (default is synchronous).")
+  parser.add_argument("-e", "--experiments_number", help=
+    "Number of experiments (sets of observations) to generate (default is " + 
+    experiments_number + ").")
+  parser.add_argument("-t", "--time_steps", help=
+    "Number of time steps to consider in each experiment (default is " + 
+    time_steps + ").")
+  parser.add_argument("-as", "--models_to_obtain", help=
+    "Number of answer sets to obtain (default is " + models_to_obtain + ").")
+  parser.add_argument("-s", "--save_directory", help=
+    "Path of directory to save generated observations to.")
   args = parser.parse_args()
 
 #Global logger (change logging.(LEVEL) to desired (LEVEL) )
 logging.basicConfig()
 global_logger = logging.getLogger("global")
-global_logger.setLevel(logging.DEBUG)
+global_logger.setLevel(logging.INFO)
 
 
 
 #-----Auxiliary Functions-----
-
 #Purpose: Parses the argument regarding which file to generate observations for.
 def parseArgs():
   logger = logging.getLogger("parser")
-  logger.setLevel(logging.DEBUG)
+  logger.setLevel(logging.INFO)
 
-  global model_path, save_folder, generate_sync, experiments_number, time_steps, models_to_obtain
+  global model_path, save_folder, generate_sync
+  global experiments_number, time_steps, models_to_obtain
 
   model_path = args.model_to_observe
+  save_folder = os.path.dirname(model_path)
   logger.debug("Obtained file: " + model_path)
 
   asynch = args.asynchronous
@@ -77,13 +89,16 @@ def parseArgs():
   time = args.time_steps
   models = args.models_to_obtain
 
-  if(args.save_directory):
-    save_folder = args.save_directory
-    logger.debug("Write folder is: "+ save_folder)
-
   if asynch:
     generate_sync = False
-    logger.debug("Mode changed from synchronous to asynchronous.")
+    logger.info("Mode used: Asynchronous.")
+  
+  else: 
+    logger.info("Mode used: Synchronous.")
+
+  if(args.save_directory):
+    save_folder = args.save_directory
+    logger.info("Custom write folder is: "+ save_folder)
   
   if experiments:
     experiments_number = experiments
@@ -112,10 +127,11 @@ def saveObsToFile(atoms):
     answer_set_finished = False
 
     origin_path = None
-    if generate_sync:
-      origin_path = os.path.join(save_folder, save_sync, os.path.basename(model_path).replace(".lp", "-obs.lp"))
-    else:
-      origin_path = os.path.join(save_folder, save_async, os.path.basename(model_path).replace(".lp", "-obs.lp"))
+    filename = os.path.basename(model_path).replace(".lp", "-sync-obs.lp")
+    if not generate_sync:
+      filename = os.path.basename(model_path).replace(".lp", "-async-obs.lp")
+  
+    origin_path = os.path.join(save_folder, filename)
     current_path = origin_path
 
     for atom in atoms:
@@ -161,7 +177,8 @@ def saveObsToFile(atoms):
 if(cmd_enabled):
   parseArgs()
 
-ctl = clingo.Control(arguments=["-c e=" + experiments_number, "-c t=" + time_steps, " " + models_to_obtain])
+ctl = clingo.Control(arguments=["-c e=" + experiments_number, "-c t=" + 
+  time_steps, " " + models_to_obtain])
 
 ctl.load(model_path)
 
