@@ -1,20 +1,33 @@
 import os, sys, argparse, logging, glob, random, re
 from aux_scripts.common import *
 
-#TODO default save should be in the same directory as the .bnet file, custom save should be in the specified directory
-
 #Usage: $python corruption.py -f (FILENAME) -op (OPERATIONS) -(O)p (PROBABILITY) -s (SAVE_DIRECTORY)
+
 #Optional flags:
-#-(O)p -> Probability (0.0 to 1.0) of corruption O taking place (default is 0.2)
-#-s -> Path of directory to save corrupted file (default is ./simple_models/corrupted/(name_of_file))
+#-op -> Specify which corruptions to apply (default applies all corruptions).
+#-(O)p -> Probability (0.0 to 1.0) of corruption O taking place (default is 0.2).
+#-s -> Path of directory to save corrupted file 
+# (default is ./simple_models/corrupted/(name_of_file)).
+
 #Variables: 
 #FILENAME -> Path of file inside simple models folder to corrupt.
-#OPERATIONS -> A string with one (or more) specific characters, denoting which corruptions to apply. These characters are 'f','e','r' and 'a'. 'fera' would be the full string, representing that (f)unction change, (e)dge flip, edge (r)emove and edge (a)dd will all be applied.
-#O -> A character that can take one of four possible values: 'f','e','r' and 'a' (followed by 'p'). -fp would change the probability of function change to occur, -ep of edge removal, etc. The argument that uses this O variable is an optional one.
-#PROBABILITY -> A float from 0.0 to 1.0 denoting the probability of a given corruption to occur. For example, -ap 0.5 would change the add edge operation's probability to 50%
+#OPERATIONS -> A string with one (or more) specific characters, denoting which 
+# corruptions to apply. These characters are 'f','e','r' and 'a'. 'fera' 
+# would be the full string, representing that (f)unction change, (e)dge flip,
+# edge (r)emove and edge (a)dd will all be applied.
+#O -> A character that can take one of four possible values: 
+# 'f','e','r' and 'a' (followed by 'p'). -fp would change the probability of 
+# function change to occur, -ep of edge removal, etc. The argument that uses 
+# this O variable is an optional one.
+#PROBABILITY -> A float from 0.0 to 1.0 denoting the probability of a given 
+# corruption to occur. For example, -ap 0.5 would change the add edge 
+# operation's probability to 50%.
 #SAVE_DIRECTORY -> Path of directory to save corrupted model to.
 
-#Attention: Input files must be in the BCF format and follow the conventions of the .bnet files in the simple_models folder (results will be unpredictable otherwise)
+#Attention: 
+# Input files must be in the BCF format and follow the conventions of 
+# the .bnet files in the simple_models folder 
+# (results will be unpredictable otherwise)
 
 
 #-----Configs-----
@@ -30,10 +43,10 @@ filename = '6.bnet'
 write_folder = './simple_models/corrupted'
 
 #Operations (set desired operations to True)
-f_toggle = False #Function Change
-e_toggle = False #Edge Sign Flip
-r_toggle = False #Edge Remove
-a_toggle = False #Edge Add
+f_toggle = True #Function Change
+e_toggle = True #Edge Sign Flip
+r_toggle = True #Edge Remove
+a_toggle = True #Edge Add
 
 #Chances (probability that corruptions will occur (when set to True), 0 being 0% probability and 1 being 100%)
 f_chance = 0.2
@@ -45,14 +58,26 @@ a_chance = 0.2
 parser = None
 args = None
 if(cmd_enabled):
-  parser = argparse.ArgumentParser(description="Corrupt a Boolean logical model written in the BCF format.")
-  parser.add_argument("-f", "--file_to_corrupt", help="Path to file to be corrupted.")
-  parser.add_argument("-op", "--operations", help="Corruptions to apply.")
-  parser.add_argument("-fp", "--f_probability", help="Probability of applying function change.", type=float)
-  parser.add_argument("-ep", "--e_probability", help="Probability of applying edge flip.", type=float)
-  parser.add_argument("-rp", "--r_probability", help="Probability of applying edge remove.", type=float)
-  parser.add_argument("-ap", "--a_probability", help="Probability of applying edge add.", type=float)
-  parser.add_argument("-s", "--save_directory", help="Path of directory to save converted model to.")
+  parser = argparse.ArgumentParser(description=
+    "Corrupt a Boolean logical model written in the BCF format.")
+  parser.add_argument("-f", 
+    "--file_to_corrupt", help="Path to file to be corrupted.")
+  parser.add_argument("-op", 
+    "--operations", help="Corruptions to apply.")
+  parser.add_argument("-fp", 
+    "--f_probability", help="Probability of applying function change.", 
+    type=float)
+  parser.add_argument("-ep", 
+    "--e_probability", help="Probability of applying edge flip.", 
+    type=float)
+  parser.add_argument("-rp", 
+    "--r_probability", help="Probability of applying edge remove.", 
+    type=float)
+  parser.add_argument("-ap", 
+    "--a_probability", help="Probability of applying edge add.", 
+    type=float)
+  parser.add_argument("-s", 
+  "--save_directory", help="Path of directory to save converted model to.")
   args = parser.parse_args()
 
 #Global logger (change logging.(LEVEL) to desired (LEVEL) )
@@ -84,28 +109,36 @@ def primesOnly(implicants):
   changed_input = []
 
   for i in range(0, orig_len):
-    if(copy[i]=='' or original[i] in output): continue #if i has already been marked as a non-prime or is already in the output, go to the next implicant
+    #if i has already been marked as a non-prime or 
+    #is already in the output, go to the next implicant
+    if(copy[i]=='' or original[i] in output): continue 
 
     for j in range(i+1, orig_len):
-      if(copy[j]==''): continue #if j has already been marked as a non-prime, go to the next implicant
+      #if j has already been marked as a non-prime, go to the next implicant
+      if(copy[j]==''): continue 
 
-      if copy[i].issubset(copy[j]): #if j absorbs i, then j is not a prime implicant
+      #if j absorbs i, then j is not a prime implicant
+      if copy[i].issubset(copy[j]): 
         changed_input.append(original[j])
         copy[j] = ''
 
-      elif copy[j].issubset(copy[i]): #if j is absorbed by i, then i is not a prime implicant
+      #if j is absorbed by i, then i is not a prime implicant
+      elif copy[j].issubset(copy[i]): 
         changed_input.append(original[i])
         copy[i] = ''
         break; #leave inner loop if i has absorbed another implicant
     
-    if(copy[i] != ''): #if i has not absorbed any other implicant, it is a prime so add it to output
+    #if i has not absorbed any other implicant, it is a prime so add it to output
+    if(copy[i] != ''): 
       output.append(original[i]) 
 
   return (changed_input, output)
 
 
-#Input: A list of prime implicants, a list of literals that should be present in the prime implicants.
-#Purpose: If there are literals missing from the list of prime implicants, add a new implicant with them.
+#Input: A list of prime implicants, a list of literals that should be present 
+# in the prime implicants.
+#Purpose: If there are literals missing from the list of prime implicants, 
+# add a new implicant with them.
 def checkLiterals(implicants, literals):
   logger = logging.getLogger("check_literals")
   logger.setLevel(logging.INFO)
@@ -131,7 +164,8 @@ def checkLiterals(implicants, literals):
   return output
 
 
-#Purpose: Parses the arguments for which operations are to be applied and their probabilities.
+#Purpose: Parses the arguments for which operations are to be applied and 
+# their probabilities.
 def parseArgs():
   logger = logging.getLogger("parser")
   logger.setLevel(logging.INFO)
@@ -143,11 +177,14 @@ def parseArgs():
   r_p = args.r_probability
   a_p = args.a_probability
 
-  global read_folder, write_folder, filename, f_toggle, e_toggle, r_toggle, a_toggle, f_chance, e_chance, r_chance, a_chance
+  global read_folder, write_folder, filename 
+  global f_toggle, e_toggle, r_toggle, a_toggle 
+  global f_chance, e_chance, r_chance, a_chance
 
   if filepath:
-    filename=os.path.basename(filepath)
-    read_folder=os.path.dirname(filepath)
+    filename = os.path.basename(filepath)
+    read_folder = os.path.dirname(filepath)
+    write_folder = read_folder
 
   logger.debug("Filename is: "+ filename)
   logger.debug("Read folder is: "+ read_folder)
@@ -156,27 +193,28 @@ def parseArgs():
     write_folder = args.save_directory
     logger.debug("Write folder is: "+ write_folder)
 
-  if 'f' in operations:
-    f_toggle = True
-    if f_p:
-      f_chance = f_p
-  
-  if 'e' in operations:
-    e_toggle = True
-    if e_p:
-      e_chance = e_p
+  if operations:
+    if 'f' in operations:
+      f_toggle = True
+      if f_p:
+        f_chance = f_p
+    
+    if 'e' in operations:
+      e_toggle = True
+      if e_p:
+        e_chance = e_p
 
-  if 'r' in operations:
-    r_toggle = True
-    if r_p:
-      r_chance = r_p
+    if 'r' in operations:
+      r_toggle = True
+      if r_p:
+        r_chance = r_p
 
-  if 'a' in operations:
-    a_toggle = True
-    if a_p:
-      a_chance = a_p
+    if 'a' in operations:
+      a_toggle = True
+      if a_p:
+        a_chance = a_p
 
-  logger.debug("Obtained operations: " + operations)
+    logger.debug("Obtained operations: " + operations)
 
   logger.debug("Corruption F: "+ str(f_toggle) + " with chance " + str(f_chance))
   logger.debug("Corruption E: "+ str(e_toggle) + " with chance " + str(e_chance))
@@ -186,20 +224,22 @@ def parseArgs():
   return
 
 
-#Input: dict is a dictionary with all the regulatory functions, path is the folder where the file will be stored and file is the file name.
-#Purpose: Stores the contents of the dictionary into a file using the .bnet format.
-def saveToFile(dict, name=False, ops=''):
+#Input: dict is a dictionary with all the regulatory functions, path is 
+# the folder where the file will be stored and file is the file name.
+#Purpose: Stores the contents of the dictionary into a file using the
+# .bnet format.
+def saveToFile(dict, ops=''):
   logger = logging.getLogger("saveLP")
   logger.setLevel(logging.INFO)
 
   global read_folder, write_folder
 
-  if not name:
-    name = filename
+  
+  name = filename
 
   print("PATH IS: " + write_folder)
   print("NAME IS: " + name)
-  current_path = uniquify(os.path.join(write_folder, name.replace(".bnet", ''),
+  current_path = uniquify(os.path.join(write_folder,
   name.replace(".bnet", '') + "-corrupted" + "-" + ops + ".bnet"))
 
   if not os.path.exists(os.path.dirname(current_path)):
@@ -232,9 +272,10 @@ def saveToFile(dict, name=False, ops=''):
 
 
 #-----Model corruption operations-----
-
-#Inputs: Receives a list of implicants as input, and the chance to change that list of implicants (0.0-1.0).
-#Purpose: Changes the regulatory function of a compound by creating a new one using the same literals.
+#Inputs: Receives a list of implicants as input, and the chance to change 
+# that list of implicants (0.0-1.0).
+#Purpose: Changes the regulatory function of a compound by creating a new one 
+# using the same literals.
 def funcChange(implicants, chance):
   logger = logging.getLogger("func_change")
   logger.setLevel(logging.INFO)
@@ -266,8 +307,12 @@ def funcChange(implicants, chance):
         roll = rng.random()
 
         if(roll <=0.5 
-           or (i==num_implicants-1 and not has_been_used) #Literal has not been used yet and we're on the last possible implicant that it can be used in
-           or (l==literals[-1] and i not in filled_clauses)): #We're on the last literal and there is a clause that does not have any literals in it yet
+           #Literal has not been used yet and we're on the last possible 
+           # implicant that it can be used in
+           or (i==num_implicants-1 and not has_been_used) 
+           #We're on the last literal and there is a clause that does not have 
+           # any literals in it yet
+           or (l==literals[-1] and i not in filled_clauses)): 
           logger.debug("Adding it to clause "+ str(i+1))
           has_been_used = True
           filled_clauses[i] = True
@@ -289,11 +334,13 @@ def funcChange(implicants, chance):
 #that a new regulator will be added to the regulatory function of a compound.
 #Purpose: Add more regulators to the regulatory function of a compound.
 #Detail: For each compound, make a loop with
-#each other compound that is not its regulator,
-#then roll the dice (given chance) and see if it is added as regulator (50% chance of being activator / inhibitor) or not
-#if it is added as a regulator, then roll the dice to see if it is added as an OR clause or 
-#added to one of the existing AND clauses (50%)
-#if it is added to one of the existing AND clauses, for each clause there's a 50% chance it will be included there.
+# each other compound that is not its regulator,
+# then roll the dice (input chance) and see if it is added as 
+# regulator (50% chance of being activator / inhibitor) or not.
+# If it is added as a regulator, then roll the dice to see if it is added as 
+# an OR clause or added to one of the existing AND clauses (50% chance).
+# If it is added to one of the existing AND clauses, for each clause there's 
+# a 50% chance it will be included there.
 def edgeAdd(func_dict, chance):
   logger = logging.getLogger("edge_add")
   logger.setLevel(logging.INFO)
@@ -355,7 +402,8 @@ def edgeAdd(func_dict, chance):
 
 
 #Inputs: A list of implicants, and the chance of removing an edge (regulator).
-#Purpose: For all literals in a regulatory function, roll the die and see if the respective edge is removed or not.
+#Purpose: For all literals in a regulatory function, roll the die and see 
+# if the respective edge is removed or not.
 def edgeRemove(implicants, chance):
   logger = logging.getLogger("edge_remove")
   logger.setLevel(logging.INFO)
@@ -375,13 +423,21 @@ def edgeRemove(implicants, chance):
 
       for i in range(0, len(implicants)): #For each implicant
 
-        replaced = output[i].replace("&" + l + "&", '&') #Start by seeing if literal to remove is one of the middle terms in the conjunction
+        #Start by seeing if literal to remove is one of the middle terms in 
+        # the conjunction
+        replaced = output[i].replace("&" + l + "&", '&') 
         if replaced == output[i]: 
-          replaced = re.sub(r'&{}\b'.format(l), '', output[i]) #If it wasn't, then check if the literal to remove is the last term of a conjunction
+          #If it wasn't, then check if the literal to remove is the last term 
+          # of a conjunction
+          replaced = re.sub(r'&{}\b'.format(l), '', output[i]) 
           if replaced == output[i]:
-            replaced = output[i].replace(l + "&", '') #If it wasn't, then check to see if it is the first term of a conjunction
+            #If it wasn't, then check to see if it is the first term of 
+            # a conjunction
+            replaced = output[i].replace(l + "&", '') 
             if(replaced == output[i]):
-              replaced = re.sub(r'\b{}\b'.format(l), '', output[i]) #If it is neither, then the literal occurs alone and can be removed without leaving behind a trailing &
+              #If it is neither, then the literal occurs alone and can 
+              # be removed without leaving behind a trailing '&'
+              replaced = re.sub(r'\b{}\b'.format(l), '', output[i]) 
         output[i] = replaced
 
   output = primesOnly(output)[1]
@@ -389,8 +445,9 @@ def edgeRemove(implicants, chance):
 
 
 #Inputs: A list of implicants, and the chance of changing an edge's sign.
-#Purpose: A (repeated) literal in an implicant represents a signed edge. For all literals, roll the die 
-#and see if the sign of the respective edge changes or not.
+#Purpose: A (repeated) literal in an implicant represents a signed edge. 
+# For all literals, roll the die and see if the sign of the respective 
+# edge changes or not.
 def edgeFlip(implicants, chance):
   logger = logging.getLogger("edge_flip")
   logger.setLevel(logging.INFO)
@@ -447,7 +504,8 @@ for fname in glob.glob(os.path.join(read_folder, filename)):
       implicants = [i.replace(" ", "").strip("()") for i in full[1].split('|')]
       global_logger.debug("Implicants of "+full[0]+": "+str(implicants))
 
-      func_dict[full[0]] = implicants  #each compound is a key; the value is the corresponding list of prime implicants
+      #each compound is a key; the value is the corresponding list of prime implicants
+      func_dict[full[0]] = implicants  
 
       if(f_toggle):
         change = funcChange(implicants, f_chance)
@@ -464,7 +522,9 @@ for fname in glob.glob(os.path.join(read_folder, filename)):
         flipped_implicants = edgeFlip(implicants, e_chance)
 
         if(len(flipped_implicants[0]) > 0):
-          global_logger.info("("+full[0]+") " + "Flipped literals "+str(flipped_implicants[0])+". New implicants: "+str(flipped_implicants[1]))
+          global_logger.info("("+full[0]+") " + "Flipped literals " + 
+            str(flipped_implicants[0]) + 
+            ". New implicants: "+str(flipped_implicants[1]))
           implicants = flipped_implicants[1]
           e_effect = True
 
@@ -475,7 +535,9 @@ for fname in glob.glob(os.path.join(read_folder, filename)):
         removed_edges = edgeRemove(implicants, r_chance)
 
         if(len(removed_edges[0]) > 0):
-          global_logger.info("("+full[0]+") " + "Removed edges from "+str(removed_edges[0])+". New implicants: "+str(removed_edges[1]))
+          global_logger.info("("+full[0]+") " + "Removed edges from " + 
+           str(removed_edges[0]) + 
+           ". New implicants: "+str(removed_edges[1]))
           implicants = removed_edges[1]
           r_effect = True
 
@@ -489,7 +551,9 @@ for fname in glob.glob(os.path.join(read_folder, filename)):
       added_edges = edgeAdd(final_dict, a_chance)
 
       if(added_edges[0]):
-        global_logger.info("Added new regulators to compound(s) "+ str(added_edges[0]) +". New functions: "+str(added_edges[1]))
+        global_logger.info("Added new regulators to compound(s) " +
+         str(added_edges[0]) + 
+         ". New functions: "+str(added_edges[1]))
         final_dict = added_edges[1]
         a_effect = True
         
@@ -508,5 +572,3 @@ for fname in glob.glob(os.path.join(read_folder, filename)):
       ops += 'a'  
 
     saveToFile(final_dict, ops=ops)
-
-    
