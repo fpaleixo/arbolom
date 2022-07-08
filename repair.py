@@ -76,6 +76,10 @@ iftv_path = "encodings/repairs/auxiliary/iftv.lp"
 unique_positive_observations_path = "encodings/repairs/auxiliary/upo.lp"
 #unique_positive_observations_path = "encodings/repairs/auxiliary/upo_alt.lp"
 
+#Path of map implementation of unique positive observations
+upo_map_path = "encodings/repairs/auxiliary/upo_map.lp"
+map_enabled = False
+
 #Paths of encodings for generating functions
 repair_encoding_stable_path = "encodings/repairs/repairs_stable.lp"
 repair_encoding_sync_path = "encodings/repairs/repairs_sync.lp"
@@ -227,6 +231,37 @@ def processIFTVs(iftvs):
   else: 
     print("No iftvs could be found \u274C")
 
+def processUpo(upo):
+  uniques_map = {}
+  output = ""
+
+  for answerset in upo:
+
+    experiment_timestep = ""
+    key = ""
+
+    for atom in answerset:
+    
+      arguments = atom.split(')')[0].split('(')[1].split(',')
+      experiment = arguments[0]
+      timestep = arguments[1]
+      compound = arguments[2]
+      state = arguments[3]
+
+      if not experiment_timestep:
+        experiment_timestep += experiment + "," + str(int(timestep) + 1)
+
+      key += compound + state
+    
+    key = "".join(sorted(key))
+
+    if key not in uniques_map:
+      uniques_map[key] = experiment_timestep
+    
+  for value in uniques_map.values():
+    output += "unique_positive_observation(" + value + ").\n"
+
+  return output
 
 
 #-----Functions that solve LPs with clingo-----
@@ -288,6 +323,24 @@ def generateFunctions(func, curated_LP):
   printStatistics(ctl.statistics)
   return functions
 
+def generateUpo(func, curated_LP):
+  clingo_args = ["0", f"-c compound={func}"]
+    
+  ctl = clingo.Control(arguments=clingo_args)
+
+  ctl.add("base", [], program=curated_LP)
+  ctl.load(upo_map_path)
+  
+  ctl.ground([("base", [])])
+  functions = []
+
+  with ctl.solve(yield_=True) as handle:
+    for model in handle:
+      functions.append(str(model).split(" "))
+
+  #print(functions)
+  printStatistics(ctl.statistics)
+  return functions
 
 
 #-----Main-----
@@ -305,8 +358,15 @@ if cmd_enabled:
     for func in iftvs_LP.keys():
 
       printFuncRepairStart(func)
-      functions = generateFunctions(func, curated_LP)
-      printRepairedLP(func, functions)
+      if map_enabled:
+        upo = generateUpo(func, curated_LP)
+        uniques = processUpo(upo)
+        print(uniques)
+      
+      else:
+        functions = generateFunctions(func, curated_LP)
+        printRepairedLP(func, functions)
+      
       printFuncRepairEnd(func)
 
 
