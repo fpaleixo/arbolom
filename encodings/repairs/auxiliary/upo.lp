@@ -1,8 +1,3 @@
-
-%If we have at least some observation where the compound is active at a T > 0,
-%then we have positive observations
-positive_observations :- curated_observation(_,T,compound,1), T > 0.
-
 %The observations before positive observations are previous_observations
 previous_observation(E,T-1) :- curated_observation(E,T,compound,1), T > 0.
 

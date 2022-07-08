@@ -74,6 +74,7 @@ iftv_path = "encodings/repairs/auxiliary/iftv.lp"
 
 #Path of the encoding to identify unique positive observations
 unique_positive_observations_path = "encodings/repairs/auxiliary/upo.lp"
+#unique_positive_observations_path = "encodings/repairs/auxiliary/upo_alt.lp"
 
 #Paths of encodings for generating functions
 repair_encoding_stable_path = "encodings/repairs/repairs_stable.lp"
@@ -272,7 +273,7 @@ def generateFunctions(func, curated_LP):
     ctl.load(repair_encoding_sync_path)
   else:
     ctl.load(repair_encoding_async_path)
-    
+  
   ctl.ground([("base", [])])
   functions = []
 

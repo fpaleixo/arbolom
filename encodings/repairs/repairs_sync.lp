@@ -26,6 +26,10 @@ sign_changed(C) :- regulates(C,compound,0), inhibitor(C).
 sign_changed(C) :- regulates(C,compound,1), activator(C).
 
 %*--Creating nodes--*%
+%If we have at least some observation where the compound is active at a T > 0,
+%then we have positive observations
+positive_observations :- curated_observation(_,T,compound,1), T > 0.
+
 %The highest number of nodes we'll consider is equal to the number of unique positive observations,
 %since at most we'll need one node per unique positive observation to render the model consistent
 %(we may use less, since it can happen that one node is able explain several positive observations)
