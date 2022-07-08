@@ -73,7 +73,7 @@ incst_path = "simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-sync_in
 iftv_path = "encodings/repairs/auxiliary/iftv.lp"
 
 #Path of the encoding to identify unique positive observations
-unique_positive_observations_path = "encodings/repairs/auxiliary/unique_positive_observations.lp"
+unique_positive_observations_path = "encodings/repairs/auxiliary/upo.lp"
 
 #Paths of encodings for generating functions
 repair_encoding_stable_path = "encodings/repairs/repairs_stable.lp"
@@ -264,6 +264,7 @@ def generateFunctions(func, curated_LP):
   ctl.add("base", [], program=curated_LP)
   ctl.load(unique_positive_observations_path)
   ctl.load(model_path) 
+  #ctl.load("testing/huge12/grounded-upo-v2.lp")
 
   if toggle_stable_state:
     ctl.load(repair_encoding_stable_path)
@@ -278,7 +279,11 @@ def generateFunctions(func, curated_LP):
   with ctl.solve(yield_=True) as handle:
     for model in handle:
       functions = str(model).split(" ")
+  
+  #for f in functions:
+    #print(f + ".\n")
 
+  #print(functions)
   printStatistics(ctl.statistics)
   return functions
 

@@ -34,3 +34,5 @@ duplicate_observation(E2,T2) :- equal_positive_observations(E1,T1,E2,T2), not no
 %If a positive observation has not been marked as a duplicate, then it is unique and we must
 %ensure that some node covers it in some next rule
 unique_positive_observation(E,T) :- positive_observation(E,T), not duplicate_observation(E,T).
+
+%#show unique_positive_observation/2.
