@@ -10,7 +10,7 @@ max_timestep(T) :- curated_observation(_,T,_,_), not curated_observation(_,T + 1
 
 %The observations before positive observations are previous_observations
 previous_observation(E,T-1) :- curated_observation(E,T,compound,1), T > 0, 
-  chosen_experiment(E), chosen_timestep(T).
+  chosen_experiment(E), chosen_timestep(T-1).
 
 previous_state(E,T,COMPOUND,S) :- curated_observation(E,T,COMPOUND,S), previous_observation(E,T).
 

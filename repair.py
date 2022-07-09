@@ -78,7 +78,8 @@ unique_positive_observations_path = "encodings/repairs/auxiliary/upo.lp"
 
 #Path of map implementation of unique positive observations
 upo_map_path = "encodings/repairs/auxiliary/upo_map.lp"
-map_enabled = False
+map_enabled = True
+processed_upo = ""
 
 #Paths of encodings for generating functions
 repair_encoding_stable_path = "encodings/repairs/repairs_stable.lp"
@@ -238,7 +239,7 @@ def processUpo(upo):
   for answerset in upo:
 
     experiment_timestep = ""
-    key = ""
+    key = "0"
 
     for atom in answerset:
     
@@ -251,8 +252,9 @@ def processUpo(upo):
       if not experiment_timestep:
         experiment_timestep += experiment + "," + str(int(timestep) + 1)
 
-      key += compound + state
-    
+      if state == "1":
+        key += compound
+
     key = "".join(sorted(key))
 
     if key not in uniques_map:
@@ -298,7 +300,10 @@ def generateFunctions(func, curated_LP):
   ctl = clingo.Control(arguments=clingo_args, logger= lambda a,b: None)
 
   ctl.add("base", [], program=curated_LP)
-  ctl.load(unique_positive_observations_path)
+  if map_enabled:
+    ctl.add("base", [], program=processed_upo)
+  else:
+    ctl.load(unique_positive_observations_path)
   ctl.load(model_path) 
   #ctl.load("testing/huge12/grounded-upo-v2.lp")
 
@@ -358,14 +363,15 @@ if cmd_enabled:
     for func in iftvs_LP.keys():
 
       printFuncRepairStart(func)
+
       if map_enabled:
         upo = generateUpo(func, curated_LP)
         uniques = processUpo(upo)
-        print(uniques)
+        #print(uniques)
+        processed_upo = uniques
       
-      else:
-        functions = generateFunctions(func, curated_LP)
-        printRepairedLP(func, functions)
+      functions = generateFunctions(func, curated_LP)
+      printRepairedLP(func, functions)
       
       printFuncRepairEnd(func)
 
