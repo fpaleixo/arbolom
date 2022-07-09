@@ -367,7 +367,6 @@ if cmd_enabled:
       if map_enabled:
         upo = generateUpo(func, curated_LP)
         uniques = processUpo(upo)
-        #print(uniques)
         processed_upo = uniques
       
       functions = generateFunctions(func, curated_LP)

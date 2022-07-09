@@ -1,3 +1,5 @@
+%Outputs 1 unique positive observation per answer set (not better)
+
 %The observations before positive observations are previous_observations
 previous_observation(E,T-1) :- curated_observation(E,T,compound,1), T > 0.
 

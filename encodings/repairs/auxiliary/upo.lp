@@ -1,3 +1,6 @@
+%Outputs positive observations that are unique, i.e. explaining one such observation
+%does not ensure you can automatically explain any of the others
+
 %The observations before positive observations are previous_observations
 previous_observation(E,T-1) :- curated_observation(E,T,compound,1), T > 0.
 
