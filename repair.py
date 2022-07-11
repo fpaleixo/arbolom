@@ -1,4 +1,4 @@
-import argparse, logging, clingo
+import argparse, logging, clingo, time
 from aux_scripts.repair_prints import *
 
 #--Work in progress--
@@ -352,6 +352,7 @@ def generateUpo(func, curated_LP):
 if cmd_enabled:
   parseArgs()
 
+  start_time = time.time()
   printIFTVStart()
   incst_LP, curated_LP = getInconsistenciesAndCuratedLP()
 
@@ -374,5 +375,6 @@ if cmd_enabled:
       
       printFuncRepairEnd(func)
 
-
+  end_time = time.time()
+  print(f"Total time taken: {end_time-start_time}s", )
   
