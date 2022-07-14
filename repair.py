@@ -74,11 +74,11 @@ iftv_path = "encodings/repairs/auxiliary/iftv.lp"
 
 #Path of the encoding to identify unique positive observations
 unique_positive_observations_path = "encodings/repairs/auxiliary/upo.lp"
-#unique_positive_observations_path = "encodings/repairs/auxiliary/upo_alt.lp"
+unique_positive_observations_async_path = "encodings/repairs/auxiliary/upo_async.lp"
 
 #Path of map implementation of unique positive observations
 upo_map_path = "encodings/repairs/auxiliary/upo_map.lp"
-map_enabled = True
+map_enabled = False
 processed_upo = ""
 
 #Paths of encodings for generating functions
@@ -303,9 +303,11 @@ def generateFunctions(func, curated_LP):
   if map_enabled:
     ctl.add("base", [], program=processed_upo)
   else:
-    ctl.load(unique_positive_observations_path)
+    if toggle_sync:
+      ctl.load(unique_positive_observations_path)
+    elif toggle_async:
+      ctl.load(unique_positive_observations_async_path)
   ctl.load(model_path) 
-  #ctl.load("testing/huge12/grounded-upo-v2.lp")
 
   if toggle_stable_state:
     ctl.load(repair_encoding_stable_path)
