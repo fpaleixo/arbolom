@@ -1,7 +1,6 @@
 import argparse, logging, clingo, time
 from aux_scripts.repair_prints import *
 
-#--Work in progress--
 #Usage: $python repair.py -f (FILENAME) -i (INCONSISTENCIES) -stable -sync -async
 #Optional flags:
 #-stable -> Performs repairs using stable state observations (default).
