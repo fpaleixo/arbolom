@@ -1,4 +1,8 @@
-%Generates the optimal candidate function for synchronous observations, according to selected optimization criteria
+%Generates the optimal candidate function for synchronous observations.
+%(In synchronous mode, all functions are actived at each time step. As such,
+%we must ensure that, at each time step, the compound's function
+%is able to replicate the observed state).
+
 #const compound = c.
 
 %Define

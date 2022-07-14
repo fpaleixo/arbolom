@@ -1,4 +1,7 @@
-%Generates the best candidate function for stable state observations
+%Generates the best candidate function for stable state observations.
+%(In stable state mode we must ensure that, given the values of a compound's
+%regulators, the compound is able to replicate its observed state).
+
 #const compound = c.
 
 %Define

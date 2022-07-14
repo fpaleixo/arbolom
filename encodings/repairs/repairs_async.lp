@@ -1,4 +1,10 @@
-%Generates the best candidate function for asynchronous observations
+%Generates the best candidate function for asynchronous observations.
+%(In asynchronous mode, only one function is actived at each time step. 
+%The strategy is similar to the synchronous one, with the exception that 
+%the only observations that need to be considered are those that
+%involve transitions in the state of the compound, i.e. transitions
+%that imply that the compound's function was activated).
+
 #const compound = c.
 
 %Define

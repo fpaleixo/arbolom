@@ -322,10 +322,6 @@ def generateFunctions(func, curated_LP):
     for model in handle:
       functions = str(model).split(" ")
   
-  #for f in functions:
-    #print(f + ".\n")
-
-  #print(functions)
   printStatistics(ctl.statistics)
   return functions
 
@@ -344,7 +340,6 @@ def generateUpo(func, curated_LP):
     for model in handle:
       functions.append(str(model).split(" "))
 
-  #print(functions)
   printStatistics(ctl.statistics)
   return functions
 
