@@ -1,0 +1,10 @@
+experiment(1).
+observation(1,0,a,1).
+observation(1,0,b,1).
+observation(1,0,c,1).
+observation(1,1,a,1).
+observation(1,1,b,1).
+observation(1,1,c,0).
+observation(1,2,a,0).
+observation(1,2,b,1).
+observation(1,2,c,1).
