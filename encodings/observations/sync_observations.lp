@@ -31,7 +31,18 @@ implicant_inactive(E,T,C,I_NO) :- function(C,I), term(C,I_NO,R), regulates(R,C,0
 %I_NO evaluates to 0 for that observation E at time step T
 implicant_inactive(E,T,C,I_NO) :- function(C,I), term(C,I_NO,R), regulates(R,C,1), observation(E,T,R,1).
 
+%If two experiments E1, E2 display different states S1,S2 for the same compound C at the
+%same time step T, then they are distinct
+distinct_experiments(E1,E2) :- observation(E1,T,C,S1), observation(E2,T,C,S2), E2 > E1, S1 != S2.
+
 
 %Display
 #show observation/4.
 #show experiment/1.
+
+
+%Optimize
+%Whenever possible, it is desirable that the generated experiments are distinct
+%(experiments with the exact same observations don't make for very interesting
+%testing scenarios...)
+#maximize{1,E1,E2 : distinct_experiments(E1,E2)}.

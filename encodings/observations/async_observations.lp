@@ -43,14 +43,28 @@ implicant_inactive(E,T,C,I_NO) :- function(C,I), term(C,I_NO,R), regulates(R,C,1
 %At each time step, only one function may be applied, and the compound who the function belongs to cannot be an input compound
 1 {chosen_compound(E,T,C) : compound(C), not input_compound(C)} 1 :- experiment(E), time(T).
 
+%If some compound's state was changed from timestep T to T+1, mark it
+state_changed(E,T,T+1):- observation(E,T,C,S1), observation(E,T+1,C,S2), S1 != S2, not input_compound(C).
+
+%If two experiments E1, E2 display different states S1,S2 for the same compound C at the
+%same time step T, then they are distinct
+distinct_experiments(E1,E2) :- observation(E1,T,C,S1), observation(E2,T,C,S2), E2 > E1, S1 != S2.
+
 
 %Test
 %Observations must change the state of the model (to create more interesting observations)
-state_changed(E,T,T+1):- observation(E,T,C,S1), observation(E,T+1,C,S2), S1 != S2, not input_compound(C).
 :- not state_changed(E,T,T+1), experiment(E), time(T).
+
 
 %Display
 #show observation/4.
 #show experiment/1.
 #show chosen_compound/3.
+
+
+%Optimize
+%Whenever possible, it is desirable that the generated experiments are distinct
+%(experiments with the exact same observations don't make for very interesting
+%testing scenarios...)
+#maximize{1,E1,E2 : distinct_experiments(E1,E2)}.
 
