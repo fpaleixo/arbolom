@@ -72,15 +72,14 @@ incst_path = "simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-sync_in
 #Path of the encodings to obtain inconsistent functions and total variables of each of those functions
 iftv_path = "encodings/repairs/auxiliary/iftv.lp"
 
-#Path of the encoding to identify unique positive observations
+#Paths of the encoding to identify unique positive observations
 unique_positive_observations_path = "encodings/repairs/auxiliary/upo.lp"
 unique_positive_observations_async_path = "encodings/repairs/auxiliary/upo_async.lp"
 
-#Path of map implementation of unique positive observations
-upo_map_path = "encodings/repairs/auxiliary/upo_map.lp"
-upo_v2_map_path = "encodings/repairs/auxiliary/upo_map_v2.lp"
-map_enabled = False 
-map_v2_enabled = True
+#Variables of python implementation of unique positive observations
+previous_observations_sync_path = "encodings/repairs/auxiliary/previous_observations_sync.lp"
+previous_observations_async_path = "encodings/repairs/auxiliary/previous_observations_async.lp"
+python_enabled = True 
 processed_upo = ""
 
 #Paths of encodings for generating functions
@@ -234,40 +233,7 @@ def processIFTVs(iftvs):
   else: 
     print("No iftvs could be found \u274C")
 
-def processUpo(upo):
-  uniques_map = {}
-  output = ""
-
-  for answerset in upo:
-
-    experiment_timestep = ""
-    key = "0"
-
-    for atom in answerset:
-    
-      arguments = atom.split(')')[0].split('(')[1].split(',')
-      experiment = arguments[0]
-      timestep = arguments[1]
-      compound = arguments[2]
-      state = arguments[3]
-
-      if not experiment_timestep:
-        experiment_timestep += experiment + "," + str(int(timestep) + 1)
-
-      if state == "1":
-        key += compound
-
-    key = "".join(sorted(key))
-
-    if key not in uniques_map:
-      uniques_map[key] = experiment_timestep
-    
-  for value in uniques_map.values():
-    output += "unique_positive_observation(" + value + ").\n"
-
-  return output
-
-def processUpo2(upo):
+def processPreviousObservations(prev_obs):
   uniques_map = {}
   output = ""
 
@@ -275,7 +241,7 @@ def processUpo2(upo):
   current_timestep = ""
   current_state_key = "0"
 
-  for previous_obsv in upo:
+  for previous_obsv in prev_obs:
     arguments = previous_obsv.split(')')[0].split('(')[1].split(',')
     experiment = arguments[0]
     timestep = arguments[1]
@@ -309,6 +275,11 @@ def processUpo2(upo):
         if state == "1":
           current_state_key += compound
 
+    #Save the last timestep's state
+    state = "".join(sorted(current_state_key))
+    if state not in uniques_map:
+      uniques_map[state] = current_experiment + "," + str(int(current_timestep) + 1)
+      
   for value in uniques_map.values():
     output += "unique_positive_observation(" + value + ").\n"
 
@@ -345,12 +316,13 @@ def generateInconsistentFunctionsAndTotalVars(incst_LP):
 #Inputs: The inconsistent compound's function, and the LP containing the curated observations
 #Purpose: Generates a function compatible with the given set of curated observations
 def generateFunctions(func, curated_LP):
+  print("Calculating optimal repairs...")
   clingo_args = ["0", f"-c compound={func}"]
     
   ctl = clingo.Control(arguments=clingo_args, logger= lambda a,b: None)
 
   ctl.add("base", [], program=curated_LP)
-  if map_enabled or map_v2_enabled:
+  if python_enabled:
     ctl.add("base", [], program=processed_upo)
   else:
     if toggle_sync:
@@ -373,35 +345,24 @@ def generateFunctions(func, curated_LP):
     for model in handle:
       functions = str(model).split(" ")
   
+  print("... Done.")
   printStatistics(ctl.statistics)
   return functions
 
-def generateUpo(func, curated_LP):
-  clingo_args = ["0", f"-c compound={func}"]
-    
-  ctl = clingo.Control(arguments=clingo_args)
-
-  ctl.add("base", [], program=curated_LP)
-  ctl.load(upo_map_path)
-  
-  ctl.ground([("base", [])])
-  functions = []
-
-  with ctl.solve(yield_=True) as handle:
-    for model in handle:
-      functions.append(str(model).split(" "))
-
-  printStatistics(ctl.statistics)
-  return functions
-
-def generateUpoV2(func, curated_LP):
-
+def generatePreviousObservations(func, curated_LP):
+  print("Calculating previous observations...")
   clingo_args = ["0", f"-c compound={func}"]
   
   ctl = clingo.Control(arguments=clingo_args)
 
   ctl.add("base", [], program=curated_LP)
-  ctl.load(upo_v2_map_path)
+
+  if toggle_sync:
+    ctl.load(previous_observations_sync_path)
+  elif toggle_async:
+    ctl.load(previous_observations_async_path)
+  else: 
+    return []
   
   ctl.ground([("base", [])])
   functions = []
@@ -409,8 +370,10 @@ def generateUpoV2(func, curated_LP):
   with ctl.solve(yield_=True) as handle:
     for model in handle:
       functions = str(model).split(" ")
-
+  print("... Done.")
   printStatistics(ctl.statistics)
+  if not functions[0]: #If there are no previous observations
+    return []
   return functions
 
 
@@ -430,19 +393,13 @@ if cmd_enabled:
     for func in iftvs_LP.keys():
 
       printFuncRepairStart(func)
-
-      if map_enabled:
-        upo = generateUpo(func, curated_LP)
-        #print(upo)
-        uniques = processUpo(upo)
-        processed_upo = uniques
-        print(processed_upo)
       
-      if map_v2_enabled:
-        upo = generateUpoV2(func, curated_LP)
-        #print(upo)
-        uniques = processUpo2(upo)
+      if python_enabled:
+        prev_obs = generatePreviousObservations(func, curated_LP)
+        uniques = processPreviousObservations(prev_obs)
         processed_upo = uniques
+        print(prev_obs)
+        print("Processed UPO:")
         print(processed_upo)
       
       functions = generateFunctions(func, curated_LP)
