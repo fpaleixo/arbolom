@@ -1,5 +1,4 @@
 import argparse, logging, clingo, time
-import re
 from aux_scripts.repair_prints import *
 
 #Usage: $python repair.py -f (FILENAME) -i (INCONSISTENCIES) -stable -sync -async
@@ -233,59 +232,7 @@ def processIFTVs(iftvs):
   else: 
     print("No iftvs could be found \u274C")
 
-def processPreviousObservations(prev_obs):
-  uniques_map = {}
-  output = ""
 
-  current_experiment = ""
-  current_timestep = ""
-  current_state_key = "0"
-
-  for previous_obsv in prev_obs:
-    arguments = previous_obsv.split(')')[0].split('(')[1].split(',')
-    experiment = arguments[0]
-    timestep = arguments[1]
-    compound = arguments[2]
-    state = arguments[3]
-
-    #First iteration
-    if not current_experiment:
-      current_experiment = experiment
-      current_timestep = timestep
-
-    #If we're still looking at the same experiment and timestep
-    if current_experiment + current_timestep == experiment + timestep:
-
-        #If the compound is active, it will be a part of this timestep's 
-        # state key
-        if state == "1":
-          current_state_key += compound
-
-    else: #We are looking at a different experiment or timestep
-      
-        #Save previous timestep's state in the map, if it didn't exist yet
-        state = "".join(sorted(current_state_key))
-        if state not in uniques_map:
-          uniques_map[state] = current_experiment + ","+ str(int(current_timestep) + 1)
-
-        current_experiment = experiment
-        current_timestep = timestep
-        current_state_key = "0"
-
-        if state == "1":
-          current_state_key += compound
-
-    #Save the last timestep's state
-    state = "".join(sorted(current_state_key))
-    if state not in uniques_map:
-      uniques_map[state] = current_experiment + "," + str(int(current_timestep) + 1)
-      
-  for value in uniques_map.values():
-    output += "unique_positive_observation(" + value + ").\n"
-
-  return output
-
-    
 
 #-----Functions that solve LPs with clingo-----
 #Input: The LP containing information regarding the inconsistent functions
@@ -349,6 +296,14 @@ def generateFunctions(func, curated_LP):
   printStatistics(ctl.statistics)
   return functions
 
+
+
+#-----Python implementation of unique positive observation determination-----
+#Inputs: 
+# -func, the compound that has the inconsistent function, 
+# -curated_LP, the LP containing all curated observations
+#Purpose: Returns observations that happen in the timestep before
+# positive observations
 def generatePreviousObservations(func, curated_LP):
   print("Calculating previous observations...")
   clingo_args = ["0", f"-c compound={func}"]
@@ -376,6 +331,62 @@ def generatePreviousObservations(func, curated_LP):
     return []
   return functions
 
+#Inputs: 
+# -prev_obs, a string containing all previous observations
+#Purpose: Returns all unique positive observations
+def processPreviousObservations(prev_obs):
+  uniques_map = {}
+  output = ""
+
+  current_experiment = ""
+  current_timestep = ""
+  current_state_key = "0"
+
+  for previous_obsv in prev_obs:
+    arguments = previous_obsv.split(')')[0].split('(')[1].split(',')
+    experiment = arguments[0]
+    timestep = arguments[1]
+    compound = arguments[2]
+    state = arguments[3]
+
+    #First iteration
+    if not current_experiment:
+      current_experiment = experiment
+      current_timestep = timestep
+
+    #If we're still looking at the same experiment and timestep
+    if current_experiment + current_timestep == experiment + timestep:
+
+        #If the compound is active, it will be a part of this timestep's 
+        # state key
+        if state == "1":
+          current_state_key += compound
+
+    else: #We are looking at a different experiment or timestep
+      
+        #Save previous timestep's state in the map, if it didn't exist yet
+        state = "".join(sorted(current_state_key))
+        if state not in uniques_map:
+          uniques_map[state] = current_experiment + ","+ str(int(current_timestep) + 1)
+
+        current_experiment = experiment
+        current_timestep = timestep
+        current_state_key = "0"
+
+        if state == "1":
+          current_state_key += compound
+
+    #Save the last timestep's state
+    state = "".join(sorted(current_state_key))
+    if state not in uniques_map:
+      uniques_map[state] = current_experiment + "," + str(int(current_timestep) + 1)
+
+  for value in uniques_map.values():
+    output += "unique_positive_observation(" + value + ").\n"
+
+  return output
+
+
 
 #-----Main-----
 if cmd_enabled:
@@ -398,9 +409,6 @@ if cmd_enabled:
         prev_obs = generatePreviousObservations(func, curated_LP)
         uniques = processPreviousObservations(prev_obs)
         processed_upo = uniques
-        print(prev_obs)
-        print("Processed UPO:")
-        print(processed_upo)
       
       functions = generateFunctions(func, curated_LP)
       printRepairedLP(func, functions)
