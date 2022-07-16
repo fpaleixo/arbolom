@@ -106,7 +106,7 @@ global_logger.setLevel(logging.DEBUG)
 #Purpose: Parses the arguments of function repair
 def parseArgs():
   logger = logging.getLogger("parser")
-  logger.setLevel(logging.DEBUG)
+  logger.setLevel(logging.INFO)
 
   global parser, args
 
@@ -139,19 +139,19 @@ def parseArgs():
     toggle_stable_state = True
     toggle_sync = False
     toggle_async = False
-    logger.debug("Mode used: Stable State \U0001f6d1")
+    logger.info("Mode used: Stable State \U0001f6d1")
 
   elif synchronous:
     toggle_stable_state = False
     toggle_sync = True
     toggle_async = False
-    logger.debug("Mode used: Synchronous \U0001f550")
+    logger.info("Mode used: Synchronous \U0001f550")
 
   elif asynchronous:
     toggle_stable_state = False
     toggle_sync = False
     toggle_async = True
-    logger.debug("Mode used: Asynchronous \U0001f331")
+    logger.info("Mode used: Asynchronous \U0001f331")
   return
 
 #---Printing functions---

@@ -8,3 +8,6 @@ observation(1,1,c,0).
 observation(1,2,a,0).
 observation(1,2,b,1).
 observation(1,2,c,1).
+observation(1,3,a,1).
+observation(1,3,b,1).
+observation(1,3,c,0).

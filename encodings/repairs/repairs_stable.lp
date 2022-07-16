@@ -44,18 +44,8 @@ maximum_node_number(POSITIVE_OBSERVATIONS_COUNT) :- positive_observations,
 %(since considering more nodes would never allow us to create more restrictive fuctions, only more general ones)
 maximum_node_number(1) :- not positive_observations.
 
-%If a compound C is active in an experiment with a positive 
-% observation, then it is a potential regulator that could be used to explain 
-% that observation
-observation_potential_regulator(E,C) :- curated_observation(E,C,1), activator(C), curated_observation(E,compound,1).
-%Variant for inhibitors
-observation_potential_regulator(E,C) :- curated_observation(E,C,0), inhibitor(C), curated_observation(E,compound,1).
-
-%Distribute potential regulators C for a given observation E across nodes
-1 {node_regulator(1..MN,C) : maximum_node_number(MN), observation_potential_regulator(E,C)} :- curated_observation(E,compound,1).
-
-%If we have no positive observations, we only need to assign regulators to a single node
-1 {node_regulator(1,C) : compound(C)} :- not positive_observations.
+%Distribute compounds across nodes
+1 {node_regulator(1..MN,C) : maximum_node_number(MN), compound(C)}.
 
 %Project node IDs into their own predicate
 node_ID(N) :- node_regulator(N,_).
