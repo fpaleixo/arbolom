@@ -5,7 +5,6 @@
 
 #const compound = c.
 
-%Define
 %*--Fixed regulators--*%
 %fixed/2 tells us that regulator C has to be one of the compound's regulators
 fixed_regulator(C) :- fixed(C,compound), compound(C).
@@ -33,6 +32,24 @@ sign_changed(C) :- regulates(C,compound,1), activator(C).
 %If we have at least some observation where the compound is active at a T > 0,
 %then we have positive observations
 positive_observations :- curated_observation(_,T,compound,1), T > 0.
+
+%* UPO MAXIMUM VALUES FOR CORRUPTED 12 HUGE INCST AND HARDCODING
+v2 - 6
+v6 - 6
+v1 - 2
+v5 - 2
+v7 - 5
+v9 - 3
+v8 - 7
+
+maximum_node_number(7) :- compound = v2.
+maximum_node_number(7) :- compound = v6.
+maximum_node_number(3) :- compound = v1.
+maximum_node_number(3) :- compound = v5.
+maximum_node_number(6) :- compound = v7.
+maximum_node_number(4) :- compound = v9.
+maximum_node_number(8) :- compound = v8.
+*%
 
 %The highest number of nodes we'll consider is equal to the number of unique positive observations,
 %since at most we'll need one node per unique positive observation to render the model consistent
@@ -119,7 +136,6 @@ regulator_inhibitor(C) :- node_regulator(N,C), inhibitor(C).
 #show regulator_activator/1.
 #show regulator_inhibitor/1.
 #show node_regulator/2.
-
 
 %Optimize
 %1-Optimize for the minimum number of final nodes (highest priority)

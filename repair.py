@@ -262,13 +262,13 @@ def generateInconsistentFunctionsAndTotalVars(incst_LP):
 
 #Inputs: The inconsistent compound's function, and the LP containing the curated observations
 #Purpose: Generates a function compatible with the given set of curated observations
-def generateFunctions(func, curated_LP):
+def generateFunctions(func):
   print("Calculating optimal repairs...")
   clingo_args = ["0", f"-c compound={func}"]
     
   ctl = clingo.Control(arguments=clingo_args, logger= lambda a,b: None)
 
-  ctl.add("base", [], program=curated_LP)
+  ctl.load(incst_path)
   if python_enabled:
     ctl.add("base", [], program=processed_upo)
   else:
@@ -325,10 +325,14 @@ def generatePreviousObservations(func, curated_LP):
   with ctl.solve(yield_=True) as handle:
     for model in handle:
       functions = str(model).split(" ")
+
   print("... Done.")
+
   printStatistics(ctl.statistics)
+
   if not functions[0]: #If there are no previous observations
     return []
+
   return functions
 
 #Inputs: 
@@ -342,6 +346,7 @@ def processPreviousObservations(prev_obs):
   current_timestep = ""
   current_state_key = "0"
 
+  start = time.time()
   for previous_obsv in prev_obs:
     arguments = previous_obsv.split(')')[0].split('(')[1].split(',')
     experiment = arguments[0]
@@ -384,6 +389,8 @@ def processPreviousObservations(prev_obs):
   for value in uniques_map.values():
     output += "unique_positive_observation(" + value + ").\n"
 
+  end = time.time()
+  print(f"Python code time for unique positive observations: {end - start}s\n")
   return output
 
 
@@ -410,7 +417,7 @@ if cmd_enabled:
         uniques = processPreviousObservations(prev_obs)
         processed_upo = uniques
       
-      functions = generateFunctions(func, curated_LP)
+      functions = generateFunctions(func)
       printRepairedLP(func, functions)
       
       printFuncRepairEnd(func)
