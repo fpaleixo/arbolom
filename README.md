@@ -1,13 +1,18 @@
 # ARBoLoM (**A**SP-based **R**evision of **B**oolean **L**ogical **M**odels)
 The ARBoLoM tool aims to automate the revision of Boolean logical models, with fully Answer Set Programming-based consistency checking and repair algorithms. 
 
+## Encoding Directories
+The encodings responsible for verifying the consistency of a model given [stable state](https://github.com/fpaleixo/arbolom/blob/main/encodings/consistency/ss_consistency.lp), [synchronous](https://github.com/fpaleixo/arbolom/blob/main/encodings/consistency/sync_consistency.lp), or [asynchronous observations](https://github.com/fpaleixo/arbolom/blob/main/encodings/consistency/async_consistency.lp), can be found [here](https://github.com/fpaleixo/arbolom/tree/main/encodings/consistency).
+
+The encodings responsible for repairing a function using [stable state](https://github.com/fpaleixo/arbolom/blob/main/encodings/repairs/repairs_stable.lp), [synchronous](https://github.com/fpaleixo/arbolom/blob/main/encodings/repairs/repairs_sync.lp), or [asynchronous observations](https://github.com/fpaleixo/arbolom/blob/main/encodings/repairs/repairs_async.lp), can be found [here](https://github.com/fpaleixo/arbolom/tree/main/encodings/repairs).
+
 ## Installation (2 alternatives)
 
 ### Using Google Colab
 All scripts can be tested with no installation by using Google Colab. Just download the repository and change the working directory to the arbolom folder.
 
 ### Using a local installation
-For a local installation, Python 3.8 or above is required, alongside the [clingo package](https://pypi.org/project/clingo/). Detailed instructions can be found in the [potassco website](https://potassco.org/clingo/).
+For a local installation, Python 3.6 or above is required, alongside the [clingo package](https://pypi.org/project/clingo/). Detailed instructions can be found in the [potassco website](https://potassco.org/clingo/).
 
 ## Running the Scripts
 
@@ -36,7 +41,7 @@ Generally, the models will be used in the following fashion:
 [![Task 5 - Encodings for model consistency](https://img.shields.io/badge/Task_5-Encodings_for_model_consistency-green?style=for-the-badge&logo=dev.to)](https://github.com/fpaleixo/arbolom/tree/main/encodings)
 ![Task 6 - Define repair strategy](https://img.shields.io/badge/Task_6-Define_repair_strategy-green?style=for-the-badge&logo=Adobe+Acrobat+Reader)
 [![Task 7 - Encodings to repair models](https://img.shields.io/badge/Task_7-Encodings_to_repair_models_(and_respective_optimizations)-yellow?style=for-the-badge&logo=dev.to)](https://github.com/fpaleixo/arbolom/tree/main/encodings)
-...
+![Task 8 - Benchmarking and writing the document](https://img.shields.io/badge/Task_8-Benchmarking_and_writing_the_document-red?style=for-the-badge&logo=dev.to)
 
 ### Timestamps (relative*)
 
@@ -54,7 +59,7 @@ Task 6: Week 5-6 (05/04 to 11/04)
 
 Task 7: Week 6-*ongoing* (11/04 to *ongoing*)
 
-...
+Task 8: Week tbd-tbd (beginning of August to 30/09)
 
 \* *for reference only - dates are not absolutely exact and deliverables usually suffer tweaks/changes after these  periods*
 
