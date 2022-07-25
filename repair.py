@@ -340,11 +340,14 @@ def generatePreviousObservations(func, curated_LP):
 #Purpose: Returns all unique positive observations
 def processPreviousObservations(prev_obs):
   uniques_map = {}
+  uniques_negative_map = {}
+
   output = ""
 
   current_experiment = ""
   current_timestep = ""
   current_state_key = "0"
+  current_is_positive = True
 
   start = time.time()
   for previous_obsv in prev_obs:
@@ -359,6 +362,9 @@ def processPreviousObservations(prev_obs):
       current_experiment = experiment
       current_timestep = timestep
 
+      if "negative" in previous_obsv:
+        current_is_positive = False
+
     #If we're still looking at the same experiment and timestep
     if current_experiment + current_timestep == experiment + timestep:
 
@@ -371,26 +377,40 @@ def processPreviousObservations(prev_obs):
       
         #Save previous timestep's state in the map, if it didn't exist yet
         state = "".join(sorted(current_state_key))
-        if state not in uniques_map:
-          uniques_map[state] = current_experiment + ","+ str(int(current_timestep) + 1)
+
+        if current_is_positive and state not in uniques_map:
+            uniques_map[state] = current_experiment + ","+ str(int(current_timestep) + 1)
+        elif not current_is_positive and state not in uniques_negative_map:
+            uniques_negative_map[state] = current_experiment + ","+ str(int(current_timestep) + 1)
 
         current_experiment = experiment
         current_timestep = timestep
         current_state_key = "0"
+        
+        if "positive" in previous_obsv:
+          current_is_positive = True
+        else:
+          current_is_positive = False
 
         if state == "1":
           current_state_key += compound
 
-    #Save the last timestep's state
-    state = "".join(sorted(current_state_key))
-    if state not in uniques_map:
-      uniques_map[state] = current_experiment + "," + str(int(current_timestep) + 1)
+  #End of loop, last timestep's state must be saved
+  state = "".join(sorted(current_state_key))
 
+  if current_is_positive and state not in uniques_map:
+    uniques_map[state] = current_experiment + ","+ str(int(current_timestep) + 1)
+  elif not current_is_positive and state not in uniques_negative_map:
+    uniques_negative_map[state] = current_experiment + ","+ str(int(current_timestep) + 1)
+
+  #Print result in LP format
   for value in uniques_map.values():
     output += "unique_positive_observation(" + value + ").\n"
+  for value in uniques_negative_map.values():
+    output += "unique_negative_observation(" + value + ").\n"
 
   end = time.time()
-  print(f"Python code time for unique positive observations: {end - start}s\n")
+  print(f"Python code time for unique observations: {end - start}s\n")
   return output
 
 

@@ -819,7 +819,7 @@ observation(1,9,v6,1).
 observation(1,9,v7,1).
 observation(1,9,v8,1).
 observation(1,9,v9,0).
-%*
+
 experiment(2).
 observation(2,0,v1,1).
 observation(2,0,v10,1).
@@ -16437,5 +16437,3 @@ observation(20,9,v6,1).
 observation(20,9,v7,1).
 observation(20,9,v8,1).
 observation(20,9,v9,0).
-
-*%
