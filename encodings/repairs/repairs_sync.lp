@@ -57,6 +57,22 @@ maximum_node_number(8) :- compound = v8.
 maximum_node_number(POSITIVE_OBSERVATIONS_COUNT) :- positive_observations,
   POSITIVE_OBSERVATIONS_COUNT = #count{E,T : unique_positive_observation(E,T)}.
 
+%If a compound C is active in the time step before a positive observation, then it is a potential regulator
+%that could be used to explain that observation. For negative observations, an analogous logic applies but with
+%inactive compounds in the time step before those observations.
+observation_potential_regulator(E,T,C) :- curated_observation(E,T-1,C,1), activator(C), unique_positive_observation(E,T).
+observation_potential_regulator(E,T,C) :- curated_observation(E,T-1,C,0), activator(C), unique_negative_observation(E,T).
+%Variants for inhibitors
+observation_potential_regulator(E,T,C) :- curated_observation(E,T-1,C,0), inhibitor(C), unique_positive_observation(E,T).
+observation_potential_regulator(E,T,C) :- curated_observation(E,T-1,C,1), inhibitor(C), unique_negative_observation(E,T).
+
+%Distribute potential regulators C for a given unique observation E,T across nodes
+1 {node_regulator(1..MN,C) : maximum_node_number(MN), observation_potential_regulator(E,T,C)} :- unique_positive_observation(E,T).
+1 {node_regulator(1..MN,C) : maximum_node_number(MN), observation_potential_regulator(E,T,C)} :- unique_negative_observation(E,T).
+
+%If we have no positive observations, we only need to assign regulators to a single node
+1 {node_regulator(1,C) : compound(C)} :- not positive_observations.
+
 %If we have no positive observations, then we will use 1 node maximum to explain the observations.
 %If 1 node isn't enough to produce a function that's restrictive enough, then no such function exists
 %(since considering more nodes would never allow us to create more restrictive fuctions, only more general ones)
