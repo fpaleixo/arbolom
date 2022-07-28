@@ -4,8 +4,26 @@
 %is able to replicate the observed state).
 
 #const compound = c.
+#const hard_limit = 10.
 
-%*--Fixed regulators--*%
+%*--Identifying inconsistency type--*%
+%If the compound is inconsistent because it outputs 1 when 0 was expected, 
+%we have a positive inconsistency
+positive_inconsistencies :- inconsistent(_,_,compound,1).
+
+%If the compound is inconsistent because it outputs 0 when 1 was expected, 
+%we have a negative inconsistency
+negative_inconsistencies :- inconsistent(_,_,compound,0).
+
+%If we have positive inconsistencies but no negative inconsistencies, we need
+%to obtain a more restrictive function
+restrain_function :- positive_inconsistencies, not negative_inconsistencies.
+
+%If we have negative inconsistencies but no positive inconsistencies, we need
+%to obtain a more general function
+generalize_function :- negative_inconsistencies, not positive_inconsistencies.
+
+%*--Fixing regulators--*%
 %fixed/2 tells us that regulator C has to be one of the compound's regulators
 fixed_regulator(C) :- fixed(C,compound), compound(C).
 fixed_regulator(C) :- fixed(C,compound,_), compound(C).
@@ -33,11 +51,23 @@ sign_changed(C) :- regulates(C,compound,1), activator(C).
 %then we have positive observations
 positive_observations :- curated_observation(_,T,compound,1), T > 0.
 
-%The highest number of nodes we'll consider is equal to the number of unique positive observations,
-%since at most we'll need one node per unique positive observation to render the model consistent
-%(we may use less, since it can happen that one node is able explain several positive observations)
-maximum_node_number(POSITIVE_OBSERVATIONS_COUNT) :- positive_observations,
-  POSITIVE_OBSERVATIONS_COUNT = #count{E,T : unique_positive_observation(E,T)}.
+%If the function needs to be more restrictive, we should be able to find
+%a solution using a lesser or equal number of nodes than it already has 
+maximum_node_number(TN) :- positive_observations,
+  restrain_function, function(compound,TN).
+
+%If the function does not need to be more restrictive, then we should be able
+%to find a solution using the minimum between the number of unique positive
+%observations that were violated plus the number of already existing nodes,
+%and 10, which is the value after which the functions in a very heavy example
+%(40 variables, 5 experiments, 20 time steps, 31 inconsistent functions),
+%take longer than 1 second to solve (also, 10 is double the amount of the number
+%of nodes present in the largest real-world function we work with)
+maximum_node_number(MIN) :- positive_observations,
+  not restrain_function, function(compound,TN),
+  PR = #count{E,T : unique_positive_observation(E,T), 
+  inconsistent(E,T,compound,0)},
+  MIN = #min{hard_limit; PR + TN}.
 
 %If we have no positive observations, then we will use 1 node maximum to explain the observations.
 %If 1 node isn't enough to produce a function that's restrictive enough, then no such function exists
