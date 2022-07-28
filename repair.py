@@ -78,7 +78,6 @@ unique_positive_observations_async_path = "encodings/repairs/auxiliary/upo_async
 #Variables of python implementation of unique positive observations
 previous_observations_sync_path = "encodings/repairs/auxiliary/previous_observations_sync.lp"
 previous_observations_async_path = "encodings/repairs/auxiliary/previous_observations_async.lp"
-python_enabled = True 
 processed_upo = ""
 
 #Paths of encodings for generating functions
@@ -268,14 +267,8 @@ def generateFunctions(func):
     
   ctl = clingo.Control(arguments=clingo_args, logger= lambda a,b: None)
 
+  ctl.add("base", [], program=processed_upo)
   ctl.load(incst_path)
-  if python_enabled:
-    ctl.add("base", [], program=processed_upo)
-  else:
-    if toggle_sync:
-      ctl.load(unique_positive_observations_path)
-    elif toggle_async:
-      ctl.load(unique_positive_observations_async_path)
   ctl.load(model_path) 
 
   if toggle_stable_state:
@@ -339,15 +332,17 @@ def generatePreviousObservations(func, curated_LP):
 # -prev_obs, a string containing all previous observations
 #Purpose: Returns all unique positive observations
 def processPreviousObservations(prev_obs):
+
+  if not prev_obs:
+    return ""
+    
   uniques_map = {}
-  uniques_negative_map = {}
 
   output = ""
 
   current_experiment = ""
   current_timestep = ""
   current_state_key = "0"
-  current_is_positive = True
 
   start = time.time()
   for previous_obsv in prev_obs:
@@ -362,55 +357,41 @@ def processPreviousObservations(prev_obs):
       current_experiment = experiment
       current_timestep = timestep
 
-      if "negative" in previous_obsv:
-        current_is_positive = False
-
     #If we're still looking at the same experiment and timestep
     if current_experiment + current_timestep == experiment + timestep:
 
-        #If the compound is active, it will be a part of this timestep's 
-        # state key
-        if state == "1":
-          current_state_key += compound
+      #If the compound is active, it will be a part of this timestep's 
+      # state key
+      if state == "1":
+        current_state_key += compound
 
     else: #We are looking at a different experiment or timestep
       
-        #Save previous timestep's state in the map, if it didn't exist yet
-        state = "".join(sorted(current_state_key))
+      #Save previous timestep's state in the map, if it didn't exist yet
+      state = "".join(sorted(current_state_key))
 
-        if current_is_positive and state not in uniques_map:
-            uniques_map[state] = current_experiment + ","+ str(int(current_timestep) + 1)
-        elif not current_is_positive and state not in uniques_negative_map:
-            uniques_negative_map[state] = current_experiment + ","+ str(int(current_timestep) + 1)
+      if state not in uniques_map:
+          uniques_map[state] = current_experiment + ","+ str(int(current_timestep) + 1)
+      
+      current_experiment = experiment
+      current_timestep = timestep
+      current_state_key = "0"
 
-        current_experiment = experiment
-        current_timestep = timestep
-        current_state_key = "0"
-        
-        if "positive" in previous_obsv:
-          current_is_positive = True
-        else:
-          current_is_positive = False
-
-        if state == "1":
-          current_state_key += compound
+      if state == "1":
+        current_state_key += compound
 
   #End of loop, last timestep's state must be saved
   state = "".join(sorted(current_state_key))
 
-  if current_is_positive and state not in uniques_map:
+  if state not in uniques_map:
     uniques_map[state] = current_experiment + ","+ str(int(current_timestep) + 1)
-  elif not current_is_positive and state not in uniques_negative_map:
-    uniques_negative_map[state] = current_experiment + ","+ str(int(current_timestep) + 1)
 
   #Print result in LP format
   for value in uniques_map.values():
     output += "unique_positive_observation(" + value + ").\n"
-  for value in uniques_negative_map.values():
-    output += "unique_negative_observation(" + value + ").\n"
 
   end = time.time()
-  print(f"Python code time for unique observations: {end - start}s\n")
+  print(f"Python code time for unique positive observations: {end - start}s\n")
   return output
 
 
@@ -432,10 +413,9 @@ if cmd_enabled:
 
       printFuncRepairStart(func)
       
-      if python_enabled:
-        prev_obs = generatePreviousObservations(func, curated_LP)
-        uniques = processPreviousObservations(prev_obs)
-        processed_upo = uniques
+      prev_obs = generatePreviousObservations(func, curated_LP)
+      uniques = processPreviousObservations(prev_obs)
+      processed_upo = uniques
       
       functions = generateFunctions(func)
       printRepairedLP(func, functions)
