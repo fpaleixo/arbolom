@@ -8,14 +8,10 @@ input_compound(C) :- compound(C), not function(C,_).
 0 {active(E,C)} 1 :- experiment(E), input_compound(C).
 
 %Input observations are converted to curated observations
-curated_observation(E,C,0) :- observation(E,C,0).
-curated_observation(E,C,1) :- observation(E,C,1).
+curated_observation(E,C,S) :- observation(E,C,S).
 
-%If compound C is active and there is no observation for it, fill in the missing observation
-curated_observation(E,C,1) :- active(E,C), not observation(E,C,_).
-
-%If compound C is inactive and there is no observation for it, fill in the missing observation
-curated_observation(E,C,0) :- not active(E,C), not observation(E,C,_), experiment(E), compound(C).
+%If compound C has no observation for it, fill in the missing observation
+1 {curated_observation(E,C,0); curated_observation(E,C,1)} 1 :- not observation(E,C,_), experiment(E), compound(C).
 
 %For a given compound C with I implicants, if there exists a regulator in implicant number I_NO
 %which is an inactive activator (outputs 1 when active) in an obervation E, then implicant 
