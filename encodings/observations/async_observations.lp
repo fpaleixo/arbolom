@@ -1,34 +1,21 @@
 #const e=1. %e is no. of experiments
 #const t=3. %t is max time steps
 
-%TODO - maybe add the possibility of forcing that a specific compound's function be applied? so that we can ensure that the produced
-%TODO observation will test a compound we know to be inconsistent (because asynchronous mode only requires that, at each time step, one function be applied,
-%TODO which means that we can generate observations where a certain compound's function is never applied)
-
-%Generate
+%Define
 experiment(1..e).
-time(0..t-1).
+time(0..t).
 compound_state(0..1).
 
-1 {observation(E,T,C,S) : compound_state(S)} 1 :- experiment(E), time(T), compound(C), T = 0.
-
-
-%Define
-observation(E,T+1,C,1) :- active(E,T+1,C), chosen_compound(E,T,C).
-observation(E,T+1,C,0) :- not active(E,T+1,C), chosen_compound(E,T,C).
-
-%Input compounds can have any value at each time step
-1 {observation(E,T+1,C,S) : compound_state(S)} 1 :- experiment(E), time(T), input_compound(C).
-
-%If the function of C is not chosen to be applied at time step T, the value carries over to the next observation
-observation(E,T+1,C,S) :- observation(E,T,C,S), not chosen_compound(E,T,C), experiment(E), time(T), not input_compound(C).
-
-%For a given compound C with I implicants, if for experiment E at time step T there exists
-%some implicant I_NO which is not inactive, then C has at least one active implicant and so is active
-active(E,T+1,C) :- function(C,I), not implicant_inactive(E,T,C,I_NO), experiment(E), time(T), term(C,I_NO,_).
-
-%A compound with no regulatory function is an input compound
+%A compound with no regulatory function is an input compound 
 input_compound(C) :- compound(C), not function(C,_).
+
+%Input compounds can take any value, 
+%but that value must be the same throughout time
+0 {input_active(E,C)} 1 :- experiment(E), input_compound(C).
+active(E,T,C) :- time(T), input_active(E,C).
+
+%Choose initial state for non-input compounds
+0 {active(E,0,C)} 1 :- experiment(E), compound(C), not input_compound(C).
 
 %For a given compound C with I implicants, if there exists a regulator in implicant number I_NO
 %which is an inactive activator (outputs 1 when active) in an obervation E at time step T, then implicant 
@@ -40,11 +27,34 @@ implicant_inactive(E,T,C,I_NO) :- function(C,I), term(C,I_NO,R), regulates(R,C,0
 %I_NO evaluates to 0 for that observation E at time step T
 implicant_inactive(E,T,C,I_NO) :- function(C,I), term(C,I_NO,R), regulates(R,C,1), observation(E,T,R,1).
 
-%At each time step, only one function may be applied, and the compound who the function belongs to cannot be an input compound
-1 {chosen_compound(E,T,C) : compound(C), not input_compound(C)} 1 :- experiment(E), time(T).
+%For a given compound C with I implicants, if for experiment E at time step T there exists
+%some implicant I_NO which is not inactive, then C has at least one active implicant and so is active
+active(E,T,C) :- function(C,I), not implicant_inactive(E,T-1,C,I_NO), experiment(E), time(T), term(C,I_NO,_), T > 0.
 
-%If some compound's state was changed from timestep T to T+1, mark it
-state_changed(E,T,T+1):- observation(E,T,C,S1), observation(E,T+1,C,S2), S1 != S2, not input_compound(C).
+%At each time step, only one function may be applied
+%(input compounds are purposefully left out, since they would not alter the
+%state of the model)
+1 {chosen_compound(E,T,C) : compound(C), not input_compound(C)} 1 :- experiment(E), time(T), T < t.
+
+%Initial observation for active compounds
+observation(E,T,C,1) :- active(E,T,C), T = 0.
+
+%Initial observation for inactive compounds
+observation(E,T,C,0) :- not active(E,T,C), T = 0, experiment(E), compound(C).
+
+%If the function of C is not chosen to be applied at time step T, the value carries over to the next observation
+observation(E,T,C,S) :- observation(E,T-1,C,S), not chosen_compound(E,T-1,C), experiment(E), time(T), T > 0.
+
+%If a chosen compound is active at a given timestep, then it produces a positive
+%observation in the next timestep
+observation(E,T,C,1) :- active(E,T,C), chosen_compound(E,T-1,C), T > 0.
+
+%If a chosen compound is inactive at a given timestep, then it produces a negative
+%observation in the next timestep
+observation(E,T,C,0) :- not active(E,T,C), chosen_compound(E,T-1,C), T > 0.
+
+%If some compound's state was changed from timestep T-1 to T, mark it
+state_changed(E,T-1,T):- observation(E,T,C,S1), observation(E,T-1,C,S2), S1 != S2, T > 0.
 
 %If two experiments E1, E2 display different states S1,S2 for the same compound C at the
 %same time step T, then they are distinct
@@ -53,10 +63,11 @@ distinct_experiments(E1,E2) :- observation(E1,T,C,S1), observation(E2,T,C,S2), E
 
 %Test
 %Observations must change the state of the model (to create more interesting observations)
-:- not state_changed(E,T,T+1), experiment(E), time(T).
+:- not state_changed(E,T-1,T), experiment(E), time(T), T > 0.
 
 
 %Display
+#show active/3.
 #show observation/4.
 #show experiment/1.
 #show chosen_compound/3.
