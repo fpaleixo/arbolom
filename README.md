@@ -40,8 +40,8 @@ Generally, the models will be used in the following fashion:
 [![Task 4 - Encodings to create observations](https://img.shields.io/badge/Task_4-Encodings_to_create_observations-green?style=for-the-badge&logo=dev.to)](https://github.com/fpaleixo/arbolom/tree/main/encodings)
 [![Task 5 - Encodings for model consistency](https://img.shields.io/badge/Task_5-Encodings_for_model_consistency-green?style=for-the-badge&logo=dev.to)](https://github.com/fpaleixo/arbolom/tree/main/encodings)
 ![Task 6 - Define repair strategy](https://img.shields.io/badge/Task_6-Define_repair_strategy-green?style=for-the-badge&logo=Adobe+Acrobat+Reader)
-[![Task 7 - Encodings to repair models](https://img.shields.io/badge/Task_7-Encodings_to_repair_models_(and_respective_optimizations)-yellow?style=for-the-badge&logo=dev.to)](https://github.com/fpaleixo/arbolom/tree/main/encodings)
-![Task 8 - Benchmarking and writing the document](https://img.shields.io/badge/Task_8-Benchmarking_and_writing_the_document-red?style=for-the-badge&logo=dev.to)
+[![Task 7 - Encodings to repair models](https://img.shields.io/badge/Task_7-Encodings_to_repair_models_(and_respective_optimizations)-green?style=for-the-badge&logo=dev.to)](https://github.com/fpaleixo/arbolom/tree/main/encodings)
+![Task 8 - Benchmarking and writing the document](https://img.shields.io/badge/Task_8-Benchmarking_and_writing_the_document-yellow?style=for-the-badge&logo=dev.to)
 
 ### Timestamps (relative*)
 
@@ -57,9 +57,9 @@ Task 5: Week 4-5 (28/03 to 05/04)
 
 Task 6: Week 5-6 (05/04 to 11/04)
 
-Task 7: Week 6-*ongoing* (11/04 to *ongoing*)
+Task 7: Week 6-21 (11/04 to 01/08)
 
-Task 8: Week tbd-tbd (beginning of August to 30/09)
+Task 8: Week 20-*ongoing* (29/07 to 30/09)
 
 \* *for reference only - dates are not absolutely exact and deliverables usually suffer tweaks/changes after these  periods*
 
