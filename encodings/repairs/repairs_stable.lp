@@ -3,6 +3,24 @@
 %regulators, the compound is able to replicate its observed state).
 
 #const compound = c.
+#const hard_limit = 10.
+
+%*--Identifying inconsistency type--*%
+%If the compound is inconsistent because it outputs 1 when 0 was expected, 
+%we have a positive inconsistency
+positive_inconsistencies :- inconsistent(_,compound,1).
+
+%If the compound is inconsistent because it outputs 0 when 1 was expected, 
+%we have a negative inconsistency
+negative_inconsistencies :- inconsistent(_,compound,0).
+
+%If we have positive inconsistencies but no negative inconsistencies, we need
+%to obtain a more restrictive function
+restrain_function :- positive_inconsistencies, not negative_inconsistencies.
+
+%If we have negative inconsistencies but no positive inconsistencies, we need
+%to obtain a more general function
+generalize_function :- negative_inconsistencies, not positive_inconsistencies.
 
 %Define
 %*--Fixed regulators--*%
@@ -33,11 +51,23 @@ sign_changed(C) :- regulates(C,compound,1), activator(C).
 %then we have positive observations
 positive_observations :- curated_observation(_,compound,1).
 
-%The highest number of nodes we'll consider is equal to the number of positive observations,
-%since at most we'll need one node per positive observation to render the model consistent
-%(we may use less, since it can happen that one node is able explain several positive observations)
-maximum_node_number(POSITIVE_OBSERVATIONS_COUNT) :- positive_observations,
-  POSITIVE_OBSERVATIONS_COUNT = #count{E : curated_observation(E,compound,1)}.
+%If the function needs to be more restrictive, we should be able to find
+%a solution using a lesser or equal number of nodes than it already has 
+maximum_node_number(TN) :- positive_observations,
+  restrain_function, function(compound,TN).
+
+%If the function does not need to be more restrictive, then we should be able
+%to find a solution using the minimum between the number of positive
+%observations that were violated plus the number of already existing nodes,
+%and 10, which is the value after which the functions in a very heavy example
+%(40 variables, 5 experiments, 20 time steps, 31 inconsistent functions),
+%take longer than 1 second to solve (also, 10 is double the amount of the number
+%of nodes present in the largest real-world function we work with)
+maximum_node_number(MIN) :- positive_observations,
+  not restrain_function, function(compound,TN),
+  PR = #count{E : curated_observation(E,compound,1), 
+  inconsistent(E,compound,0)},
+  MIN = #min{hard_limit; PR + TN}.
 
 %If we have no positive observations, then we will use 1 node maximum to explain the observations.
 %If 1 node isn't enough to produce a function that's restrictive enough, then no such function exists
@@ -103,7 +133,7 @@ bcf_broken :- node_ID(N1), node_ID(N2), N1 != N2, node_regulator_number(N1,N1_VA
 :- curated_observation(E,compound,1), not node_positive_observation_coverage(_,E).
 
 %3-If two candidate nodes share the same behavior, then the solution is not optimal
-:- candidate_node(N1), candidate_node(N2), N1 < N2, not distinct_behavior(N1,N2).
+:- node_ID(N1), node_ID(N2), N1 < N2, not nodes_distinct_coverage(N1,N2).
 
 %4-The BCF cannot be broken (nodes cannot contain other nodes)
 :- bcf_broken.
