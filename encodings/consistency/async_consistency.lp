@@ -56,7 +56,7 @@ inconsistent(E,T,C,0) :- changed_compound(E,T-1,C), not active(E,T,C), curated_o
 
 
 %Test
-%Input compounds need to take values consistent with the observations (when they exist)
+%Input compounds need to take values consistent with the observations
 :- curated_observation(E,T,C,0), active(E,T,C), input_compound(C).
 :- curated_observation(E,T,C,1), not active(E,T,C), input_compound(C).
 

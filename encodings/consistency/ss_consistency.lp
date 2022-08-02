@@ -35,7 +35,7 @@ inconsistent(E,C,0) :- not active(E,C), curated_observation(E,C,1).
 
 
 %Test
-%Input compounds need to take values consistent with the observations (when they exist)
+%Input compounds need to take values consistent with the observations
 :- curated_observation(E,C,0), active(E,C), input_compound(C).
 :- curated_observation(E,C,1), not active(E,C), input_compound(C).
 

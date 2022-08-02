@@ -159,7 +159,9 @@ def saveInconsistenciesToFile(LP):
 #Purpose: Prints the obtained atoms in a more readable manner.
 def isConsistent(atoms):
   if not atoms:
-    print("No answers sets could be found	\u2755 there must be something wrong with the encoding...")
+    print("No answers sets could be found	\u2755 \nPossible reasons for this include:\n"
+      + "- Using the wrong update mode; \n- Defining a compound as an input compound"
+      + " when its value changes over time in the observations (time-series only).")
   else:
     isConsistent = True
     inconsistent_LP = ""
