@@ -1,6 +1,7 @@
 import argparse, logging, clingo, time
 import os
 from aux_scripts.common import getAllCompounds
+from aux_scripts.consistency_functions import *
 from aux_scripts.conversion_functions import *
 from aux_scripts.repair_prints import *
 
@@ -146,10 +147,16 @@ def readModel():
   return model
 
 
-def checkConsistency(model):
-  inconsistencies = ""
-  print("consistency checking happens here")
+def checkConsistency(model, obsv):
+  logger = logging.getLogger("checkConsistency")
+  logger.setLevel(logging.INFO)
 
+  atoms = consistencyCheck(model,obsv,
+    toggle_stable_state,toggle_sync,toggle_async)
+  inconsistencies = isConsistent(atoms, toggle_stable_state, 
+    toggle_sync, toggle_async)
+
+  logger.debug("inconsistencies: \n" + str(inconsistencies))
   return inconsistencies
 
 
@@ -166,7 +173,7 @@ parseArgs()
 # extension, it must be converted to .lp.
 model = readModel()
 if model:
-  inconsistencies = checkConsistency(model)
+  inconsistencies = checkConsistency(model, obsv_path)
 
   # Second, check the consistency of the .lp model using the provided observations
   # and time step.
@@ -183,6 +190,5 @@ if model:
     else:
       print("Repairs found \u2714\uFE0F")
       print("Print repairs here")
-
 
 

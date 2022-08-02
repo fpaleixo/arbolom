@@ -1,4 +1,6 @@
-import os, argparse, logging, clingo
+import os, argparse, logging
+
+from aux_scripts.consistency_functions import *
 
 #Usage: $python consistency_checking.py -f (FILENAME) -o (OBSERVATIONS) -stable -sync -async -s (SAVE_DIRECTORY)
 
@@ -36,11 +38,6 @@ write_folder = "simple_models/lp/corrupted"
 toggle_stable_state = True
 toggle_sync = False
 toggle_async = False
-
-#Encoding paths
-ss_path = "./encodings/consistency/ss_consistency.lp"
-sync_path = "./encodings/consistency/sync_consistency.lp"
-async_path = "./encodings/consistency/async_consistency.lp"
 
 #Parser (will only be used if command-line usage is enabled above)
 parser = None
@@ -155,59 +152,13 @@ def saveInconsistenciesToFile(LP):
 
   logger.info("Saved to: " + str(write_fullpath))
 
-#Inputs: atoms is a list of atoms obtained from solving with clingo.
-#Purpose: Prints the obtained atoms in a more readable manner.
-def isConsistent(atoms):
-  if not atoms:
-    print("No answers sets could be found	\u2755 \nPossible reasons for this include:\n"
-      + "- Using the wrong update mode; \n- Defining a compound as an input compound"
-      + " when its value changes over time in the observations (time-series only).")
-  else:
-    isConsistent = True
-    inconsistent_LP = ""
-    observations_LP = ""
-
-    for atom in atoms:
-      if "inconsistent" in atom:
-        isConsistent = False
-        inconsistent_LP += atom + ".\n"
-      else:
-        observations_LP += atom + ".\n"
-
-    if not isConsistent:
-      if toggle_stable_state:
-        print("Model is not consistent \u274C Inconsistent (experiment, compound, value): ")
-      elif toggle_sync:
-        print("Model is not consistent \u274C Inconsistent (experiment, timestep, compound, value): ")
-      else:
-        print("Model is not consistent \u274C Inconsistent (experiment, timestep, compound, value/other compound updated at the same time): ")  
-      print(inconsistent_LP)
-      saveInconsistenciesToFile(inconsistent_LP + "\n" + observations_LP)
-    
-    else: 
-      print("Model is consistent \u2714\uFE0F")
 
 
 #-----Main-----
 if(cmd_enabled):
   parseArgs()
+atoms = consistencyCheck(model_path,obsv_path,
+  toggle_stable_state,toggle_sync,toggle_async,True)
+result = isConsistent(atoms, toggle_stable_state, toggle_sync, toggle_async,True)
+if result: saveInconsistenciesToFile(result)
 
-ctl = clingo.Control(arguments=["0"])
-
-ctl.load(model_path)
-ctl.load(obsv_path)
-
-if toggle_stable_state:
-  ctl.load(ss_path)
-elif toggle_sync:
-  ctl.load(sync_path)
-else:
-  ctl.load(async_path)
-
-ctl.ground([("base", [])])
-atoms = []
-with ctl.solve(yield_=True) as handle:
-  for model in handle:
-    atoms = (str(model).split(" "))
-
-isConsistent(atoms)
