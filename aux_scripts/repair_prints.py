@@ -67,3 +67,10 @@ def printRepairedLP(inconsistent_func, result):
 
     print(result)
 
+#Inputs: The stats dictionary returned from clingo
+def printStatistics(stats_dict):
+  times = stats_dict["summary"]["times"]
+  print("\n<Statistics>")
+  print("Total: "+str(times["total"]) + "s (Solving: "+str(times["solve"])+"s)")
+  print("CPU Time: "+str(times["cpu"])+"s")
+  print("\n")

@@ -1,5 +1,6 @@
 import os, argparse, logging, glob
-from aux_scripts.common import *
+from aux_scripts.common import getAllCompounds
+from aux_scripts.conversion_functions import *
 
 #Usage: $python conversion.py -f (FILENAME) -s (SAVE_DIRECTORY)
 
@@ -67,57 +68,6 @@ def parseArgs():
   return
 
 
-
-#-----ASP Predicates-related operations-----
-
-#Inputs: file is the file to write in, compounds is a list of strings 
-# representing the compounds.
-#Purpose: Adds predicates representing compounds to LP.
-def addCompoundsToLP(file, compounds):
-  file.write("%Compounds\n")
-  for c in compounds:
-    file.write("compound(" + c + ").\n")
-  file.write("\n")
-
-
-#Inputs: file is the file to write in, item is a tuple where the first element 
-# is the compound of the regulatory function, 
-# and the second element is a list of its implicants.
-#Purpose: Adds the predicates representing the regulators of each compound to LP.
-def addRegulatorsToLP(file, item):
-  if item[1][0]: #if there exist any regulators
-    file.write("%Regulators of " + item[0] + "\n")
-    all_literals = getAllLiterals(item[1])
-
-    for l in all_literals:
-      if(l[0]=='!'):
-        file.write("regulates(" + l[1:] + ", " + item[0] + ", " + "1).\n")
-
-      else:
-        file.write("regulates(" + l + ", " + item[0] + ", " + "0).\n")
-    file.write("\n")
-
-
-#Inputs: file is the file to write in, item is a tuple where the first element 
-# is the compound of the regulatory function, 
-# and the second element is a list of its implicants.
-#Purpose: Adds regulators of each compound to LP.
-def addFunctionToLP(file, item):
-  if item[1][0]: #if there exist any regulators
-    file.write("%Regulatory function of " + item[0] + "\n")
-    num_terms = len(item[1])
-    file.write("function(" + item[0] + ", " + str(num_terms) + ").\n") 
-
-    for idx, i in enumerate(item[1]):
-      regulators = getRegulatorsOf(item[0],[i])
-      
-      for r in regulators:
-        file.write("term(" + item[0] + ", " + str(idx+1) + ", " + r + ").\n")
-
-    file.write("\n")
-
-
-
 #-----Convert to LP operations-----
 
 #Inputs: 'dict' is a dictionary where the keys are compounds and the values are 
@@ -140,7 +90,7 @@ def saveLPToFile(dict):
     logger.info("Created directory: " + str(current_path))
 
   f = open(current_path, 'w')
-
+  result = ""
   logger.info("Saved to: " + str(current_path))
   
   all_compounds = getAllCompounds(dict, True)
@@ -149,16 +99,16 @@ def saveLPToFile(dict):
   if len(all_compounds) == len(list(dict.keys())):
     #If all compounds are present in the map keys, 
     # then the original order is preserved for convenience
-    addCompoundsToLP(f, list(dict.keys())) 
+    result = addCompoundsToResult(result, list(dict.keys())) 
   else: 
-    addCompoundsToLP(f, all_compounds)  
+    result = addCompoundsToResult(result, all_compounds)  
 
   for function in dict.items():
-    addRegulatorsToLP(f,function)
-    addFunctionToLP(f,function)
+    result = addRegulatorsToResult(result,function)
+    result = addFunctionToResult(result,function)
+
+  f.write(result)
   f.close()
-
-
 
 #-----Main-----
 if(cmd_enabled):
@@ -169,21 +119,7 @@ for fname in glob.glob(os.path.join(read_folder, filename)):
     global_logger.debug("Reading file: " + filename)
 
     lines = [line.strip() for line in f.readlines()]
-    func_dict = {}
-    
-    for regfun in lines:
-      if regfun == '': #ignore blank lines
-        continue
-      else:
-        full = [c.strip() for c in regfun.split(',')]
-        global_logger.debug("Read function: "+str(full))
-
-        implicants = [i.replace(" ", "").strip("()") for i in full[1].split('|')]
-        global_logger.debug("Implicants of "+full[0]+": "+str(implicants))
-
-        #each compound is a key; the value is the corresponding 
-        # list of prime implicants
-        func_dict[full[0]] = implicants  
+    func_dict = getFunctionDict(lines,global_logger)
 
     saveLPToFile(func_dict)
 
