@@ -1,4 +1,4 @@
-%Obtaining inconsistent functions
+%Obtain inconsistent functions from consistency checking
 
 %Define
 %Identify inconsistent functions

@@ -1,10 +1,9 @@
 import time
 import clingo
-
 from aux_scripts.repair_prints import printStatistics
 
 #Path of the encodings to obtain inconsistent functions and total variables of each of those functions
-iftv_path = "encodings/repairs/auxiliary/iftv.lp"
+iftv_path = "encodings/repairs/auxiliary/inconsistent_functions.lp"
 
 #Variables of python implementation of unique positive observations
 previous_observations_sync_path = "encodings/repairs/auxiliary/previous_observations_sync.lp"
@@ -20,27 +19,20 @@ repair_encoding_async_path = "encodings/repairs/repairs_async.lp"
 #Input: The nodes generated from clingo
 #Purpose: Creates a map of logic programs, indexed by inconsistent functions. Each value contains a string with the variables and total number of variables
 # of the respective inconsistent function.
-def getIftvsLPAndTotalVars(iftvs):
-  result_LP = {}
+def getInconsistentFunctionsArray(inconsistent_functions):
+  result = []
 
-  for iftv in iftvs:
-    current_LP = ""
-    var_name = ""
-      
-    var_name = iftv[0].split(')')[0].split('(')[1]
-    
-    for atom_idx in range(1, len(iftv)):
-      current_LP += iftv[atom_idx] +".\n"
+  for incst_func in inconsistent_functions:      
+    var_name = incst_func[0].split(')')[0].split('(')[1]
+    result.append(var_name)
 
-    result_LP[var_name] = current_LP
-
-  return result_LP
+  return result
 
 
 #-----Functions that solve LPs with clingo-----
 #Input: The LP containing information regarding the inconsistent functions
 #Purpose: Obtains inconsistent functions, the variables and total number of variables of each function
-def generateInconsistentFunctionsAndTotalVars(model, inconsistencies, debug_mode=False, path_mode=False):
+def generateInconsistentFunctions(model, inconsistencies, debug_mode=False, path_mode=False, enable_prints=False):
   clingo_args = ["0"]
   if debug_mode:
     clingo_args.append("--output-debug=text")
@@ -56,7 +48,7 @@ def generateInconsistentFunctionsAndTotalVars(model, inconsistencies, debug_mode
     
   ctl.load(iftv_path)
 
-  print("Starting iftv generation \u23F1")
+  if enable_prints: print("Starting iftv generation \u23F1")
   ctl.ground([("base", [])])
   iftv = []
 
@@ -64,14 +56,14 @@ def generateInconsistentFunctionsAndTotalVars(model, inconsistencies, debug_mode
     for model in handle:
       iftv.append(str(model).split(" "))
 
-  print("Finished iftv generation \U0001F3C1")
-  printStatistics(ctl.statistics)
+  if enable_prints: print("Finished iftv generation \U0001F3C1")
+  if enable_prints: printStatistics(ctl.statistics)
   return iftv
 
 #Inputs: The inconsistent compound's function, and the LP containing the curated observations
 #Purpose: Generates a function compatible with the given set of curated observations
-def generateFunctions(func, model, incst, upo, toggle_stable_state, toggle_sync, toggle_async, path_mode = False):
-  print("Calculating optimal repairs...")
+def generateFunctions(func, model, incst, upo, toggle_stable_state, toggle_sync, toggle_async, path_mode = False, enable_prints=False):
+  if enable_prints: print("Calculating optimal repairs...")
   clingo_args = ["0", f"-c compound={func}"]
     
   ctl = clingo.Control(arguments=clingo_args, logger= lambda a,b: None)
@@ -99,8 +91,8 @@ def generateFunctions(func, model, incst, upo, toggle_stable_state, toggle_sync,
     for model in handle:
       functions = str(model).split(" ")
   
-  print("... Done.")
-  printStatistics(ctl.statistics)
+  if enable_prints: print("... Done.")
+  if enable_prints: printStatistics(ctl.statistics)
   return functions
 
 
@@ -108,26 +100,27 @@ def generateFunctions(func, model, incst, upo, toggle_stable_state, toggle_sync,
 #Input: The generated iftv output from clingo
 #Purpose: Processes clingo's iftv output by creating an LP with them, forming a map with inconsistent functions as keys and the respective
 # LP containing the variables and total number of variables as value 
-def processIFTVs(iftvs):
-  if not iftvs:
-    print("No answers sets could be found	\u2755 there must be something wrong with the encoding...")
+def processInconsistentFunctions(inconsistent_functions, enable_prints=False):
+  if not inconsistent_functions:
+    print("processInconsistentFunctions: No answers sets could be found	\u2755 there must be something wrong with the encoding...")
 
-  elif iftvs[0]:
+  elif inconsistent_functions[0]:
 
-    iftvs_LP = getIftvsLPAndTotalVars(iftvs)
+    i_f_array = getInconsistentFunctionsArray(inconsistent_functions)
 
-    total_iftvs = len(iftvs)
-    if(total_iftvs < 100):
-      print("<Resulting inconsistent functions and total variables>")
-      print(str(iftvs_LP),end="\n\n")
-    else:
-      print("Too many iftvs to print...!")
-    print(f"Total iftvs: {total_iftvs}\n")
+    if enable_prints:
+      total_iftvs = len(i_f_array)
+      if(total_iftvs < 100):
+        print("<Resulting inconsistent functions>")
+        print(str(i_f_array),end="\n\n")
+      else:
+        print("Too many iftvs to print...!")
+      print(f"Total iftvs: {total_iftvs}\n")
 
-    return iftvs_LP
+    return i_f_array
 
   else: 
-    print("No iftvs could be found \u274C")
+    print("processInconsistentFunctions: No inconsistent functions could be found \u274C")
 
 
 
@@ -137,8 +130,7 @@ def processIFTVs(iftvs):
 # -curated_LP, the LP containing all curated observations
 #Purpose: Returns observations that happen in the timestep before
 # positive observations
-def generatePreviousObservations(func, inconsistencies, toggle_sync, toggle_async, path_mode=False):
-  print("Calculating previous observations...")
+def generatePreviousObservations(func, inconsistencies, toggle_sync, toggle_async, path_mode=False, enable_prints=False):
   clingo_args = ["0", f"-c compound={func}"]
   
   ctl = clingo.Control(arguments=clingo_args)
@@ -158,13 +150,15 @@ def generatePreviousObservations(func, inconsistencies, toggle_sync, toggle_asyn
   ctl.ground([("base", [])])
   functions = []
 
+  if enable_prints: print("Calculating previous observations...")
+
   with ctl.solve(yield_=True) as handle:
     for model in handle:
       functions = str(model).split(" ")
 
-  print("... Done.")
+  if enable_prints: print("... Done.")
 
-  printStatistics(ctl.statistics)
+  if enable_prints: printStatistics(ctl.statistics)
 
   if not functions[0]: #If there are no previous observations
     return []
@@ -174,7 +168,7 @@ def generatePreviousObservations(func, inconsistencies, toggle_sync, toggle_asyn
 #Inputs: 
 # -prev_obs, a string containing all previous observations
 #Purpose: Returns all unique positive observations
-def processPreviousObservations(prev_obs):
+def processPreviousObservations(prev_obs, enable_prints=False):
 
   if not prev_obs:
     return ""
@@ -234,5 +228,5 @@ def processPreviousObservations(prev_obs):
     output += "unique_positive_observation(" + value + ").\n"
 
   end = time.time()
-  print(f"Python code time for unique positive observations: {end - start}s\n")
+  if enable_prints: print(f"Python code time for unique positive observations: {end - start}s\n")
   return output

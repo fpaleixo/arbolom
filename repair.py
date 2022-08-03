@@ -159,22 +159,22 @@ if cmd_enabled:
   start_time = time.time()
   printIFTVStart()
 
-  iftvs = generateInconsistentFunctionsAndTotalVars(model_path, incst_path, 
-    iftv_debug_toggled, True)
-  iftvs_LP = processIFTVs(iftvs)
+  incst_funcs = generateInconsistentFunctions(model_path, incst_path, 
+    iftv_debug_toggled, True, True)
+  i_f_array = processInconsistentFunctions(incst_funcs, True)
   printIFTVEnd()
 
-  if iftvs_LP:
-    for func in iftvs_LP.keys():
+  if i_f_array:
+    for func in i_f_array:
 
       printFuncRepairStart(func)
       
       prev_obs = generatePreviousObservations(func, incst_path, toggle_sync,
-        toggle_async, True)
+        toggle_async, True, True)
       upo = processPreviousObservations(prev_obs)
       
       functions = generateFunctions(func, model_path, incst_path, upo,
-        toggle_stable_state, toggle_sync, toggle_async, True)
+        toggle_stable_state, toggle_sync, toggle_async, True, True)
 
       printRepairedLP(func, functions)
       

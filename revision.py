@@ -163,13 +163,14 @@ def checkConsistency(model, obsv):
 
 def repair(model, inconsistencies):
   repairs = ""
-  print("repairs happen here")
 
-  iftvs = generateInconsistentFunctionsAndTotalVars(model, inconsistencies)
-  iftvs_LP = processIFTVs(iftvs)
+  incst_funcs = generateInconsistentFunctions(model, inconsistencies)
+  i_f_array = processInconsistentFunctions(incst_funcs)
 
-  if iftvs_LP:
-    for func in iftvs_LP.keys():
+  if i_f_array:
+    for func in i_f_array:
+      printFuncRepairStart(func)
+
       prev_obs = generatePreviousObservations(func, inconsistencies, toggle_sync,
         toggle_async)
       upo = processPreviousObservations(prev_obs)
@@ -178,6 +179,8 @@ def repair(model, inconsistencies):
         toggle_stable_state, toggle_sync, toggle_async)
 
       printRepairedLP(func, functions)
+      printFuncRepairEnd(func)
+
 
   return repairs
 
@@ -195,7 +198,7 @@ if model:
   if not inconsistencies:
     print("The model is consistent with the observations \u2714\uFE0F")
   else: 
-    print("Inconsistent model. Repairing...")
+    print("Inconsistent model! \nRepairing...")
     # Third, if it is not, proceed with the repairs and print out the necessary ones.
     repairs = repair(model, inconsistencies)
 
