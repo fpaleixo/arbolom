@@ -3,6 +3,7 @@ import os
 from aux_scripts.common import getAllCompounds
 from aux_scripts.consistency_functions import *
 from aux_scripts.conversion_functions import *
+from aux_scripts.repair_functions import *
 from aux_scripts.repair_prints import *
 
 #Usage: $python revision.py -f (FILENAME) -o (OBSERVATIONS) -stable -sync -async
@@ -164,6 +165,20 @@ def repair(model, inconsistencies):
   repairs = ""
   print("repairs happen here")
 
+  iftvs = generateInconsistentFunctionsAndTotalVars(model, inconsistencies)
+  iftvs_LP = processIFTVs(iftvs)
+
+  if iftvs_LP:
+    for func in iftvs_LP.keys():
+      prev_obs = generatePreviousObservations(func, inconsistencies, toggle_sync,
+        toggle_async)
+      upo = processPreviousObservations(prev_obs)
+      
+      functions = generateFunctions(func, model, inconsistencies, upo,
+        toggle_stable_state, toggle_sync, toggle_async)
+
+      printRepairedLP(func, functions)
+
   return repairs
 
 
@@ -176,19 +191,11 @@ if model:
   inconsistencies = checkConsistency(model, obsv_path)
 
   # Second, check the consistency of the .lp model using the provided observations
-  # and time step.
+  # and time step. If the model is consistent, print a message saying so.
   if not inconsistencies:
     print("The model is consistent with the observations \u2714\uFE0F")
   else: 
     print("Inconsistent model. Repairing...")
+    # Third, if it is not, proceed with the repairs and print out the necessary ones.
     repairs = repair(model, inconsistencies)
-
-    # Third, if the model is consistent, print a message saying so. If it is not,
-    #proceed with the repairs and print out the necessary ones.
-    if not repairs:
-      print("No repairs could be found \u274C")
-    else:
-      print("Repairs found \u2714\uFE0F")
-      print("Print repairs here")
-
 
