@@ -2,36 +2,25 @@ import time
 import clingo
 from aux_scripts.repair_prints import printStatistics
 
-#Path of the encodings to obtain inconsistent functions and total variables of each of those functions
-iftv_path = "encodings/repairs/auxiliary/inconsistent_functions.lp"
+#Path of the encodings to obtain inconsistent functions
+inconsistent_functions_path = "encodings/repairs/auxiliary/inconsistent_functions.lp"
 
-#Variables of python implementation of unique positive observations
+#Paths of the encodings to obtain the observations that happen before positive observations
 previous_observations_sync_path = "encodings/repairs/auxiliary/previous_observations_sync.lp"
 previous_observations_async_path = "encodings/repairs/auxiliary/previous_observations_async.lp"
 
-#Paths of encodings for generating functions
+#Paths of the encodings that generating functions
 repair_encoding_stable_path = "encodings/repairs/repairs_stable.lp"
 repair_encoding_sync_path = "encodings/repairs/repairs_sync.lp"
 repair_encoding_async_path = "encodings/repairs/repairs_async.lp"
 
 
-#-----Functions that create the LPs to be used by clingo-----
-#Input: The nodes generated from clingo
-#Purpose: Creates a map of logic programs, indexed by inconsistent functions. Each value contains a string with the variables and total number of variables
-# of the respective inconsistent function.
-def getInconsistentFunctionsArray(inconsistent_functions):
-  result = []
-
-  for incst_func in inconsistent_functions:      
-    var_name = incst_func[0].split(')')[0].split('(')[1]
-    result.append(var_name)
-
-  return result
-
-
 #-----Functions that solve LPs with clingo-----
-#Input: The LP containing information regarding the inconsistent functions
-#Purpose: Obtains inconsistent functions, the variables and total number of variables of each function
+#Input:
+# model - the model that is being revised
+# inconsistencies - the inconsistencies obtained from consistency checking
+# debug_mode - flag that enables extra clingo output (must remove logger in clingo.Control to see)
+#Purpose: Obtains the inconsistent functions from the consistency checking phase
 def generateInconsistentFunctions(model, inconsistencies, debug_mode=False, path_mode=False, enable_prints=False):
   clingo_args = ["0"]
   if debug_mode:
@@ -46,7 +35,7 @@ def generateInconsistentFunctions(model, inconsistencies, debug_mode=False, path
     ctl.add("base", [], program=model)
     ctl.add("base", [], program=inconsistencies)
     
-  ctl.load(iftv_path)
+  ctl.load(inconsistent_functions_path)
 
   if enable_prints: print("Starting iftv generation \u23F1")
   ctl.ground([("base", [])])
@@ -60,8 +49,17 @@ def generateInconsistentFunctions(model, inconsistencies, debug_mode=False, path
   if enable_prints: printStatistics(ctl.statistics)
   return iftv
 
-#Inputs: The inconsistent compound's function, and the LP containing the curated observations
-#Purpose: Generates a function compatible with the given set of curated observations
+#Inputs:
+# func - the name of the inconsistent function
+# model - the model to revise
+# incst - the inconsistencies obtained from consistency checking
+# upo - unique positive observations that are obtained from processPreviousObservations
+# toggle_stable_state - flag that enables stable state interaction
+# toggle_sync - flag that enables synchronous interaction
+# toggle_async - flag that enables asynchronous interaction
+# path_mode - flag that enables loading the model and inconsistencies from a file, instead of a string
+# enable_prints - enables additional prints
+#Purpose: Generates a function that is compatible with previously given observations, based on the obtained inconsistencies
 def generateFunctions(func, model, incst, upo, toggle_stable_state, toggle_sync, toggle_async, path_mode = False, enable_prints=False):
   if enable_prints: print("Calculating optimal repairs...")
   clingo_args = ["0", f"-c compound={func}"]
@@ -96,10 +94,21 @@ def generateFunctions(func, model, incst, upo, toggle_stable_state, toggle_sync,
   return functions
 
 
+
 #-----Functions that process output from clingo-----
-#Input: The generated iftv output from clingo
-#Purpose: Processes clingo's iftv output by creating an LP with them, forming a map with inconsistent functions as keys and the respective
-# LP containing the variables and total number of variables as value 
+#Input: The inconsistent functions obtained from clingo
+#Purpose: Creates an array containing the name of all the inconsistent functions 
+def getInconsistentFunctionsArray(inconsistent_functions):
+  result = []
+
+  for incst_func in inconsistent_functions:      
+    var_name = incst_func[0].split(')')[0].split('(')[1]
+    result.append(var_name)
+
+  return result
+
+#Input: The generated inconsistent functions output from clingo
+#Purpose: Processes clingo's inconsistent functions output by creating an array with them
 def processInconsistentFunctions(inconsistent_functions, enable_prints=False):
   if not inconsistent_functions:
     print("processInconsistentFunctions: No answers sets could be found	\u2755 there must be something wrong with the encoding...")
@@ -126,10 +135,14 @@ def processInconsistentFunctions(inconsistent_functions, enable_prints=False):
 
 #-----Python implementation of unique positive observation determination-----
 #Inputs: 
-# -func, the compound that has the inconsistent function, 
-# -curated_LP, the LP containing all curated observations
+# func- the compound that has the inconsistent function
+# inconsistencies - the inconsistencies obtained from consistency checking
+# toggle_stable_state - flag that enables stable state interaction
+# toggle_sync - flag that enables synchronous interaction
+# toggle_async - flag that enables asynchronous interaction
+# path_mode - flag that enables loading the inconsistencies from a file, instead of a string
 #Purpose: Returns observations that happen in the timestep before
-# positive observations
+# positive observations (the observations are contained in inconsistencies)
 def generatePreviousObservations(func, inconsistencies, toggle_sync, toggle_async, path_mode=False, enable_prints=False):
   clingo_args = ["0", f"-c compound={func}"]
   
