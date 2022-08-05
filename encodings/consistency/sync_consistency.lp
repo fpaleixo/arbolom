@@ -4,8 +4,9 @@
 %Time must occur in some rule head
 time(T) :- observation(_,T,_,_).
 
-%A compound with no regulatory function is an input compound 
-input_compound(C) :- compound(C), not function(C,_).
+%If a compound C has a single term, with a single regulator in that term, 
+%and it has itself as an activator, then C is an input compound
+input_compound(C) :- compound(C), function(C,1), regulates(C,C,0), #count{R : term(C,1,R)} = 1.
 
 %Input compounds can take any value, 
 %but that value must be the same throughout time
@@ -49,12 +50,6 @@ inconsistent(E,T,C,1) :- active(E,T,C), curated_observation(E,T,C,0), T > 0.
 
 %If compound C is inactive but there is an observation stating it should be active, then the model is inconsistent
 inconsistent(E,T,C,0) :- not active(E,T,C), curated_observation(E,T,C,1), T > 0.
-
-
-%Test
-%Input compounds need to take values consistent with the observations
-:- curated_observation(E,T,C,0), active(E,T,C), input_compound(C).
-:- curated_observation(E,T,C,1), not active(E,T,C), input_compound(C).
 
 
 %Display

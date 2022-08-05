@@ -6,9 +6,9 @@ compound(pp).
 compound(rum1).
 compound(sk).
 compound(slp1).
-compound(start).
 compound(ste9).
 compound(wee1_mik1).
+compound(start).
 
 %Regulators of cdc25
 regulates(cdc2_cdc13, cdc25, 1).
@@ -144,4 +144,11 @@ term(wee1_mik1, 2, cdc2_cdc13).
 term(wee1_mik1, 2, pp).
 term(wee1_mik1, 3, pp).
 term(wee1_mik1, 3, wee1_mik1).
+
+%Regulators of start
+regulates(start, start, 0).
+
+%Regulatory function of start
+function(start, 1).
+term(start, 1, start).
 

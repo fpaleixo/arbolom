@@ -341,3 +341,9 @@ regulates(v13, v19, 0).
 function(v19, 1).
 term(v19, 1, v13).
 
+%Regulators of v20
+regulates(v20, v20, 0).
+
+%Regulatory function of v20
+function(v20, 1).
+term(v20, 1, v20).

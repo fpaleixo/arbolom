@@ -6,8 +6,9 @@ experiment(1..e).
 time(0..t).
 compound_state(0..1).
 
-%A compound with no regulatory function is an input compound 
-input_compound(C) :- compound(C), not function(C,_).
+%If a compound C has a single term, with a single regulator in that term, 
+%and it has itself as an activator, then C is an input compound
+input_compound(C) :- compound(C), function(C,1), regulates(C,C,0), #count{R : term(C,1,R)} = 1.
 
 %Input compounds can take any value, 
 %but that value must be the same throughout time

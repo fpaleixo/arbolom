@@ -1,8 +1,8 @@
-from aux_scripts.common import getAllLiterals, getRegulatorsOf
+from aux_scripts.common import getAllCompounds, getAllLiterals, getRegulatorsOf
 
 def getFunctionDict(lines, logger):
   func_dict = {}
-
+  all_regulators = set()
   for regfun in lines:
     if regfun == '': #ignore blank lines
       continue
@@ -11,12 +11,28 @@ def getFunctionDict(lines, logger):
       if logger : logger.debug("Read function: "+str(full))
 
       implicants = [i.replace(" ", "").strip("()") for i in full[1].split('|')]
+
+      #If we are dealing with an input compound, then it will be regulated
+      #by itself
+      if not implicants[0]:
+        implicants = [full[0]]
+      else:
+        regulators = getRegulatorsOf(full[0], implicants)
+        for r in regulators:
+          all_regulators.add(r)
+
       if logger : logger.debug("Implicants of "+full[0]+": "+str(implicants))
 
       #each compound is a key; the value is the corresponding 
       # list of prime implicants
       func_dict[full[0]] = implicants  
 
+  #Add missing input compounds (compounds that appear only as regulators of 
+  #other compounds )
+  for r in all_regulators:
+    if r not in func_dict.keys():
+      func_dict[r] = [r]
+      
   return func_dict
 
 #Inputs: file is the file to write in, compounds is a list of strings 

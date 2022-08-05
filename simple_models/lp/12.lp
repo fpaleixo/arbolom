@@ -1,5 +1,13 @@
 %Compounds
 compound(v1).
+compound(v2).
+compound(v3).
+compound(v4).
+compound(v5).
+compound(v6).
+compound(v7).
+compound(v8).
+compound(v9).
 compound(v10).
 compound(v11).
 compound(v12).
@@ -10,15 +18,7 @@ compound(v16).
 compound(v17).
 compound(v18).
 compound(v19).
-compound(v2).
 compound(v20).
-compound(v3).
-compound(v4).
-compound(v5).
-compound(v6).
-compound(v7).
-compound(v8).
-compound(v9).
 
 %Regulators of v1
 regulates(v1, v1, 0).
@@ -350,4 +350,11 @@ regulates(v13, v19, 0).
 %Regulatory function of v19
 function(v19, 1).
 term(v19, 1, v13).
+
+%Regulators of v20
+regulates(v20, v20, 0).
+
+%Regulatory function of v20
+function(v20, 1).
+term(v20, 1, v20).
 

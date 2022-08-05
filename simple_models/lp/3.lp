@@ -31,3 +31,10 @@ term(v3, 1, v1).
 term(v3, 2, v2).
 term(v3, 2, v4).
 
+%Regulators of v4
+regulates(v4, v4, 0).
+
+%Regulatory function of v4
+function(v4, 1).
+term(v4, 1, v4).
+

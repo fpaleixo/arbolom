@@ -1,25 +1,25 @@
 %Compounds
-compound(gata3).
-compound(ifn_b).
+compound(nfat).
 compound(ifn_br).
+compound(il_18r).
+compound(irak).
+compound(socs1).
+compound(il_12r).
+compound(stat4).
+compound(t_bet).
 compound(ifn_g).
 compound(ifn_gr).
-compound(il_10).
-compound(il_10r).
-compound(il_12).
-compound(il_12r).
-compound(il_18r).
+compound(jak1).
+compound(stat1).
 compound(il_4).
 compound(il_4r).
-compound(irak).
-compound(jak1).
-compound(nfat).
-compound(socs1).
-compound(stat1).
-compound(stat3).
-compound(stat4).
 compound(stat6).
-compound(t_bet).
+compound(gata3).
+compound(il_10).
+compound(il_10r).
+compound(stat3).
+compound(il_12).
+compound(ifn_b).
 compound(tcr).
 
 %Regulators of nfat
@@ -191,4 +191,25 @@ regulates(il_10r, stat3, 1).
 %Regulatory function of stat3
 function(stat3, 1).
 term(stat3, 1, il_10r).
+
+%Regulators of il_12
+regulates(il_12, il_12, 0).
+
+%Regulatory function of il_12
+function(il_12, 1).
+term(il_12, 1, il_12).
+
+%Regulators of ifn_b
+regulates(ifn_b, ifn_b, 0).
+
+%Regulatory function of ifn_b
+function(ifn_b, 1).
+term(ifn_b, 1, ifn_b).
+
+%Regulators of tcr
+regulates(tcr, tcr, 0).
+
+%Regulatory function of tcr
+function(tcr, 1).
+term(tcr, 1, tcr).
 

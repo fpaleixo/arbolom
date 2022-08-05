@@ -1,5 +1,13 @@
 %Compounds
 compound(v1).
+compound(v2).
+compound(v3).
+compound(v4).
+compound(v5).
+compound(v6).
+compound(v7).
+compound(v8).
+compound(v9).
 compound(v10).
 compound(v11).
 compound(v12).
@@ -10,7 +18,6 @@ compound(v16).
 compound(v17).
 compound(v18).
 compound(v19).
-compound(v2).
 compound(v20).
 compound(v21).
 compound(v22).
@@ -21,7 +28,6 @@ compound(v26).
 compound(v27).
 compound(v28).
 compound(v29).
-compound(v3).
 compound(v30).
 compound(v31).
 compound(v32).
@@ -32,13 +38,7 @@ compound(v36).
 compound(v37).
 compound(v38).
 compound(v39).
-compound(v4).
 compound(v40).
-compound(v5).
-compound(v6).
-compound(v7).
-compound(v8).
-compound(v9).
 
 %Regulators of v1
 regulates(v40, v1, 0).
