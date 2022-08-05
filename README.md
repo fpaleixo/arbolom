@@ -23,14 +23,13 @@ For quick testing, the models in the [simple_models](https://github.com/fpaleixo
 
 Generally, the models will be used in the following fashion:
 - One of the models is chosen to perform tests on. 
-- The corruption.py script can then be used to create a "wrong" version of this model.
-- conversion.py is ran on both models, to convert them to .lp format.
-- gen_observations.py is ran on the original .lp model, to generate observations that can be used to check the correctness of the wrong model.
-- consistency_checking.py is then ran on the wrong .lp model, using the observations generated from the original model. This script will tell you if the model is consistent with the given observations or not.
-- In case it is not, repair.py can be used to repair the inconsistent model.
+- The `corruption.py` script can then be used to create a "wrong" version of this model.
+- `conversion.py` is ran on both models, to convert them to .lp format.
+- `gen_observations.py` is ran on the original .lp model, to generate observations that can be used to check the correctness of the wrong model.
+- `revision.py` is ran on the corrupted model alongisde the generated observations, to revise it. 
 
-(At a later date, a single script should be implemented to automatically convert, check the consistency of, and repair a model written in the .bnet format, given a set of observations in .lp format).
-   
+Note: Alternatively, instead of using `revision.py`, `consistency_checking.py` can also be used on the inconsistent .lp model, alongside the observations generated from the original model. This script will tell you if the model is consistent with the given observations or not. In case it is not, the inconsistencies generated can then be given to `repair.py`, which will repair the inconsistent model (`revision.py` simply streamlines this process, doing it all at once).
+
 
 ## Task Progress
 
