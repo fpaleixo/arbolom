@@ -1,5 +1,6 @@
 import os, sys, argparse, logging, glob, random, re
 from aux_scripts.common import *
+from aux_scripts.conversion_functions import addCompoundsToResult, addFunctionToResult, addRegulatorsToResult, convertModelToLP, getFunctionDict
 
 #Usage: $python corruption.py -f (FILENAME) -op (OPERATIONS) -(O)p (PROBABILITY) -s (SAVE_DIRECTORY)
 
@@ -44,6 +45,9 @@ write_folder = './simple_models/corrupted'
 #Number of corrupted instances to produce
 instance_number = 1
 
+#Flag that enables the corrupted model to be directly converted to LP
+convert_to_lp = False
+
 #Operations (set desired operations to True)
 f_toggle = True #Function Change
 e_toggle = True #Edge Sign Flip
@@ -80,9 +84,12 @@ if(cmd_enabled):
     "--a_probability", help="Probability of applying edge add.", 
     type=float)
   parser.add_argument("-s", 
-  "--save_directory", help="Path of directory to save converted model to.")
+    "--save_directory", help="Path of directory to save converted model to.")
   parser.add_argument("-bulk",
-  "--bulk", help="Make several corrupted instances at once (must specify a number).", type=int)
+    "--bulk", help="Make several corrupted instances at once (must specify a number).", type=int)
+  parser.add_argument("-lp",
+    "--logic_program", action='store_true',
+  help="Converts the corrupted model directly to the logic program format.")
   args = parser.parse_args()
 
 #Global logger (change logging.(LEVEL) to desired (LEVEL) )
@@ -182,11 +189,12 @@ def parseArgs():
   r_p = args.r_probability
   a_p = args.a_probability
   bulk = args.bulk
+  convert = args.logic_program
 
   global read_folder, write_folder, filename 
   global f_toggle, e_toggle, r_toggle, a_toggle 
   global f_chance, e_chance, r_chance, a_chance
-  global instance_number
+  global instance_number, convert_to_lp
 
   if filepath:
     filename = os.path.basename(filepath)
@@ -202,6 +210,9 @@ def parseArgs():
 
   if bulk:
     instance_number = bulk  
+
+  if convert:
+    convert_to_lp = convert
 
   if operations:
     if 'f' in operations:
@@ -243,14 +254,15 @@ def saveToFile(dict, ops=''):
   logger.setLevel(logging.INFO)
 
   global read_folder, write_folder
-
   
   name = filename
 
-  print("PATH IS: " + write_folder)
-  print("NAME IS: " + name)
+  file_extension = ".bnet"
+  if convert_to_lp:
+    file_extension =".lp"
+
   current_path = uniquify(os.path.join(write_folder,
-  name.replace(".bnet", '') + "-corrupted" + "-" + ops + ".bnet"))
+  name.replace(".bnet", '') + "-corrupted" + "-" + ops + file_extension))
 
   if not os.path.exists(os.path.dirname(current_path)):
     os.makedirs(os.path.dirname(current_path))
@@ -258,6 +270,7 @@ def saveToFile(dict, ops=''):
 
   f = open(current_path, 'w')
 
+  result = ""
   for function in dict.items():
     implicants = ''
 
@@ -276,8 +289,15 @@ def saveToFile(dict, ops=''):
 
         else:
           implicants += i + " | "
+    
+    result += function[0] + ", " + implicants + '\n'
+  
+  if convert_to_lp: 
+      result = convertModelToLP(result.split('\n'),logger)
 
-    f.write(function[0] + ", " + implicants + '\n')
+  f.write(result)
+  f.close()
+  if instance_number < 10: logger.info("Saved to: " + str(current_path))
 
 
 
@@ -495,14 +515,16 @@ def edgeFlip(implicants, chance):
 if(cmd_enabled):
   parseArgs()
 
-for instance in range(0, instance_number):
-  for fname in glob.glob(os.path.join(read_folder, filename)):
-    with open(os.path.join(os.getcwd(), fname), 'r') as f:
-      global_logger.info("Reading file: " + filename)
-      print("FILENAME: " + str(filename))
+for fname in glob.glob(os.path.join(read_folder, filename)):
+  with open(os.path.join(os.getcwd(), fname), 'r') as f:
+
+    global_logger.info("Reading file: " + filename)
+
+    original_lines = [line.strip() for line in f.readlines()]
       
-      lines = [line.strip() for line in f.readlines()]
-      print(lines)
+    for instance in range(0, instance_number):
+      
+      lines = original_lines.copy()
       func_dict = {}
       final_dict = {}
 
@@ -513,7 +535,7 @@ for instance in range(0, instance_number):
       
       for regfun in lines:
         full = [c.strip() for c in regfun.split(',')]
-        global_logger.info("Read function: "+str(full))
+        global_logger.debug("Read function: "+str(full))
 
         implicants = [i.replace(" ", "").strip("()") for i in full[1].split('|')]
         global_logger.debug("Implicants of "+full[0]+": "+str(implicants))
@@ -525,55 +547,56 @@ for instance in range(0, instance_number):
           change = funcChange(implicants, f_chance)
 
           if(change[0]):
-            global_logger.info("("+full[0]+") " + "Changed reg func to " + str(change[1]))
+            global_logger.debug("("+full[0]+") " + "Changed reg func to " + str(change[1]))
             implicants = change[1]
             f_effect = True
 
           else:
-            global_logger.info("("+full[0]+") " + "No changes to reg func")
+            global_logger.debug("("+full[0]+") " + "No changes to reg func")
 
         if(e_toggle):
           flipped_implicants = edgeFlip(implicants, e_chance)
 
           if(len(flipped_implicants[0]) > 0):
-            global_logger.info("("+full[0]+") " + "Flipped literals " + 
+            global_logger.debug("("+full[0]+") " + "Flipped literals " + 
               str(flipped_implicants[0]) + 
               ". New implicants: "+str(flipped_implicants[1]))
             implicants = flipped_implicants[1]
             e_effect = True
 
           else:
-            global_logger.info("("+full[0]+") " + "No signs flipped")
+            global_logger.debug("("+full[0]+") " + "No signs flipped")
 
         if(r_toggle):
           removed_edges = edgeRemove(implicants, r_chance)
 
           if(len(removed_edges[0]) > 0):
-            global_logger.info("("+full[0]+") " + "Removed edges from " + 
+            global_logger.debug("("+full[0]+") " + "Removed edges from " + 
             str(removed_edges[0]) + 
             ". New implicants: "+str(removed_edges[1]))
             implicants = removed_edges[1]
             r_effect = True
 
           else:
-            global_logger.info("("+full[0]+") " + "No edges removed")
+            global_logger.debug("("+full[0]+") " + "No edges removed")
 
         final_dict[full[0]] = implicants #Update final corrupted model
       
-      global_logger.info("Reached EOF")
+      
       if(a_toggle):
         added_edges = edgeAdd(final_dict, a_chance)
 
         if(added_edges[0]):
-          global_logger.info("Added new regulators to compound(s) " +
+          global_logger.debug("Added new regulators to compound(s) " +
           str(added_edges[0]) + 
           ". New functions: "+str(added_edges[1]))
           final_dict = added_edges[1]
           a_effect = True
           
         else:
-          global_logger.info("No edges added")
+          global_logger.debug("No edges added")
 
+      
       #Operations that changed the model
       ops = ''
       if(f_effect):

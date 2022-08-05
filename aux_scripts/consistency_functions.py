@@ -63,5 +63,5 @@ def isConsistent(atoms,stable_flag, sync_flag, async_flag, print_inconsistencies
       return inconsistent_LP + "\n" + observations_LP
     
     else: 
-      print("Model is consistent \u2714\uFE0F")
+      print("The model is consistent with the observations \u2714\uFE0F")
       return None

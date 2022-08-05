@@ -95,32 +95,6 @@ def parseArgs():
   return
 
 
-#-----Convertion Functions-----
-def convertModelToLP(model):
-  logger = logging.getLogger("saveLP")
-  logger.setLevel(logging.INFO)
-
-  lines = [line.strip() for line in model]
-  func_dict = getFunctionDict(lines, logger)
-
-  result = ""
-  
-  all_compounds = getAllCompounds(func_dict, True)
-  logger.debug("All compounds: " + str(all_compounds))
-
-  if len(all_compounds) == len(list(func_dict.keys())):
-    #If all compounds are present in the map keys, 
-    # then the original order is preserved for convenience
-    result = addCompoundsToResult(result, list(func_dict.keys())) 
-  else: 
-    result = addCompoundsToResult(result, all_compounds)  
-
-  for function in func_dict.items():
-    result = addRegulatorsToResult(result,function)
-    result = addFunctionToResult(result,function)
-
-  return result
-
 
 #-----Revision Functions-----
 def readModel():
@@ -139,8 +113,7 @@ def readModel():
   model = model_file.readlines()
 
   if model_extension == ".bnet":
-    print("conversion happens here")
-    model = convertModelToLP(model)
+    model = convertModelToLP(model,logger)
   
   else: model = "".join(model)
     
@@ -195,10 +168,9 @@ if model:
 
   # Second, check the consistency of the .lp model using the provided observations
   # and time step. If the model is consistent, print a message saying so.
-  if not inconsistencies:
-    print("The model is consistent with the observations \u2714\uFE0F")
-  else: 
+  if inconsistencies:
     print("Inconsistent model! \nRepairing...")
     # Third, if it is not, proceed with the repairs and print out the necessary ones.
     repairs = repair(model, inconsistencies)
+    print("Applying the above repairs to the model will render it consistent!")
 

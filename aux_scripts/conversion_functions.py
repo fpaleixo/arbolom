@@ -45,7 +45,6 @@ def addCompoundsToResult(string, compounds):
   string +="\n"
   return string
 
-
 #Inputs: file is the file to write in, item is a tuple where the first element 
 # is the compound of the regulatory function, 
 # and the second element is a list of its implicants.
@@ -63,7 +62,6 @@ def addRegulatorsToResult(string, item):
         string += "regulates(" + l + ", " + item[0] + ", " + "0).\n"
     string += "\n"
   return string
-
 
 #Inputs: file is the file to write in, item is a tuple where the first element 
 # is the compound of the regulatory function, 
@@ -83,3 +81,28 @@ def addFunctionToResult(string, item):
 
     string +="\n"
   return string
+
+#Inputs: model, an array containing the model in which each element is a string
+#containg a line of the .bnet model representation
+#Purpose: Converts the .bnet model into a string in .lp format
+def convertModelToLP(model, logger):
+  lines = [line.strip() for line in model]
+  func_dict = getFunctionDict(lines, logger)
+
+  result = ""
+  
+  all_compounds = getAllCompounds(func_dict, True)
+  logger.debug("All compounds: " + str(all_compounds))
+
+  if len(all_compounds) == len(list(func_dict.keys())):
+    #If all compounds are present in the map keys, 
+    # then the original order is preserved for convenience
+    result = addCompoundsToResult(result, list(func_dict.keys())) 
+  else: 
+    result = addCompoundsToResult(result, all_compounds)  
+
+  for function in func_dict.items():
+    result = addRegulatorsToResult(result,function)
+    result = addFunctionToResult(result,function)
+
+  return result
