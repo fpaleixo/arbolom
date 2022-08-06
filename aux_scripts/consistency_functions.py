@@ -33,7 +33,7 @@ def consistencyCheck(model, obsv, stable_flag, sync_flag, async_flag, path_mode=
 
 #Inputs: atoms is a list of atoms obtained from solving with clingo.
 #Purpose: Prints the obtained atoms in a more readable manner.
-def isConsistent(atoms,stable_flag, sync_flag, async_flag, print_inconsistencies=False):
+def isConsistent(atoms,stable_flag, sync_flag, async_flag, print_inconsistencies=False, print_consistent=True):
   if not atoms:
     print("No answers sets could be found	\u2755 \nPossible reasons for this include:\n"
       + "- Using the wrong update mode; \n- Defining a compound as an input compound"
@@ -63,5 +63,5 @@ def isConsistent(atoms,stable_flag, sync_flag, async_flag, print_inconsistencies
       return inconsistent_LP + "\n" + observations_LP
     
     else: 
-      print("The model is consistent with the observations \u2714\uFE0F")
+      if print_consistent: print("The model is consistent with the observations \u2714\uFE0F")
       return None
