@@ -1,6 +1,4 @@
-import argparse, logging, time, glob
-import os
-from aux_scripts.common import getAllCompounds
+import os, argparse, logging, time
 from aux_scripts.consistency_functions import *
 from aux_scripts.conversion_functions import *
 from aux_scripts.repair_functions import *

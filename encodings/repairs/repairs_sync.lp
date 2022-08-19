@@ -25,7 +25,7 @@ inhibitor(C) :- fixed_inhibitor(C).
   not fixed_activator(C), not fixed_inhibitor(C).
 
 %Keep track of which original regulators C had their sign changed
-%(used in minimization #3)
+%(used in minimization #2)
 sign_changed(C) :- regulates(C,compound,0), inhibitor(C).
 sign_changed(C) :- regulates(C,compound,1), activator(C).
 
@@ -104,6 +104,7 @@ regulator_inhibitor(C) :- node_regulator(N,C), inhibitor(C).
 #show regulator_activator/1.
 #show regulator_inhibitor/1.
 #show node_regulator/2.
+
 
 %Optimize
 %1-Optimize for the minimum changes to regulators (highest priority)

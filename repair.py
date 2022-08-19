@@ -1,4 +1,4 @@
-import argparse, logging, clingo, time
+import argparse, logging, time
 from aux_scripts.repair_functions import *
 from aux_scripts.repair_prints import *
 
