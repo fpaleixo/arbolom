@@ -62,33 +62,57 @@ def generateInconsistentFunctions(model, inconsistencies, debug_mode=False, path
 #Purpose: Generates a function that is compatible with previously given observations, based on the obtained inconsistencies
 def generateFunctions(func, model, incst, upo, toggle_stable_state, toggle_sync, toggle_async, path_mode = False, enable_prints=False):
   if enable_prints: print("Calculating optimal repairs...")
-  clingo_args = ["0", f"-c compound={func}"]
-    
-  ctl = clingo.Control(arguments=clingo_args, logger= lambda a,b: None)
 
-  ctl.add("base", [], program=upo)
-
-  if path_mode:
-    ctl.load(model)
-    ctl.load(incst) 
-  else: 
-    ctl.add("base", [], program=model)
-    ctl.add("base", [], program=incst)
-
-  if toggle_stable_state:
-    ctl.load(repair_encoding_stable_path)
-  elif toggle_sync:
-    ctl.load(repair_encoding_sync_path)
-  elif toggle_async:
-    ctl.load(repair_encoding_async_path)
-  
-  ctl.ground([("base", [])])
+  node_number = 1
+  solution_found = False
+  no_timeouts = True
   functions = []
+  node_limit = 1
+  upo_program = ""
 
-  with ctl.solve(yield_=True) as handle:
-    for model in handle:
-      functions = str(model).split(" ")
+  if upo:
+    upo_program = upo[0]
+    node_limit = upo[1]
+
+  timeout_start = time.time()
+  while not solution_found and no_timeouts and node_number <= node_limit:
+    clingo_args = ["0", f"-c compound={func}", f"-c node_number={node_number}"]
+      
+    ctl = clingo.Control(arguments=clingo_args, logger= lambda a,b: None)
+
+    ctl.add("base", [], program=upo_program)
+
+    if path_mode:
+      ctl.load(model)
+      ctl.load(incst) 
+    else: 
+      ctl.add("base", [], program=model)
+      ctl.add("base", [], program=incst)
+
+    if toggle_stable_state:
+      ctl.load(repair_encoding_stable_path)
+    elif toggle_sync:
+      ctl.load(repair_encoding_sync_path)
+    elif toggle_async:
+      ctl.load(repair_encoding_async_path)
+    
+    ctl.ground([("base", [])])
+    functions = []
+
+    with ctl.solve(yield_=True) as handle:
+      for model in handle:
+        functions = str(model).split(" ")
+
+    if functions:
+      solution_found = True
+    elif time.time() - timeout_start > 300:
+      no_timeouts = False
+    else:
+      node_number += 1
   
+  if node_number > node_limit:
+    functions = "no_solution"
+
   if enable_prints: print("... Done.")
   if enable_prints: printStatistics(ctl.statistics)
   return functions
@@ -180,7 +204,8 @@ def generatePreviousObservations(func, inconsistencies, toggle_sync, toggle_asyn
 
 #Inputs: 
 # -prev_obs, a string containing all previous observations
-#Purpose: Returns all unique positive observations
+#Purpose: Returns a tuple with all unique positive observations,
+# and the total number of unique positive observations
 def processPreviousObservations(prev_obs, enable_prints=False):
 
   if not prev_obs:
@@ -242,4 +267,5 @@ def processPreviousObservations(prev_obs, enable_prints=False):
 
   end = time.time()
   if enable_prints: print(f"Python code time for unique positive observations: {end - start}s\n")
-  return output
+  total_upos = len(uniques_map.values())
+  return (output, total_upos)

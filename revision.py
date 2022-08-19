@@ -173,6 +173,7 @@ def checkConsistency(model, obsv):
 
 
 def repair(model, inconsistencies):
+  timed_out_functions = ""
   unrepaired_functions = ""
 
   incst_funcs = generateInconsistentFunctions(model, inconsistencies)
@@ -189,12 +190,13 @@ def repair(model, inconsistencies):
       functions = generateFunctions(func, model, inconsistencies, upo,
         toggle_stable_state, toggle_sync, toggle_async)
 
-      if not functions: unrepaired_functions += func + " "
+      if not functions: timed_out_functions += func + " "
+      if functions[0] == "no_solution": unrepaired_functions += func + " "
 
       if not benchmark_enabled: printRepairedLP(func, functions)
       if not benchmark_enabled: printFuncRepairEnd(func)
 
-  return unrepaired_functions
+  return timed_out_functions, unrepaired_functions
 
 
 def saveBenchmark(array):
@@ -253,15 +255,16 @@ for model in models:
     if not benchmark_enabled: print("Inconsistent model! \nRepairing...")
 
     # Third, if it is not, proceed with the repairs and print out the necessary ones.
-    unrepaired_functions = repair(model[0], inconsistencies)
+    timed_out_functions, unrepaired_functions = repair(model[0], inconsistencies)
 
-    if unrepaired_functions: final_state = "still inconsistent"
+    if timed_out_functions: final_state = "still inconsistent (timed out)"
+    elif unrepaired_functions: final_state = "still inconsistent (no solutions)"
     else: final_state = "repaired"
 
     if not benchmark_enabled and not unrepaired_functions: print(f"Applying the above repairs to model {model[1]} will render it consistent!\n")
 
   revision_end_time = time.time()
-  benchmark_array.append((model[1],final_state,str(revision_end_time-revision_start_time),unrepaired_functions))
+  benchmark_array.append((model[1],final_state,str(revision_end_time-revision_start_time),timed_out_functions + " " + unrepaired_functions))
 
 if benchmark_enabled:
   saveBenchmark(benchmark_array)

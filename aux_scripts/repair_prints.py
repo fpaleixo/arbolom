@@ -25,10 +25,12 @@ def printRepairedLP(inconsistent_func, result):
   nodes = {}
 
   if not result:
+    print("Timed out before determining solutions...")
+
+  elif result == "no_solution":
     print("No possible repairs found...")
 
   else:
-
     for atom in result:
       arguments = atom.split(')')[0].split('(')[1].split(',')
 
