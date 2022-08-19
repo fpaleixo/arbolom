@@ -241,6 +241,7 @@ benchmark_array = [("Model","Final State","Time Taken","Unrepairable Functions")
 for model in models:
   revision_start_time = time.time()
   final_state = "consistent"
+  timed_out_functions = ""
   unrepaired_functions = ""
 
   if bulk_enabled and not benchmark_enabled: print("Currently repairing model ", model[1])
