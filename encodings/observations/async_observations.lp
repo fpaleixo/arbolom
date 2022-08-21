@@ -76,7 +76,5 @@ distinct_experiments(E1,E2) :- observation(E1,T,C,S1), observation(E2,T,C,S2), E
 
 %Optimize
 %Whenever possible, it is desirable that the generated experiments are distinct
-%(experiments with the exact same observations don't make for very interesting
-%testing scenarios...)
 #maximize{1,E1,E2 : distinct_experiments(E1,E2)}.
 
