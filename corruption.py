@@ -1,6 +1,6 @@
 import os, sys, argparse, logging, glob, random, re
 from aux_scripts.common import *
-from aux_scripts.conversion_functions import addCompoundsToResult, addFunctionToResult, addRegulatorsToResult, convertModelToLP, getFunctionDict
+from aux_scripts.conversion_functions import convertModelToLP
 
 #Usage: $python corruption.py -f (FILENAME) -op (OPERATIONS) -(O)p (PROBABILITY) -s (SAVE_DIRECTORY)
 
