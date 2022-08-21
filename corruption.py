@@ -197,9 +197,19 @@ def parseArgs():
   global instance_number, convert_to_lp
 
   if filepath:
-    filename = os.path.basename(filepath)
-    read_folder = os.path.dirname(filepath)
-    write_folder = read_folder
+    
+    split_path = os.path.splitext(filepath)
+    model_extension = split_path[1]
+
+    if model_extension != ".bnet":
+      logger.error("Unrecognized model format. Only models written in "
+      +".bnet format are accepted.")
+      sys.exit()
+
+    else:
+      filename = os.path.basename(filepath)
+      read_folder = os.path.dirname(filepath)
+      write_folder = read_folder
 
   logger.debug("Filename is: "+ filename)
   logger.debug("Read folder is: "+ read_folder)
@@ -219,21 +229,25 @@ def parseArgs():
       f_toggle = True
       if f_p:
         f_chance = f_p
+    else: f_toggle = False
     
     if 'e' in operations:
       e_toggle = True
       if e_p:
         e_chance = e_p
+    else: e_toggle = False
 
     if 'r' in operations:
       r_toggle = True
       if r_p:
         r_chance = r_p
+    else: r_toggle = False
 
     if 'a' in operations:
       a_toggle = True
       if a_p:
         a_chance = a_p
+    else: a_toggle = False
 
     logger.debug("Obtained operations: " + operations)
 
