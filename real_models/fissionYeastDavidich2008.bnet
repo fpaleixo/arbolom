@@ -1,9 +1,9 @@
-cdc25,  (!cdc2_cdc13 & pp) | (!cdc25 & pp) | (!cdc2_cdc13 & !cdc25)
-cdc2_cdc13,  ste9 & rum1 & slp1
-cdc2_cdc13_a,  ste9 & rum1 & slp1 & wee1_mik1 & !cdc25
-pp,  !slp1
-rum1,  (cdc2_cdc13 & cdc2_cdc13_a & !rum1 & sk) | (cdc2_cdc13 & cdc2_cdc13_a & !pp & sk) | (cdc2_cdc13 & cdc2_cdc13_a & !pp & !rum1) | (cdc2_cdc13 & !pp & !rum1 & sk) | (cdc2_cdc13_a & !pp & !rum1 & sk)
-sk,  !start
-slp1,  !cdc2_cdc13_a
-ste9, (cdc2_cdc13 & cdc2_cdc13_a & !ste9 & sk) | (cdc2_cdc13 & cdc2_cdc13_a & !pp & sk) | (cdc2_cdc13 & cdc2_cdc13_a & !pp & !ste9) | (cdc2_cdc13 & !pp & !ste9 & sk) | (cdc2_cdc13_a & !pp & !ste9 & sk)
-wee1_mik1,  (cdc2_cdc13 & !wee1_mik1) | (cdc2_cdc13 & !pp) | (!pp & !wee1_mik1)
+cdc25,  (cdc2_cdc13 & !pp) | (cdc25 & !pp) | (cdc2_cdc13 & cdc25)
+cdc2_cdc13,  !ste9 & !rum1 & !slp1
+cdc2_cdc13_a,  !ste9 & !rum1 & !slp1 & !wee1_mik1 & cdc25
+pp,  slp1
+rum1,  (!cdc2_cdc13 & !cdc2_cdc13_a & rum1 & !sk) | (!cdc2_cdc13 & !cdc2_cdc13_a & pp & !sk) | (!cdc2_cdc13 & !cdc2_cdc13_a & pp & rum1) | (!cdc2_cdc13 & pp & rum1 & !sk) | (!cdc2_cdc13_a & pp & rum1 & !sk)
+sk,  start
+slp1,  cdc2_cdc13_a
+ste9, (!cdc2_cdc13 & !cdc2_cdc13_a & ste9 & !sk) | (!cdc2_cdc13 & !cdc2_cdc13_a & pp & !sk) | (!cdc2_cdc13 & !cdc2_cdc13_a & pp & ste9) | (!cdc2_cdc13 & pp & ste9 & !sk) | (!cdc2_cdc13_a & pp & ste9 & !sk)
+wee1_mik1,  (!cdc2_cdc13 & wee1_mik1) | (!cdc2_cdc13 & pp) | (pp & wee1_mik1)
