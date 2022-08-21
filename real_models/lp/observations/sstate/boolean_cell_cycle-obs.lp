@@ -1,0 +1,11 @@
+experiment(1).
+observation(1,cycb,0).
+observation(1,cyca,0).
+observation(1,cdc20,0).
+observation(1,ubch10,0).
+observation(1,cycd,0).
+observation(1,p27,1).
+observation(1,cyce,0).
+observation(1,rb,1).
+observation(1,cdh1,1).
+observation(1,e2f,0).
