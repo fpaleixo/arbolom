@@ -1,10 +1,11 @@
 import os, argparse, logging, time
+from genericpath import isdir
 from aux_scripts.consistency_functions import *
 from aux_scripts.conversion_functions import *
 from aux_scripts.repair_functions import *
 from aux_scripts.repair_prints import *
 
-#Usage: $python revision.py -f (FILENAME) -o (OBSERVATIONS) -stable -sync -async -bulk -benchmark
+#Usage: $python revision.py -f (FILENAME) -o (OBSERVATIONS) -stable -sync -async -bulk -benchmark (SAVE_PATH)
 #Optional flags:
 #-stable -> Performs repairs using stable state observations (default).
 #-sync -> Performs repairs using synchronous observations.
@@ -14,6 +15,7 @@ from aux_scripts.repair_prints import *
 #Variables:
 #FILENAME -> Path of file containing the BCF Boolean model written in .lp or .bnet format
 #OBSERVATIONS -> Path of file containing observations written in lp. 
+#SAVE_PATH -> Path of folder to save benchmark results to
 
 
 #-----Configs-----
@@ -23,7 +25,7 @@ iftv_debug_toggled = False
 #Model path
 model_path = None
 
-#Paths of encodings with inconsistencies
+#Paths of encodings with observations
 obsv_path = None
 
 #Flag that enables the revision of multiple models at once
@@ -39,19 +41,24 @@ bulk_enabled = False
 # which functions could not be repaired.
 benchmark_enabled = False
 
+benchmark_naming = False
+
+#Benchmark save path
+write_folder = "None"
+
 #Mode flags 
 toggle_stable_state = True
 toggle_sync = False
 toggle_async = False
 
-#Parser (will only be used if command-line usage is enabled above)
+#Parser
 parser = None
 args = None
 
 #Global logger (change logging.(LEVEL) to desired (LEVEL) )
 logging.basicConfig()
 global_logger = logging.getLogger("global")
-global_logger.setLevel(logging.DEBUG)
+global_logger.setLevel(logging.INFO)
 
 
 
@@ -72,11 +79,13 @@ def parseArgs():
   parser.add_argument("-sync", "--synchronous", action='store_true', help="Flag to check the consistency using synchronous observations (default is stable state).")
   parser.add_argument("-async", "--asynchronous", action='store_true', help="Flag to check the consistency using asynchronous observations (default is stable state).")
   parser.add_argument("-bulk", "--bulk", action='store_true', help="Enables the revision of multiple models at once. (Note: the path provided to -f must be the directory containing those models).")
-  parser.add_argument("-benchmark", "--benchmark", action='store_true', help="Enables benchmark mode.")
+  parser.add_argument("-benchmark", "--benchmark_save_folder", help="Enables benchmark mode, saving at the specified path.")
+  parser.add_argument("-benchmark_naming", "--benchmark_naming", action='store_true', help="Enables benchmark files to be saved with a more helpful name.")
   args = parser.parse_args()
 
-  global model_path, obsv_path, toggle_stable_state, toggle_sync, toggle_async
-  global bulk_enabled, benchmark_enabled
+  global model_path, obsv_path, write_folder
+  global toggle_stable_state, toggle_sync, toggle_async
+  global bulk_enabled, benchmark_enabled, benchmark_naming
 
   model_path = args.model_to_repair
   obsv_path = args.observations
@@ -88,13 +97,21 @@ def parseArgs():
   synchronous = args.synchronous
   asynchronous = args.asynchronous
   bulk = args.bulk
-  benchmark = args.benchmark
+  benchmark = args.benchmark_save_folder
 
   if bulk:
     bulk_enabled = bulk  
   
   if benchmark:
-    benchmark_enabled = benchmark  
+    benchmark_enabled = True
+    if isdir(benchmark):
+      write_folder = benchmark
+    else:
+      logger.info("Specified save location is not a valid directory. Saving in model directory instead.")
+      write_folder = os.path.dirname(model_path)
+
+  if args.benchmark_naming: 
+    benchmark_naming = True
 
   if not stable and not synchronous and not asynchronous:
     logger.info("Default mode: Stable State \U0001f6d1")
@@ -201,17 +218,27 @@ def saveBenchmark(array):
   logger = logging.getLogger("saveBenchmark")
   logger.setLevel(logging.INFO)
 
-  filename = ""
-  if toggle_stable_state:
-    filename = "stable_benchmark.txt"
-  elif toggle_sync:
-    filename = "sync_benchmark.txt"
+  filename = None
+  if benchmark_naming:
+    filename = os.path.split(os.path.split(model_path)[0])[1] + "-" + os.path.basename(os.path.normpath(obsv_path))
   else:
-    filename = "async_benchmark.txt"
+    filename = os.path.basename(os.path.normpath(model_path)) + "-" + os.path.basename(os.path.normpath(obsv_path))
 
-  save_path = os.path.join(os.path.dirname(model_path), filename)
-  if bulk_enabled:
-    save_path = os.path.join(model_path, filename)
+
+  if toggle_stable_state:
+    filename += "-stable_benchmark.csv"
+  elif toggle_sync:
+    filename += "-sync_benchmark.csv"
+  else:
+    filename += "-async_benchmark.csv"
+  
+  save_path = None
+  if write_folder:
+    save_path = os.path.join(write_folder, filename)
+  else:
+    save_path = os.path.join(os.path.dirname(model_path), filename)
+    if bulk_enabled:
+      save_path = os.path.join(model_path, filename)
 
   logger.debug("Save path: " + str(save_path))
 
