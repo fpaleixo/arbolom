@@ -22,18 +22,25 @@ Instructions and examples on how to run each script can be found in the [noteboo
 For quick testing, the models in the [simple_models](https://github.com/fpaleixo/arbolom/blob/main/simple_models) folder may be used. These are small, hand-made examples of hypothethical biological networks. Due to their compact nature, one can use them to perform quick tests with the scripts, or to manually verify the correctness of the results produced by said scripts.
 
 Generally, the models will be used in the following fashion:
-- One of the models is chosen to perform tests on. 
-- The `corruption.py` script can then be used to create a "wrong" version of this model.
-- `conversion.py` is ran on both models, to convert them to .lp format.
-- `gen_observations.py` is ran on the original .lp model, to generate observations that can be used to check the correctness of the wrong model.
-- `revision.py` is ran on the corrupted model alongisde the generated observations, to revise it. 
+1. One of the models is chosen to perform tests on; 
+2. The `corruption.py` script can then be used to create a "wrong" version of this model;
+3. `conversion.py` is ran on both models, to convert them to .lp format;
+4. `gen_observations.py` is ran on the original .lp model, to generate observations that can be used to check the correctness of the wrong model;
+5. `revision.py` is ran on the corrupted model alongisde the generated observations, to revise it. 
 
 Note: Alternatively, instead of using `revision.py`, `consistency_checking.py` can also be used on the inconsistent .lp model, alongside the observations generated from the original model. This script will tell you if the model is consistent with the given observations or not. In case it is not, the inconsistencies generated can then be given to `repair.py`, which will repair the inconsistent model (`revision.py` simply streamlines this process, doing it all at once).
 
 ## Benchmarking
-The files used for benchmarking can be found [here](https://drive.google.com/drive/folders/1DeJDOSd3RLMIvrcW1WNfT1u0_lEQsP__?usp=sharing). There is one folder containing the observations from the real world models, plus another 24 folders, one for each different configuration of corruptions applied to the original models.
+The files used for benchmarking can be found [here](https://drive.google.com/drive/folders/1DeJDOSd3RLMIvrcW1WNfT1u0_lEQsP__?usp=sharing). The folder is organised as follows:
+- There is one folder containing the original models;
+- There is another folder containing all the applied corruption configurations to the original models;
+- There is a folder with the observations obtained from the original models (the time-series observations were generated using the `gen_observations.py` script);
+- There is one last folder containing results obtained from the benchmarks.
 
-Results from benchmarking will also be displayed here, at a later date.
+Results from the benchmarks will also be displayed here, at a later date.
+
+## Dissertation
+The full document can be found [here](https://drive.google.com/file/d/1yZACpuRfHjQhUT-3nFDBANZrtGHtZ_XP/view?usp=sharing) (still being written!).
 
 ## Task Progress
 
