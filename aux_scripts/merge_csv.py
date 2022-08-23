@@ -41,8 +41,7 @@ parseArgs()
 for o_type in obsv_types:
   files = [f for f in glob.glob(os.path.join(csv_folder, "*.csv")) if o_type in f]
 
-  print(files)
   df = pd.concat(map(pd.read_csv, files), ignore_index=True)
-  df.to_csv(os.path.join(os.path.dirname(csv_folder),"Merged", csv_name + "-" + o_type + "-" + os.path.basename(os.path.dirname(csv_folder)) + "-merged.csv"))
-print("Done!")
+  df.to_csv(os.path.join(os.path.dirname(csv_folder),"Merged", csv_name + "-" + o_type + "-" + os.path.basename(os.path.dirname(csv_folder)) + "-merged.csv"), index=False)
+print("Done! Saved in 'Merged' folder.")
 
