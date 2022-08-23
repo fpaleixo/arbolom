@@ -121,19 +121,19 @@ def parseArgs():
     toggle_stable_state = True
     toggle_sync = False
     toggle_async = False
-    logger.info("Mode used: Stable State \U0001f6d1")
+    if not benchmark_naming: logger.info("Mode used: Stable State \U0001f6d1")
 
   elif synchronous:
     toggle_stable_state = False
     toggle_sync = True
     toggle_async = False
-    logger.info("Mode used: Synchronous \U0001f550")
+    if not benchmark_naming: logger.info("Mode used: Synchronous \U0001f550")
 
   elif asynchronous:
     toggle_stable_state = False
     toggle_sync = False
     toggle_async = True
-    logger.info("Mode used: Asynchronous \U0001f331")
+    if not benchmark_naming: logger.info("Mode used: Asynchronous \U0001f331")
   return
 
 
@@ -255,7 +255,7 @@ def saveBenchmark(array):
     f.write("\n")
   f.close()
 
-  logger.info("Saved benchmark to: " + str(save_path))
+  if not benchmark_naming: logger.info("Saved benchmark to: " + str(save_path))
 
 #-----Main-----
 parseArgs()

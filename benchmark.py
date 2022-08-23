@@ -46,7 +46,7 @@ args = None
 #Global logger (change logging.(LEVEL) to desired (LEVEL) )
 logging.basicConfig()
 global_logger = logging.getLogger("global")
-global_logger.setLevel(logging.DEBUG)
+global_logger.setLevel(logging.INFO)
 
 #-----Auxiliary Functions-----
 #---Argument parser---
@@ -153,9 +153,10 @@ parseArgs()
 
 revision_base_args = f"-bulk -benchmark_naming -benchmark {save_folder}"
 
-if toggle_stable_state: revision_base_args += " -stable"
-elif toggle_sync: revision_base_args += " -sync"
-elif toggle_async: revision_base_args += " -async"
+interaction_mode = None
+if toggle_stable_state: interaction_mode = "stable"
+elif toggle_sync: interaction_mode = "sync"
+elif toggle_async: interaction_mode = "async"
 
 configs_list = getConfigsList()
 obsv_list = getObsvList()
@@ -165,6 +166,26 @@ global_logger.debug(f"Obtained observations: {obsv_list}")
 
 current_observations = None
 current_config_directory = None
+current_obs_number = 0
+current_config_number = 0
 
-#for obsv in obsv_list:
-#subprocess.run(['python', 'revision.py', revision_base_args])
+for obsv in obsv_list:
+  current_observations = obsv
+  revision_obsv_args = f"-o {current_observations}"
+  current_obs_number += 1
+
+  for config in configs_list:
+    current_config_number += 1
+    current_config_directory = config
+    revision_model_args = f"-f {current_config_directory}"
+    
+    subprocess.run(['python', 'revision.py', 
+    '-f', current_config_directory,
+    '-o', current_observations,
+    f'-{interaction_mode}',
+    '-bulk', '-benchmark_naming','-benchmark', save_folder])
+    global_logger.info(f"Current progress: Obsv({current_obs_number}/{len(obsv_list)}) || Config({current_config_number}/{len(configs_list)})")
+  current_config_number = 0
+  
+global_logger.info("Done!")
+  
