@@ -1,4 +1,6 @@
+from genericpath import isdir
 import os, argparse, logging, time
+import subprocess
 from aux_scripts.consistency_functions import *
 from aux_scripts.conversion_functions import *
 from aux_scripts.repair_functions import *
@@ -77,7 +79,7 @@ def parseArgs():
   logger.debug("Obtained observations folder: " + obsv_path)
   logger.debug("Obtained save folder: " + save_folder)
 
-
+  model_name = args.model_name
   stable = args.stable_state
   synchronous = args.synchronous
   asynchronous = args.asynchronous
@@ -106,7 +108,63 @@ def parseArgs():
   return
 
 
+#-----Benchmark functions-----
+def getObsvList():
+
+  obsv_path_list = []
+
+  #For each file system entity inside the Observations folder
+  for obsv_model in os.listdir(obsv_path):
+
+    #If it is a folder containing the name of the model passed as argument
+    if os.path.isdir(os.path.join(obsv_path, obsv_model)) and model_name in obsv_model:
+
+      #For each folder containing the observations for the interaction types inside the folder with the name of the model
+      for interaction_type in os.listdir(os.path.join(obsv_path, obsv_model)):
+        #If the folder name matches the chosen interaction type
+        if toggle_stable_state and "stable" == interaction_type or \
+          toggle_sync and "sync" == interaction_type or \
+          toggle_async and "async" == interaction_type:
+
+          #Then place all the paths for the observations within inside the list
+          for obsv in os.listdir(os.path.join(obsv_path, obsv_model,interaction_type)):
+            obsv_path_list.append(os.path.join(obsv_path, obsv_model,interaction_type,obsv))
+          return obsv_path_list
+
+def getConfigsList():
+
+  configs_path_list = []
+
+  #For each file system entity inside the Configurations folder
+  for config_folder in os.listdir(config_path):
+    #If it is a folder
+    if os.path.isdir(os.path.join(config_path, config_folder)):
+
+      #For each model folder within that folder
+      for model_folder in os.listdir(os.path.join(config_path, config_folder)):
+        #If it matches the name of the model passed as an argument, add it to the list
+        if model_name in model_folder:
+          configs_path_list.append(os.path.join(config_path, config_folder, model_folder))
+  
+  return configs_path_list
+
 #-----Main-----
 parseArgs()
 
+revision_base_args = f"-bulk -benchmark_naming -benchmark {save_folder}"
 
+if toggle_stable_state: revision_base_args += " -stable"
+elif toggle_sync: revision_base_args += " -sync"
+elif toggle_async: revision_base_args += " -async"
+
+configs_list = getConfigsList()
+obsv_list = getObsvList()
+
+global_logger.debug(f"Obtained config models: {configs_list}")
+global_logger.debug(f"Obtained observations: {obsv_list}")
+
+current_observations = None
+current_config_directory = None
+
+#for obsv in obsv_list:
+#subprocess.run(['python', 'revision.py', revision_base_args])
