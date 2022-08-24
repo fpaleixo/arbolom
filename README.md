@@ -37,7 +37,7 @@ The files used for benchmarking can be found [here](https://drive.google.com/dri
 - There is a folder with the observations obtained from the original models (the time-series observations were generated using the `gen_observations.py` script);
 - There is one last folder containing results obtained from the benchmarks.
 
-Results from the benchmarks will also be displayed here, at a later date.
+Results from the benchmarks can also be seen [here](https://github.com/fpaleixo/arbolom/blob/main/benchmark_results/benchmark_results.pdf).
 
 ## Dissertation
 The full document can be found [here](https://drive.google.com/file/d/1yZACpuRfHjQhUT-3nFDBANZrtGHtZ_XP/view?usp=sharing) (still being written!).
