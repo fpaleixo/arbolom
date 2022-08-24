@@ -32,9 +32,10 @@ def parseArgs():
   requiredNamed.add_argument("-f", "--csv_folder", help="Path of folder with the .csv files", required=True)
   args = parser.parse_args()
 
-  global csv_folder
+  global csv_folder, csv_name
 
   csv_folder = args.csv_folder
+  csv_name = os.path.basename(os.path.dirname(os.path.dirname(csv_folder)))
 
 #-----Main-----
 parseArgs()
