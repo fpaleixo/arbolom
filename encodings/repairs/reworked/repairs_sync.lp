@@ -77,7 +77,7 @@ extra_regulator(C) :- not original_regulator(C), present_regulator(C).
 sign_changed(C) :- regulates(C,compound,0), inhibitor(C).
 sign_changed(C) :- regulates(C,compound,1), activator(C).
 
-%*--Identifying original node number changes--*%
+%*--Identifying original node number changes (minimization #3)--*%
 node_number_changes(CH) :- NODE_NO = #count{N : node_ID(N)}, function(compound,TERM_NO), CH = |NODE_NO - TERM_NO|.
 
 %*--Identifying node format changes (minimization #4)--*%

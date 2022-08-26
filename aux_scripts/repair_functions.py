@@ -1,5 +1,4 @@
-import time
-import clingo
+import time, clingo, re
 from aux_scripts.repair_prints import printStatistics
 
 #Path of the encodings to obtain inconsistent functions
@@ -11,7 +10,8 @@ previous_observations_async_path = "encodings/repairs/auxiliary/previous_observa
 
 #Paths of the encodings that generating functions
 repair_encoding_stable_path = "encodings/repairs/repairs_stable.lp"
-repair_encoding_sync_path = "encodings/repairs/repairs_sync.lp"
+# TODO dont forge this repair_encoding_sync_path = "encodings/repairs/repairs_sync.lp"
+repair_encoding_sync_path = "encodings/repairs/reworked/repairs_sync.lp"
 repair_encoding_async_path = "encodings/repairs/repairs_async.lp"
 
 
@@ -49,6 +49,7 @@ def generateInconsistentFunctions(model, inconsistencies, debug_mode=False, path
   if enable_prints: printStatistics(ctl.statistics)
   return iftv
 
+'''
 #Inputs:
 # func - the name of the inconsistent function
 # model - the model to revise
@@ -116,6 +117,94 @@ def generateFunctions(func, model, incst, upo, toggle_stable_state, toggle_sync,
   if enable_prints: print("... Done.")
   if enable_prints: printStatistics(ctl.statistics)
   return functions
+'''
+
+#Inputs:
+# func - the name of the inconsistent function
+# model - the model to revise
+# incst - the inconsistencies obtained from consistency checking
+# upo - unique positive observations that are obtained from processPreviousObservations
+# toggle_stable_state - flag that enables stable state interaction
+# toggle_sync - flag that enables synchronous interaction
+# toggle_async - flag that enables asynchronous interaction
+# path_mode - flag that enables loading the model and inconsistencies from a file, instead of a string
+# enable_prints - enables additional prints
+#Purpose: Generates a function that is compatible with previously given observations, based on the obtained inconsistencies
+def generateFunctions(func, model, incst, upo, toggle_stable_state, toggle_sync, toggle_async, path_mode = False, enable_prints=False):
+  if enable_prints: print("Calculating repairs...")
+
+  solution_found = False
+  no_timeouts = True
+  functions = []
+  upo_program = ""
+  if upo : upo_program = upo[0]
+
+  max_nodes, node_limit = determineMaxNodesAndLimit(func,model,upo,path_mode)
+
+  timeout_start = time.time()
+  while not solution_found and no_timeouts and max_nodes <= node_limit:
+    clingo_args = ["0", f"-c compound={func}", f"-c max_node_number={max_nodes}"]
+      
+    ctl = clingo.Control(arguments=clingo_args, logger= lambda a,b: None)
+
+    ctl.add("base", [], program=upo_program)
+
+    if path_mode:
+      ctl.load(model)
+      ctl.load(incst) 
+    else: 
+      ctl.add("base", [], program=model)
+      ctl.add("base", [], program=incst)
+
+    if toggle_stable_state:
+      ctl.load(repair_encoding_stable_path)
+    elif toggle_sync:
+      ctl.load(repair_encoding_sync_path)
+    elif toggle_async:
+      ctl.load(repair_encoding_async_path)
+    
+    ctl.ground([("base", [])])
+    functions = []
+
+    with ctl.solve(yield_=True) as handle:
+      for model in handle:
+        functions = str(model).split(" ")
+
+    if functions:
+      solution_found = True
+    elif time.time() - timeout_start > 300:
+      no_timeouts = False
+    else:
+      max_nodes += 1
+  
+  if max_nodes > node_limit:
+    functions = "no_solution"
+
+  if enable_prints: print("... Done.")
+  if enable_prints: printStatistics(ctl.statistics)
+  return functions
+
+def determineMaxNodesAndLimit(func,model,upo,path_mode):
+  max_nodes = None
+  node_limit = None
+  original_nodes = None
+
+  if not upo: node_limit = float('inf')
+  else: node_limit = upo[1]
+
+  f = open(model, "r")
+  lines = f.readlines()
+  for line in lines:
+    if f"function({func}" in line:
+      original_nodes = int(line.split(',')[1].split(')')[0])
+      break
+
+  max_nodes = original_nodes * 2
+  if upo:
+    if max_nodes > upo[1]:
+      max_nodes = upo[1]
+
+  return max_nodes, node_limit
 
 
 
