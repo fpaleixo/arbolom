@@ -192,12 +192,16 @@ def determineMaxNodesAndLimit(func,model,upo,path_mode):
   if not upo: node_limit = float('inf')
   else: node_limit = upo[1]
 
-  f = open(model, "r")
-  lines = f.readlines()
-  for line in lines:
-    if f"function({func}" in line:
-      original_nodes = int(line.split(',')[1].split(')')[0])
-      break
+  if path_mode:
+    f = open(model, "r")
+    lines = f.readlines()
+    for line in lines:
+      if f"function({func}" in line:
+        original_nodes = int(line.split(',')[1].split(')')[0])
+        break
+    f.close()
+  else:
+    original_nodes = int(model.split(f"function({func},")[1].split(')')[0])
 
   max_nodes = original_nodes * 2
   if upo:
