@@ -119,6 +119,13 @@ regulator_inhibitor(C) :- node_regulator(N,C), inhibitor(C).
 #show regulator_inhibitor/1.
 #show node_regulator/2.
 
+#show missing_regulator/1.
+#show extra_regulator/1.
+#show sign_changed/1.
+#show node_number_changes/1.
+#show missing_node_regulator/2.
+#show extra_node_regulator/2.
+
 
 %Optimize
 %1-Optimize for the minimum changes to regulators (highest priority)

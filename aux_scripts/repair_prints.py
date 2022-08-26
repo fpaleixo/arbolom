@@ -24,6 +24,13 @@ def printRepairedLP(inconsistent_func, result):
   node_ID_map = {} 
   nodes = {}
 
+  missing_regulator_no = 0
+  extra_regulator_no = 0
+  sign_change_no = 0
+  node_number_change_no = 0
+  missing_node_regulator_no = 0
+  extra_node_regulator_no = 0
+
   if result =="timed_out":
     print("Timed out before determining consistent solutions...")
 
@@ -34,13 +41,13 @@ def printRepairedLP(inconsistent_func, result):
     for atom in result:
       arguments = atom.split(')')[0].split('(')[1].split(',')
 
-      if "activator" in atom:
+      if "regulator_activator" in atom:
         activators += f"regulates({arguments[0]}, {inconsistent_func}, 0).\n"
       
-      elif "inhibitor" in atom:
+      elif "regulator_inhibitor" in atom:
         inhibitors += f"regulates({arguments[0]}, {inconsistent_func}, 1).\n"
 
-      elif "regulator" in atom:
+      elif "node_regulator" in atom:
         unsorted_node_ID = arguments[0]
         regulator = arguments[1]
 
@@ -55,6 +62,24 @@ def printRepairedLP(inconsistent_func, result):
           nodes[node_ID].append(regulator)
         else:
           nodes[node_ID] = [regulator]
+      
+      elif "missing_regulator":
+        missing_regulator_no += 1
+
+      elif "extra_regulator":
+        extra_regulator_no += 1
+
+      elif "sign_changed":
+        sign_change_no += 1
+
+      elif "node_number_changes":
+        node_number_change_no = arguments[0]
+
+      elif "missing_node_regulator":
+        missing_node_regulator_no += 1
+      
+      elif "extra_node_regulator":
+        extra_node_regulator_no +=1
 
     result = f"%Regulators of {inconsistent_func}\n" + activators + inhibitors +"\n"
     result += f"%Regulatory function of {inconsistent_func}\nfunction({inconsistent_func}, {len(nodes.keys())}).\n"
@@ -68,6 +93,13 @@ def printRepairedLP(inconsistent_func, result):
     print("\033[1;32mRepairs: \033[0;37;40m")
 
     print(result)
+
+    printChanges(missing_regulator_no, extra_regulator_no, sign_change_no,
+      node_number_change_no, missing_node_regulator_no, extra_node_regulator_no)
+
+def printChanges(missing_regulator_no, extra_regulator_no, sign_change_no,
+      node_number_change_no, missing_node_regulator_no, extra_node_regulator_no):
+  print("TODO")
 
 #Inputs: The stats dictionary returned from clingo
 def printStatistics(stats_dict):
