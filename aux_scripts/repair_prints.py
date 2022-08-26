@@ -24,8 +24,8 @@ def printRepairedLP(inconsistent_func, result):
   node_ID_map = {} 
   nodes = {}
 
-  if not result:
-    print("Timed out before determining solutions...")
+  if result =="timed_out":
+    print("Timed out before determining consistent solutions...")
 
   elif result == "no_solution":
     print("No possible repairs found...")

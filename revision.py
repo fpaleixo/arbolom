@@ -205,8 +205,8 @@ def repair(model, inconsistencies):
       functions = generateFunctions(func, model, inconsistencies, upo,
         toggle_stable_state, toggle_sync, toggle_async)
 
-      if not functions: timed_out_functions += func + " "
-      if functions[0] == "no_solution": unrepaired_functions += func + " "
+      if functions == "timed_out": timed_out_functions += func + " "
+      if functions == "no_solution": unrepaired_functions += func + " "
 
       if not benchmark_enabled: printRepairedLP(func, functions)
       if not benchmark_enabled: printFuncRepairEnd(func)

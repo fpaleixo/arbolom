@@ -10,9 +10,11 @@ previous_observations_async_path = "encodings/repairs/auxiliary/previous_observa
 
 #Paths of the encodings that generating functions
 repair_encoding_stable_path = "encodings/repairs/repairs_stable.lp"
-# TODO dont forge this repair_encoding_sync_path = "encodings/repairs/repairs_sync.lp"
 repair_encoding_sync_path = "encodings/repairs/reworked/repairs_sync.lp"
 repair_encoding_async_path = "encodings/repairs/repairs_async.lp"
+
+#Timeout for function repair
+repair_timeout = 300
 
 
 #-----Functions that solve LPs with clingo-----
@@ -166,19 +168,22 @@ def generateFunctions(func, model, incst, upo, toggle_stable_state, toggle_sync,
     ctl.ground([("base", [])])
     functions = []
 
-    with ctl.solve(yield_=True) as handle:
-      for model in handle:
-        functions = str(model).split(" ")
+    def on_model(m):
+      nonlocal functions
+      functions = str(m).split(" ")
 
-    if functions:
-      solution_found = True
-    elif time.time() - timeout_start > 300:
-      no_timeouts = False
-    else:
-      max_nodes += 1
+    with ctl.solve(on_model=on_model, async_=True) as handle:
+      no_timeouts = handle.wait(repair_timeout - (time.time() - timeout_start))
+      handle.cancel()
+
+    if no_timeouts:
+      if functions:
+        solution_found = True
+      else:
+        max_nodes += 1
   
-  if max_nodes > node_limit:
-    functions = "no_solution"
+  if not no_timeouts: functions = "timed_out"
+  if max_nodes > node_limit: functions = "no_solution"
 
   if enable_prints: print("... Done.")
   if enable_prints: printStatistics(ctl.statistics)
