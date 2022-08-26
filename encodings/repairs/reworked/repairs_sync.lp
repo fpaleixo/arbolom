@@ -77,16 +77,19 @@ extra_regulator(C) :- not original_regulator(C), present_regulator(C).
 sign_changed(C) :- regulates(C,compound,0), inhibitor(C).
 sign_changed(C) :- regulates(C,compound,1), activator(C).
 
+%*--Identifying original node number changes--*%
+node_number_changes(CH) :- NODE_NO = #count{N : node_ID(N)}, function(compound,TERM_NO), CH = |NODE_NO - TERM_NO|.
+
 %*--Identifying node format changes (minimization #4)--*%
 %If we have a regulator R in term ID of compound's original function, but our
 %solution does not have regulator R in the node with the same ID, then that node
 %has a missing regulator
-missing_node_regulator(ID,R) :- term(compound, ID, R), not node_regulator(ID, R).
+missing_node_regulator(ID,R) :- term(compound, ID, R), node_ID(ID), not node_regulator(ID, R).
 
 %If we have a regulator R in node ID, but our original function does not have 
 %regulator R in the term with the same ID, then that node has an
 %extra regulator
-extra_node_regulator(ID,R) :- node_regulator(ID, R), not term(compound, ID, R).
+extra_node_regulator(ID,R) :- node_regulator(ID, R), term(compound, ID, _), not term(compound, ID, R).
 
 
 %Test
@@ -125,8 +128,8 @@ regulator_inhibitor(C) :- node_regulator(N,C), inhibitor(C).
 %2-Optimize for the minimum changes to regulator signs 
 #minimize{1@3,C : sign_changed(C)}.
 
-%3-Optimize for minimum changes to node number
-#minimize{1@2,N : node_ID(N)}
+%3-Optimize for minimum changes to original node number
+#minimize{CH@2,CH : node_number_changes(CH)}.
 
 %4-Optimize for minimum changes to node format (lowest priority)
 #minimize{1@1,N,C : missing_node_regulator(N,C)}.
