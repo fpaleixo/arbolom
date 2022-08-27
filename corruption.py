@@ -95,7 +95,7 @@ if(cmd_enabled):
 #Global logger (change logging.(LEVEL) to desired (LEVEL) )
 logging.basicConfig()
 global_logger = logging.getLogger("global")
-global_logger.setLevel(logging.INFO)
+global_logger.setLevel(logging.DEBUG)
 
 #Random seed (seed can be manually fixed to replicate results)
 seed = random.randrange(sys.maxsize)
@@ -174,6 +174,28 @@ def checkLiterals(implicants, literals):
     output.append(missing_literals_implicant)
 
   return output
+
+
+def getUnremovableCompoundsMap(func_dict):
+  uc_map = {}
+
+  all_compounds = getAllCompounds(func_dict)
+
+  for compound in all_compounds:
+    if compound in func_dict.keys():
+      #print("KEY SKIP")
+      continue 
+    else:
+      uc_map[compound] = 0
+
+      for c in all_compounds:
+        if c in func_dict.keys():
+          if compound in getRegulatorsOf(c, func_dict[c]):
+            uc_map[compound] += 1
+
+      #print(f"{compound} added to uc map with value {uc_map[compound]}")
+  return uc_map    
+
 
 
 #Purpose: Parses the arguments for which operations are to be applied and 
@@ -449,44 +471,70 @@ def edgeAdd(func_dict, chance):
 #Inputs: A list of implicants, and the chance of removing an edge (regulator).
 #Purpose: For all literals in a regulatory function, roll the die and see 
 # if the respective edge is removed or not.
-def edgeRemove(implicants, chance):
+def edgeRemove(func_dict, chance):
   logger = logging.getLogger("edge_remove")
-  logger.setLevel(logging.INFO)
+  logger.setLevel(logging.DEBUG)
 
-  output = implicants.copy()
-  changed_input = []
+  #original keys are copied to preserve key ordering
+  final_dict = dict.fromkeys(func_dict.keys(),[]) 
+  changed = set()
 
-  literals = getAllLiterals(implicants)
+  unremovable_compounds = getUnremovableCompoundsMap(func_dict)  
 
-  for l in literals:
-    roll = rng.random()
-    logger.debug("Rolled: " + str(roll))
+  for c in func_dict.keys():
+    c_implicants = func_dict.get(c,[])
+    literals = getAllLiterals(c_implicants)
+    output = c_implicants.copy()
 
-    if(roll <= chance):
-      logger.debug("Removing regulator " + l)
-      changed_input.append(l)
+    for l in literals:
+      compound = l
+      if l[0] == '!':
+        compound = l[1:]
 
-      for i in range(0, len(implicants)): #For each implicant
+      #print("LITERAL:" ,l)
+      if compound in unremovable_compounds:
+        if unremovable_compounds[compound] <= 1:
+          #print("SKIPPED")
+          continue
 
-        #Start by seeing if literal to remove is one of the middle terms in 
-        # the conjunction
-        replaced = output[i].replace("&" + l + "&", '&') 
-        if replaced == output[i]: 
-          #If it wasn't, then check if the literal to remove is the last term 
-          # of a conjunction
-          replaced = re.sub(r'&{}\b'.format(l), '', output[i]) 
-          if replaced == output[i]:
-            #If it wasn't, then check to see if it is the first term of 
-            # a conjunction
-            replaced = output[i].replace(l + "&", '') 
-            if(replaced == output[i]):
-              #If it is neither, then the literal occurs alone and can 
-              # be removed without leaving behind a trailing '&'
-              replaced = re.sub(r'\b{}\b'.format(l), '', output[i]) 
-        output[i] = replaced
+      roll = rng.random()
+      logger.debug("Rolled: " + str(roll))
 
-  output = primesOnly(output)[1]
-  return (changed_input, output)
+      if(roll <= chance):
+        logger.debug("Removing regulator " + l)
+        
+        if compound in unremovable_compounds:
+          unremovable_compounds[compound] -= 1
+          #print("DECREASED OCCURENCES OF ", compound)
+
+        changed.add(c)
+
+        #print("IMPLICANTS:", c_implicants)
+        #print("OUTPUT BEFORE:", output)
+
+        #print(len(c_implicants))
+        for i in range(0, len(output)): #For each implicant
+          #print(i)
+          #Start by seeing if literal to remove is one of the middle terms in 
+          # the conjunction
+          replaced = output[i].replace("&" + l + "&", '&') 
+          if replaced == output[i]: 
+            #If it wasn't, then check if the literal to remove is the last term 
+            # of a conjunction
+            replaced = re.sub(r'&{}\b'.format(l), '', output[i]) 
+            if replaced == output[i]:
+              #If it wasn't, then check to see if it is the first term of 
+              # a conjunction
+              replaced = output[i].replace(l + "&", '') 
+              if(replaced == output[i]):
+                #If it is neither, then the literal occurs alone and can 
+                # be removed without leaving behind a trailing '&'
+                replaced = re.sub(r'\b{}\b'.format(l), '', output[i]) 
+          output[i] = replaced
+
+        output = primesOnly(output)[1]
+        final_dict[c] = output
+  return (changed, final_dict)
 
 
 #Inputs: A list of implicants, and the chance of changing an edge's sign.
@@ -555,7 +603,9 @@ for fname in glob.glob(os.path.join(read_folder, filename)):
         global_logger.debug("Implicants of "+full[0]+": "+str(implicants))
 
         #each compound is a key; the value is the corresponding list of prime implicants
-        func_dict[full[0]] = implicants  
+        func_dict[full[0]] = implicants
+
+        
 
         if(f_toggle):
           change = funcChange(implicants, f_chance)
@@ -581,21 +631,20 @@ for fname in glob.glob(os.path.join(read_folder, filename)):
           else:
             global_logger.debug("("+full[0]+") " + "No signs flipped")
 
-        if(r_toggle):
-          removed_edges = edgeRemove(implicants, r_chance)
+        final_dict[full[0]] = implicants #Update final corrupted model
+      
+      if(r_toggle):
+          removed_edges = edgeRemove(final_dict, r_chance)
 
-          if(len(removed_edges[0]) > 0):
-            global_logger.debug("("+full[0]+") " + "Removed edges from " + 
+          if(removed_edges[0]):
+            global_logger.debug("Removed edges from compound(s)" + 
             str(removed_edges[0]) + 
-            ". New implicants: "+str(removed_edges[1]))
-            implicants = removed_edges[1]
+            ". New functions: "+str(removed_edges[1]))
+            final_dict = removed_edges[1]
             r_effect = True
 
           else:
-            global_logger.debug("("+full[0]+") " + "No edges removed")
-
-        final_dict[full[0]] = implicants #Update final corrupted model
-      
+            global_logger.debug("No edges removed")
       
       if(a_toggle):
         added_edges = edgeAdd(final_dict, a_chance)
