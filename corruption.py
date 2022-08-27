@@ -95,7 +95,7 @@ if(cmd_enabled):
 #Global logger (change logging.(LEVEL) to desired (LEVEL) )
 logging.basicConfig()
 global_logger = logging.getLogger("global")
-global_logger.setLevel(logging.DEBUG)
+global_logger.setLevel(logging.INFO)
 
 #Random seed (seed can be manually fixed to replicate results)
 seed = random.randrange(sys.maxsize)
@@ -177,13 +177,15 @@ def checkLiterals(implicants, literals):
 
 
 def getUnremovableCompoundsMap(func_dict):
+  logger = logging.getLogger("get_unremovables_map")
+  logger.setLevel(logging.INFO)
   uc_map = {}
 
   all_compounds = getAllCompounds(func_dict)
 
   for compound in all_compounds:
     if compound in func_dict.keys():
-      #print("KEY SKIP")
+      logger.debug(f"Skipped {compound} because it has a function")
       continue 
     else:
       uc_map[compound] = 0
@@ -193,7 +195,7 @@ def getUnremovableCompoundsMap(func_dict):
           if compound in getRegulatorsOf(c, func_dict[c]):
             uc_map[compound] += 1
 
-      #print(f"{compound} added to uc map with value {uc_map[compound]}")
+      logger.debug(f"{compound} added to uc map with value {uc_map[compound]}")
   return uc_map    
 
 
@@ -473,7 +475,7 @@ def edgeAdd(func_dict, chance):
 # if the respective edge is removed or not.
 def edgeRemove(func_dict, chance):
   logger = logging.getLogger("edge_remove")
-  logger.setLevel(logging.DEBUG)
+  logger.setLevel(logging.INFO)
 
   #original keys are copied to preserve key ordering
   final_dict = dict.fromkeys(func_dict.keys(),[]) 
@@ -486,35 +488,33 @@ def edgeRemove(func_dict, chance):
     literals = getAllLiterals(c_implicants)
     output = c_implicants.copy()
 
+    logger.debug(f"Currently removing regulators of {c}")
     for l in literals:
       compound = l
       if l[0] == '!':
         compound = l[1:]
 
-      #print("LITERAL:" ,l)
       if compound in unremovable_compounds:
         if unremovable_compounds[compound] <= 1:
-          #print("SKIPPED")
+          logger.debug(f"Skipped {compound} because map value was {unremovable_compounds[compound]}")
+          final_dict[c] = output
           continue
 
       roll = rng.random()
       logger.debug("Rolled: " + str(roll))
 
       if(roll <= chance):
-        logger.debug("Removing regulator " + l)
+        logger.debug("Removing " + l)
         
         if compound in unremovable_compounds:
           unremovable_compounds[compound] -= 1
-          #print("DECREASED OCCURENCES OF ", compound)
+          logger.debug("Decreased unremovable map counter for {compound}, now at {unremovable_compounds[compound]} ")
 
         changed.add(c)
 
-        #print("IMPLICANTS:", c_implicants)
-        #print("OUTPUT BEFORE:", output)
+        logger.debug(f"Implicants before: {output}")
 
-        #print(len(c_implicants))
         for i in range(0, len(output)): #For each implicant
-          #print(i)
           #Start by seeing if literal to remove is one of the middle terms in 
           # the conjunction
           replaced = output[i].replace("&" + l + "&", '&') 
@@ -526,14 +526,16 @@ def edgeRemove(func_dict, chance):
               #If it wasn't, then check to see if it is the first term of 
               # a conjunction
               replaced = output[i].replace(l + "&", '') 
-              if(replaced == output[i]):
+              if replaced == output[i]:
                 #If it is neither, then the literal occurs alone and can 
                 # be removed without leaving behind a trailing '&'
-                replaced = re.sub(r'\b{}\b'.format(l), '', output[i]) 
+                if replaced == output[i] == l:
+                  replaced = ''
           output[i] = replaced
-
+        
         output = primesOnly(output)[1]
-        final_dict[c] = output
+        logger.debug(f"Implicants after: {output}")
+    final_dict[c] = output
   return (changed, final_dict)
 
 
