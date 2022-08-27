@@ -35,10 +35,11 @@ def printRepairedLP(inconsistent_func, result):
     print("Timed out before determining consistent solutions...")
 
   elif result == "no_solution":
-    print("No possible repairs found...")
+    print("No possible repairs exist...")
 
   else:
     for atom in result:
+      
       arguments = atom.split(')')[0].split('(')[1].split(',')
 
       if "regulator_activator" in atom:
@@ -46,22 +47,6 @@ def printRepairedLP(inconsistent_func, result):
       
       elif "regulator_inhibitor" in atom:
         inhibitors += f"regulates({arguments[0]}, {inconsistent_func}, 1).\n"
-
-      elif "node_regulator" in atom:
-        unsorted_node_ID = arguments[0]
-        regulator = arguments[1]
-
-        #Makes sure nodes are outputted using ordered IDs
-        if unsorted_node_ID not in node_ID_map.keys():
-          node_ID_map[unsorted_node_ID] = node_max_ID
-          node_max_ID += 1
-
-        node_ID = node_ID_map[unsorted_node_ID]
-
-        if node_ID in nodes:
-          nodes[node_ID].append(regulator)
-        else:
-          nodes[node_ID] = [regulator]
       
       elif "missing_regulator" in atom:
         missing_regulator_no += 1
@@ -80,6 +65,22 @@ def printRepairedLP(inconsistent_func, result):
       
       elif "extra_node_regulator" in atom:
         extra_node_regulator_no += 1
+
+      elif "node_regulator" in atom:
+        unsorted_node_ID = arguments[0]
+        regulator = arguments[1]
+
+        #Makes sure nodes are outputted using ordered IDs
+        if unsorted_node_ID not in node_ID_map.keys():
+          node_ID_map[unsorted_node_ID] = node_max_ID
+          node_max_ID += 1
+
+        node_ID = node_ID_map[unsorted_node_ID]
+
+        if node_ID in nodes:
+          nodes[node_ID].append(regulator)
+        else:
+          nodes[node_ID] = [regulator]
 
     result = f"%Regulators of {inconsistent_func}\n" + activators + inhibitors +"\n"
     result += f"%Regulatory function of {inconsistent_func}\nfunction({inconsistent_func}, {len(nodes.keys())}).\n"
