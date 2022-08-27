@@ -63,23 +63,23 @@ def printRepairedLP(inconsistent_func, result):
         else:
           nodes[node_ID] = [regulator]
       
-      elif "missing_regulator":
+      elif "missing_regulator" in atom:
         missing_regulator_no += 1
 
-      elif "extra_regulator":
+      elif "extra_regulator" in atom:
         extra_regulator_no += 1
 
-      elif "sign_changed":
+      elif "sign_changed" in atom:
         sign_change_no += 1
 
-      elif "node_number_changes":
+      elif "node_number_changes" in atom:
         node_number_change_no = arguments[0]
 
-      elif "missing_node_regulator":
+      elif "missing_node_regulator" in atom:
         missing_node_regulator_no += 1
       
-      elif "extra_node_regulator":
-        extra_node_regulator_no +=1
+      elif "extra_node_regulator" in atom:
+        extra_node_regulator_no += 1
 
     result = f"%Regulators of {inconsistent_func}\n" + activators + inhibitors +"\n"
     result += f"%Regulatory function of {inconsistent_func}\nfunction({inconsistent_func}, {len(nodes.keys())}).\n"
@@ -99,7 +99,13 @@ def printRepairedLP(inconsistent_func, result):
 
 def printChanges(missing_regulator_no, extra_regulator_no, sign_change_no,
       node_number_change_no, missing_node_regulator_no, extra_node_regulator_no):
-  print("TODO")
+  print("\033[1;32mNumber of repairs of each type: \033[0;37;40m")
+  print("Removed regulators - ", missing_regulator_no)
+  print("Added regulators - ", extra_regulator_no)
+  print("Changed regulator signs - ", sign_change_no)
+  print("Node number variation (|original node number - final node number|) - ", node_number_change_no)
+  print("Total regulators removed from nodes - ", missing_node_regulator_no)
+  print("Total regulators added to nodes - ", extra_node_regulator_no)
 
 #Inputs: The stats dictionary returned from clingo
 def printStatistics(stats_dict):
