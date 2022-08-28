@@ -326,12 +326,11 @@ def saveBenchmark(array):
   f = open(save_path, 'w')
 
   for line in array:
-    for column in line:
-      f.write(str(column))
+    for column_idx in range(0,len(line)):
+      f.write(str(line[column_idx]))
 
-      if (column != line[-1]):
-        if not (column == line[-2] and line[-1] == ""):
-          f.write(",\t")
+      if (column_idx != len(line)-1):
+        f.write(",\t")
        
     f.write("\n")
   f.close()
