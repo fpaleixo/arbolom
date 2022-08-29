@@ -200,6 +200,8 @@ def initRepairStatsMap():
   repair_stats_map[AVG_MISSING_REGULATORS] = 0
   repair_stats_map[NUM_FUNC_CHANGED_SIGN] = 0
   repair_stats_map[AVG_CHANGED_SIGN] = 0
+  repair_stats_map[NUM_FUNC_ALTERED_NUMBER] = 0
+  repair_stats_map[AVG_ALTERED_NUMBER] = 0
   repair_stats_map[NUM_FUNC_ALTERED_FORMAT] = 0
   repair_stats_map[AVG_ALTERED_FORMAT] = 0
   return repair_stats_map
@@ -209,6 +211,7 @@ def processFunctionRepairStats(functions, repair_stats):
   counted_extra_reg = False
   counted_missing_reg = False
   counted_sign_change = False
+  counted_altered_num = False
   counted_altered_form = False
 
   for atom in functions:
@@ -233,10 +236,11 @@ def processFunctionRepairStats(functions, repair_stats):
 
       elif "node_number_changes" in atom:
         node_no_variation = atom.split(')')[0].split('(')[1]
-        if not counted_altered_form:
-          repair_stats[NUM_FUNC_ALTERED_FORMAT] += 1
-          counted_altered_form = True
-        repair_stats[AVG_ALTERED_FORMAT] += int(node_no_variation)
+        if int(node_no_variation) > 0:
+          if not counted_altered_form:
+            repair_stats[NUM_FUNC_ALTERED_NUMBER] += 1
+            counted_altered_num = True
+          repair_stats[AVG_ALTERED_NUMBER] += int(node_no_variation)
        
       elif "missing_node_regulator" in atom or "extra_node_regulator" in atom:
         if not counted_altered_form:
@@ -256,6 +260,10 @@ def calculateAverages(repair_stats):
   if repair_stats[AVG_CHANGED_SIGN] != 0:
     repair_stats[AVG_CHANGED_SIGN] = \
       round(repair_stats[AVG_CHANGED_SIGN] / float(repair_stats[NUM_FUNC_CHANGED_SIGN]),1)
+
+  if repair_stats[AVG_ALTERED_NUMBER] != 0:
+    repair_stats[AVG_ALTERED_NUMBER] = \
+      round(repair_stats[AVG_ALTERED_NUMBER] / float(repair_stats[NUM_FUNC_ALTERED_NUMBER]),1)
 
   if repair_stats[AVG_ALTERED_FORMAT] != 0:
     repair_stats[AVG_ALTERED_FORMAT] = \
@@ -351,6 +359,7 @@ NUM_TOTAL_FUNCTIONS, NUM_INCONSISTENT_FUNCTIONS,
 NUM_FUNC_EXTRA_REGULATORS, AVG_EXTRA_REGULATORS,
 NUM_FUNC_MISSING_REGULATORS, AVG_MISSING_REGULATORS,
 NUM_FUNC_CHANGED_SIGN, AVG_CHANGED_SIGN,
+NUM_FUNC_ALTERED_NUMBER, AVG_ALTERED_NUMBER,
 NUM_FUNC_ALTERED_FORMAT, AVG_ALTERED_FORMAT)]
 
 for model in models:
@@ -384,6 +393,7 @@ for model in models:
     repair_stats[NUM_FUNC_EXTRA_REGULATORS], repair_stats[AVG_EXTRA_REGULATORS],
     repair_stats[NUM_FUNC_MISSING_REGULATORS], repair_stats[AVG_MISSING_REGULATORS],
     repair_stats[NUM_FUNC_CHANGED_SIGN], repair_stats[AVG_CHANGED_SIGN],
+    repair_stats[NUM_FUNC_ALTERED_NUMBER], repair_stats[AVG_ALTERED_NUMBER],
     repair_stats[NUM_FUNC_ALTERED_FORMAT], repair_stats[AVG_ALTERED_FORMAT]))
 
 if benchmark_enabled:
