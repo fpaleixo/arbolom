@@ -1,4 +1,5 @@
 import os, argparse, glob, pandas as pd
+from natsort import natsorted
 #Usage: $python revision.py -f (FILENAME) -o (OBSERVATIONS) -stable -sync -async -bulk -benchmark (SAVE_PATH)
 #Optional flags:
 #-stable -> Performs repairs using stable state observations (default).
@@ -41,6 +42,8 @@ def parseArgs():
 parseArgs()
 for o_type in obsv_types:
   files = [f for f in glob.glob(os.path.join(csv_folder, "*.csv")) if o_type in f]
+
+  files = natsorted(files)
 
   df = pd.concat(map(pd.read_csv, files), ignore_index=True)
   df.to_csv(os.path.join(os.path.dirname(csv_folder),"Merged", csv_name + "-" + o_type + "-" + os.path.basename(os.path.dirname(csv_folder)) + "-merged.csv"), index=False)
