@@ -136,6 +136,7 @@ def generateFunctions(func, model, incst, upo, toggle_stable_state, toggle_sync,
   if enable_prints: print("Calculating repairs...")
 
   solution_found = False
+  first_iteration = True
   no_timeouts = True
   functions = []
   upo_program = ""
@@ -144,7 +145,7 @@ def generateFunctions(func, model, incst, upo, toggle_stable_state, toggle_sync,
   max_nodes, node_limit = determineMaxNodesAndLimit(func,model,upo,path_mode)
 
   timeout_start = time.time()
-  while not solution_found and no_timeouts and max_nodes <= node_limit:
+  while not solution_found and no_timeouts and (first_iteration or max_nodes <= node_limit):
     clingo_args = ["0", f"-c compound={func}", f"-c max_node_number={max_nodes}"]
       
     ctl = clingo.Control(arguments=clingo_args, logger= lambda a,b: None)
@@ -181,9 +182,12 @@ def generateFunctions(func, model, incst, upo, toggle_stable_state, toggle_sync,
         solution_found = True
       else:
         max_nodes += 1
+    
+    first_iteration = False
   
-  if not no_timeouts: functions = "timed_out"
-  if max_nodes > node_limit: functions = "no_solution"
+  if not solution_found:
+    if not no_timeouts: functions = "timed_out"
+    else: functions = "no_solution"
 
   if enable_prints: print("... Done.")
   if enable_prints: printStatistics(ctl.statistics)
@@ -209,9 +213,6 @@ def determineMaxNodesAndLimit(func,model,upo,path_mode):
     original_nodes = int(model.split(f"function({func},")[1].split(')')[0])
 
   max_nodes = original_nodes * 2
-  if upo:
-    if max_nodes > upo[1]:
-      max_nodes = upo[1]
 
   return max_nodes, node_limit
 

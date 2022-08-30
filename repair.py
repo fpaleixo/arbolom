@@ -72,18 +72,6 @@ model_path = "simple_models/lp/corrupted/8/8-corrupted-f.lp"
 #Paths of encodings with inconsistencies
 incst_path = "simple_models/lp/corrupted/8/inconsistencies/8-corrupted-f-sync_inconsistency.lp"
 
-#Path of the encodings to obtain inconsistent functions and total variables of each of those functions
-iftv_path = "encodings/repairs/auxiliary/iftv.lp"
-
-#Variables of python implementation of unique positive observations
-previous_observations_sync_path = "encodings/repairs/auxiliary/previous_observations_sync.lp"
-previous_observations_async_path = "encodings/repairs/auxiliary/previous_observations_async.lp"
-
-#Paths of encodings for generating functions
-repair_encoding_stable_path = "encodings/repairs/repairs_stable.lp"
-repair_encoding_sync_path = "encodings/repairs/repairs_sync.lp"
-repair_encoding_async_path = "encodings/repairs/repairs_async.lp"
-
 #Mode flags 
 toggle_stable_state = True
 toggle_sync = False
