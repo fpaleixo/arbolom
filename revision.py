@@ -382,7 +382,9 @@ for model in models:
     # Third, if it is not, proceed with the repairs and print out the necessary ones.
     timed_out_functions, unrepaired_functions = repair(model[0], inconsistencies, repair_stats)
 
-    if timed_out_functions or unrepaired_functions: final_state = "still inconsistent (timed out functions/no existing solutions)"
+    if timed_out_functions and unrepaired_functions: final_state = "still inconsistent (timed out functions and functions without existing solutions)"
+    elif timed_out_functions: final_state = "still inconsistent (timed out functions)"
+    elif unrepaired_functions: "still inconsistent (functions without existing solutions)"
     else: final_state = "repaired"
 
     if not benchmark_enabled and not unrepaired_functions: print(f"Applying the above repairs to model {model[1]} will render it consistent!\n")
