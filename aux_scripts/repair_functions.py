@@ -212,7 +212,7 @@ def determineMaxNodesAndLimit(func,model,upo,path_mode):
   else:
     original_nodes = int(model.split(f"function({func},")[1].split(')')[0])
 
-  max_nodes = original_nodes * 3
+  max_nodes = original_nodes + 5
 
   return max_nodes, node_limit
 
