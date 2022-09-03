@@ -4,7 +4,7 @@
 %is able to replicate the observed state).
 
 #const compound = c.
-#const max_node_number = n.
+#const node_number = n.
 
 %*--Fixing regulators--*%
 %fixed/2 tells us that regulator C has to be one of the compound's regulators
@@ -25,10 +25,22 @@ inhibitor(C) :- fixed_inhibitor(C).
   not fixed_activator(C), not fixed_inhibitor(C).
 
 %*--Creating nodes--*%
-%Distribute compounds across nodes
-1 {node_regulator(1..max_node_number,C) : compound(C)}.
+%Original node IDs must always be available 
+%(so that we are able to make as little changes to the format of the original 
+%nodes as possible, using optimizations #3). Note that we cannot simply 
+%create all IDs using 1..node_number, since node_number may be smaller than
+%the number of original nodes. This would cause us to potentially leave out 
+%some original nodes when optimizing the format of our solution nodes
+available_node_ID(1..TERM_NO) :- function(compound, TERM_NO).
 
-%Project node IDs into their own predicate
+%If we require more IDs than those that were originally available,
+%create them
+available_node_ID(TERM_NO + 1..node_number):- function(compound, TERM_NO), node_number > TERM_NO.
+
+%Distribute compounds across available IDs
+{node_regulator(N,C) : compound(C)} :- available_node_ID(N).
+
+%Project the node IDs our solution is using into their own predicate
 node_ID(N) :- node_regulator(N,_).
 
 %*--Assessing node behavior--*%
@@ -77,10 +89,7 @@ extra_regulator(C) :- not original_regulator(C), present_regulator(C).
 sign_changed(C) :- regulates(C,compound,0), inhibitor(C).
 sign_changed(C) :- regulates(C,compound,1), activator(C).
 
-%*--Identifying original node number changes (minimization #3)--*%
-node_number_changes(CH) :- NODE_NO = #count{N : node_ID(N)}, function(compound,TERM_NO), CH = |NODE_NO - TERM_NO|.
-
-%*--Identifying node format changes (minimization #4)--*%
+%*--Identifying node format changes (optimizations #3)--*%
 %If we have a regulator R in term ID of compound's original function, but our
 %solution does not have regulator R in the node with the same ID, then that node
 %has a missing regulator
@@ -112,6 +121,9 @@ kept_node(ID) :- term(compound, ID, _), node_ID(ID).
 %5-Fixed regulators must be present in the final solution
 :- fixed_regulator(C), not node_regulator(_,C).
 
+%6-We must always have node_number nodes in our solution
+:- node_number != #count{N : node_regulator(N,R)}.
+
 
 %Display
 regulator_activator(C) :- node_regulator(N,C), activator(C).
@@ -125,24 +137,19 @@ regulator_inhibitor(C) :- node_regulator(N,C), inhibitor(C).
 #show missing_regulator/1.
 #show extra_regulator/1.
 #show sign_changed/1.
-#show node_number_changes/1.
 #show missing_node_regulator/2.
 #show extra_node_regulator/2.
-#show kept_node/1.
 
 
 %Optimize
 %1-Optimize for the minimum changes to regulators (highest priority)
-#minimize{1@5,C : missing_regulator(C)}.
-#minimize{1@5,C : extra_regulator(C)}.
+#minimize{1@4,C : missing_regulator(C)}.
+#minimize{1@4,C : extra_regulator(C)}.
 
 %2-Optimize for the minimum changes to regulator signs 
-#minimize{1@4,C : sign_changed(C)}.
+#minimize{1@3,C : sign_changed(C)}.
 
-%3-Optimize for minimum changes to original node number
-#minimize{CH@3,CH : node_number_changes(CH)}.
-
-%4-Optimize for minimum changes to original node format
+%3-Optimize for minimum changes to original node format
 #maximize{1@2,N : kept_node(N)}.
 #minimize{1@1,N,C : missing_node_regulator(N,C)}.
 #minimize{1@1,N,C : extra_node_regulator(N,C)}.

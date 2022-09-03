@@ -237,7 +237,7 @@ def processFunctionRepairStats(functions, repair_stats):
       elif "node_number_changes" in atom:
         node_no_variation = atom.split(')')[0].split('(')[1]
         if int(node_no_variation) > 0:
-          if not counted_altered_form:
+          if not counted_altered_num:
             repair_stats[NUM_FUNC_ALTERED_NUMBER] += 1
             counted_altered_num = True
           repair_stats[AVG_ALTERED_NUMBER] += int(node_no_variation)

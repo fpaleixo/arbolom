@@ -1,4 +1,5 @@
 import time, clingo, re
+from aux_scripts.repair_constants import CHANGED_SIGNS, EXTRA_NODE_REGULATORS, EXTRA_REGULATORS, MISSING_NODE_REGULATORS, MISSING_REGULATORS
 from aux_scripts.repair_prints import printStatistics
 
 #Path of the encodings to obtain inconsistent functions
@@ -135,68 +136,150 @@ def generateFunctions(func, model, incst, upo, toggle_stable_state, toggle_sync,
 def generateFunctions(func, model, incst, upo, toggle_stable_state, toggle_sync, toggle_async, path_mode = False, enable_prints=False):
   if enable_prints: print("Calculating repairs...")
 
-  solution_found = False
-  first_iteration = True
-  no_timeouts = True
-  functions = []
+  current_variation = 0
+  function = []
   upo_program = ""
   if upo : upo_program = upo[0]
-
-  max_nodes, node_limit = determineMaxNodesAndLimit(func,model,upo,path_mode)
+  starting_node_number, max_node_limit = determineStartNodesAndLimit(func,model,upo,path_mode)
 
   timeout_start = time.time()
-  while not solution_found and no_timeouts and (first_iteration or max_nodes <= node_limit):
-    clingo_args = ["0", f"-c compound={func}", f"-c max_node_number={max_nodes}"]
+  while True:
+    if current_variation == 0:
+      if enable_prints: print(f"Trying to find a solution with the same ({starting_node_number}) number of nodes...")
+      node_number = starting_node_number
+      function = generateFunctionsClingo(node_number, timeout_start, func, model, incst, upo_program, toggle_stable_state, toggle_sync, toggle_async, path_mode, enable_prints)
+      if function == "timed_out": return function
+          
+    else:
+      high_node_number = starting_node_number + current_variation
+      function_above = None
+      if high_node_number <= max_node_limit:
+        if enable_prints: print(f"Trying to find a solution with {starting_node_number + current_variation} nodes...(max is {max_node_limit})")
+        function_above = generateFunctionsClingo(high_node_number, timeout_start, func, model, incst, upo_program, toggle_stable_state, toggle_sync, toggle_async, path_mode, enable_prints)
+        if function_above == "timed_out": return function
       
-    ctl = clingo.Control(arguments=clingo_args, logger= lambda a,b: None)
+      low_node_number = starting_node_number - current_variation
+      function_below = None
+      if low_node_number > 0:
+        if enable_prints: print(f"Trying to find a solution with {starting_node_number - current_variation} nodes...(minimum is 1)")
+        function_below = generateFunctionsClingo(low_node_number, timeout_start, func, model, incst, upo_program, toggle_stable_state, toggle_sync, toggle_async, path_mode, enable_prints)
+        if function_below == "timed_out": return function
 
-    ctl.add("base", [], program=upo_program)
+      function = compareAndGetBestFunction(function_above, function_below)
 
-    if path_mode:
-      ctl.load(model)
-      ctl.load(incst) 
-    else: 
-      ctl.add("base", [], program=model)
-      ctl.add("base", [], program=incst)
+    if function:
+      if enable_prints: print("... Done.")
+      return function
 
-    if toggle_stable_state:
-      ctl.load(repair_encoding_stable_path)
-    elif toggle_sync:
-      ctl.load(repair_encoding_sync_path)
-    elif toggle_async:
-      ctl.load(repair_encoding_async_path)
-    
-    ctl.ground([("base", [])])
-    functions = []
+    else:
+      if enable_prints: print(f"No solutions with {starting_node_number + current_variation} nodes.")
+      current_variation += 1
+      if starting_node_number + current_variation > max_node_limit and \
+        starting_node_number - current_variation <= 0:
+        if enable_prints: print("... Done.")
+        return "no_solution"
 
-    def on_model(m):
-      nonlocal functions
-      functions = str(m).split(" ")
+def compareAndGetBestFunction(function_above, function_below):
 
-    with ctl.solve(on_model=on_model, async_=True) as handle:
-      no_timeouts = handle.wait(repair_timeout - (time.time() - timeout_start))
-      handle.cancel()
+  if not function_above and not function_below: return None
+  if function_above and not function_below: return function_above
+  if function_below and not function_above: return function_below
 
-    if no_timeouts:
-      if functions:
-        solution_found = True
-      else:
-        max_nodes += 1
-    
-    first_iteration = False
+  func_above_stat_map = getFuncStatMap(function_above)
+  func_below_stat_map = getFuncStatMap(function_below)
+
+  if func_above_stat_map[MISSING_REGULATORS] + func_above_stat_map[EXTRA_REGULATORS] < \
+    func_below_stat_map[MISSING_REGULATORS] + func_below_stat_map[EXTRA_REGULATORS]:
+    return function_above
+
+  elif func_above_stat_map[MISSING_REGULATORS] + func_above_stat_map[EXTRA_REGULATORS] > \
+    func_below_stat_map[MISSING_REGULATORS] + func_below_stat_map[EXTRA_REGULATORS]:
+    return function_below
+
+  elif func_above_stat_map[CHANGED_SIGNS] < func_below_stat_map[CHANGED_SIGNS]:
+    return function_above
   
-  if not solution_found:
-    if not no_timeouts: functions = "timed_out"
-    else: functions = "no_solution"
+  elif func_above_stat_map[CHANGED_SIGNS] > func_below_stat_map[CHANGED_SIGNS]:
+    return function_below
 
-  if enable_prints: print("... Done.")
+  elif func_above_stat_map[MISSING_NODE_REGULATORS] + func_above_stat_map[EXTRA_NODE_REGULATORS] < \
+    func_below_stat_map[MISSING_NODE_REGULATORS] + func_below_stat_map[EXTRA_NODE_REGULATORS]:
+    return function_above
+  
+  elif func_above_stat_map[MISSING_NODE_REGULATORS] + func_above_stat_map[EXTRA_NODE_REGULATORS] > \
+    func_below_stat_map[MISSING_NODE_REGULATORS] + func_below_stat_map[EXTRA_NODE_REGULATORS]:
+    return function_below
+  
+  else: return function_below
+
+def getFuncStatMap(function_above):
+  stat_map = {}
+
+  stat_map[MISSING_REGULATORS] = 0
+  stat_map[EXTRA_REGULATORS] = 0
+  stat_map[CHANGED_SIGNS] = 0
+  stat_map[MISSING_NODE_REGULATORS] = 0
+  stat_map[EXTRA_NODE_REGULATORS] = 0
+
+  for atom in function_above:
+    if "missing_regulator" in atom:
+      stat_map[MISSING_REGULATORS] += 1
+    
+    elif "extra_regulator" in atom:
+      stat_map[EXTRA_REGULATORS] += 1
+
+    elif "sign_changed" in atom:
+      stat_map[CHANGED_SIGNS] += 1
+      
+    elif "missing_node_regulator" in atom:
+      stat_map[MISSING_NODE_REGULATORS] += 1
+      
+    elif "extra_node_regulator" in atom:
+      stat_map[EXTRA_NODE_REGULATORS] += 1
+
+  return stat_map
+  
+def generateFunctionsClingo(node_number, timeout_start, func, model, incst, upo_program, toggle_stable_state, toggle_sync, toggle_async, path_mode = False, enable_prints=False):
+  no_timeout = True
+  clingo_args = ["0", f"-c compound={func}", f"-c node_number={node_number}"]
+      
+  ctl = clingo.Control(arguments=clingo_args, logger= lambda a,b: None)
+
+  ctl.add("base", [], program=upo_program)
+
+  if path_mode:
+    ctl.load(model)
+    ctl.load(incst) 
+  else: 
+    ctl.add("base", [], program=model)
+    ctl.add("base", [], program=incst)
+
+  if toggle_stable_state:
+    ctl.load(repair_encoding_stable_path)
+  elif toggle_sync:
+    ctl.load(repair_encoding_sync_path)
+  elif toggle_async:
+    ctl.load(repair_encoding_async_path)
+  
+  ctl.ground([("base", [])])
+  function = []
+
+  def on_model(m):
+    nonlocal function
+    function = str(m).split(" ")
+
+  with ctl.solve(on_model=on_model, async_=True) as handle:
+    no_timeout = handle.wait(repair_timeout - (time.time() - timeout_start))
+    handle.cancel()
+
+  if not no_timeout:
+    function = "timed_out" 
+  
   if enable_prints: printStatistics(ctl.statistics)
-  return functions
+  return function
 
-def determineMaxNodesAndLimit(func,model,upo,path_mode):
-  max_nodes = None
+def determineStartNodesAndLimit(func,model,upo,path_mode):
   node_limit = None
-  original_nodes = None
 
   if not upo: node_limit = float('inf')
   else: node_limit = upo[1]
@@ -212,9 +295,7 @@ def determineMaxNodesAndLimit(func,model,upo,path_mode):
   else:
     original_nodes = int(model.split(f"function({func},")[1].split(')')[0])
 
-  max_nodes = original_nodes + 5
-
-  return max_nodes, node_limit
+  return original_nodes, node_limit
 
 
 
