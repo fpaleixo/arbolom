@@ -179,6 +179,11 @@ def generateFunctions(func, model, incst, upo, toggle_stable_state, toggle_sync,
         if enable_prints: print("... Done.")
         return "no_solution"
 
+#Inputs:
+# function_above - the function with original number of nodes + variation
+# function_below - the function with original number of nodes - variation
+#Purpose: Compare the two functions and return the one with the least changes,
+#according to the optimization criteria (regulators, signs, format)
 def compareAndGetBestFunction(function_above, function_below):
 
   if not function_above and not function_below: return None
@@ -212,7 +217,11 @@ def compareAndGetBestFunction(function_above, function_below):
   
   else: return function_below
 
-def getFuncStatMap(function_above):
+#Inputs:
+# function - The repaired function obtained from clingo.
+#Purpose: Organize the differencecs between the original function and the
+#given function in a map.
+def getFuncStatMap(function):
   stat_map = {}
 
   stat_map[MISSING_REGULATORS] = 0
@@ -221,7 +230,7 @@ def getFuncStatMap(function_above):
   stat_map[MISSING_NODE_REGULATORS] = 0
   stat_map[EXTRA_NODE_REGULATORS] = 0
 
-  for atom in function_above:
+  for atom in function:
     if "missing_regulator" in atom:
       stat_map[MISSING_REGULATORS] += 1
     
@@ -238,7 +247,20 @@ def getFuncStatMap(function_above):
       stat_map[EXTRA_NODE_REGULATORS] += 1
 
   return stat_map
-  
+
+#Inputs:
+# node_number - number of nodes to consider in the search
+# timeout_start - time when the timeout counter was started
+# func - the name of the inconsistent function
+# model - the model to revise
+# incst - the inconsistencies obtained from consistency checking
+# upo_program - the processed unique positive observations
+# toggle_stable_state - flag that enables stable state interaction
+# toggle_sync - flag that enables synchronous interaction
+# toggle_async - flag that enables asynchronous interaction
+# path_mode - flag that enables loading the model and inconsistencies from a file, instead of a string
+# enable_prints - enables additional prints
+#Purpose: Calls clingo to solve the repair encoding
 def generateFunctionsClingo(node_number, timeout_start, func, model, incst, upo_program, toggle_stable_state, toggle_sync, toggle_async, path_mode = False, enable_prints=False):
   no_timeout = True
   clingo_args = ["0", f"-c compound={func}", f"-c node_number={node_number}"]
@@ -278,6 +300,13 @@ def generateFunctionsClingo(node_number, timeout_start, func, model, incst, upo_
   if enable_prints: printStatistics(ctl.statistics)
   return function
 
+#Inputs:
+# func - the inconsistent function
+# model - the model being revised
+# upo - unique positive observations that are obtained from processPreviousObservations
+# path mode - flag that enables loading the model and inconsistencies from a file, instead of a string
+#Purpose: Determines how many nodes were in the inconsistent function, as well
+#as what the maximum number of nodes to consider should be
 def determineStartNodesAndLimit(func,model,upo,path_mode):
   node_limit = None
 
