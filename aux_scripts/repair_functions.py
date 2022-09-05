@@ -137,6 +137,7 @@ def generateFunctions(func, model, incst, upo, toggle_stable_state, toggle_sync,
   if enable_prints: print("Calculating repairs...")
 
   current_variation = 0
+  final_variation = 0
   function = []
   upo_program = ""
   if upo : upo_program = upo[0]
@@ -148,7 +149,7 @@ def generateFunctions(func, model, incst, upo, toggle_stable_state, toggle_sync,
       if enable_prints: print(f"Trying to find a solution with the same ({starting_node_number}) number of nodes...")
       node_number = starting_node_number
       function = generateFunctionsClingo(node_number, timeout_start, func, model, incst, upo_program, toggle_stable_state, toggle_sync, toggle_async, path_mode, enable_prints)
-      if function == "timed_out": return function
+      if function == "timed_out": return function, 0
           
     else:
       high_node_number = starting_node_number + current_variation
@@ -156,20 +157,20 @@ def generateFunctions(func, model, incst, upo, toggle_stable_state, toggle_sync,
       if high_node_number <= max_node_limit:
         if enable_prints: print(f"Trying to find a solution with {starting_node_number + current_variation} nodes...(max is {max_node_limit})")
         function_above = generateFunctionsClingo(high_node_number, timeout_start, func, model, incst, upo_program, toggle_stable_state, toggle_sync, toggle_async, path_mode, enable_prints)
-        if function_above == "timed_out": return function
+        if function_above == "timed_out": return function, 0
       
       low_node_number = starting_node_number - current_variation
       function_below = None
       if low_node_number > 0:
         if enable_prints: print(f"Trying to find a solution with {starting_node_number - current_variation} nodes...(minimum is 1)")
         function_below = generateFunctionsClingo(low_node_number, timeout_start, func, model, incst, upo_program, toggle_stable_state, toggle_sync, toggle_async, path_mode, enable_prints)
-        if function_below == "timed_out": return function
+        if function_below == "timed_out": return function, 0
 
-      function = compareAndGetBestFunction(function_above, function_below)
+      function, final_variation = compareAndGetBestFunction(function_above, function_below, current_variation)
 
     if function:
       if enable_prints: print("... Done.")
-      return function
+      return function, final_variation
 
     else:
       if enable_prints: print(f"No solutions with {starting_node_number + current_variation} nodes.")
@@ -177,45 +178,45 @@ def generateFunctions(func, model, incst, upo, toggle_stable_state, toggle_sync,
       if starting_node_number + current_variation > max_node_limit and \
         starting_node_number - current_variation <= 0:
         if enable_prints: print("... Done.")
-        return "no_solution"
+        return "no_solution", 0
 
 #Inputs:
 # function_above - the function with original number of nodes + variation
 # function_below - the function with original number of nodes - variation
 #Purpose: Compare the two functions and return the one with the least changes,
 #according to the optimization criteria (regulators, signs, format)
-def compareAndGetBestFunction(function_above, function_below):
+def compareAndGetBestFunction(function_above, function_below, variation):
 
-  if not function_above and not function_below: return None
-  if function_above and not function_below: return function_above
-  if function_below and not function_above: return function_below
+  if not function_above and not function_below: return None, 0
+  if function_above and not function_below: return function_above, variation
+  if function_below and not function_above: return function_below, -variation
 
   func_above_stat_map = getFuncStatMap(function_above)
   func_below_stat_map = getFuncStatMap(function_below)
 
   if func_above_stat_map[MISSING_REGULATORS] + func_above_stat_map[EXTRA_REGULATORS] < \
     func_below_stat_map[MISSING_REGULATORS] + func_below_stat_map[EXTRA_REGULATORS]:
-    return function_above
+    return function_above, variation
 
   elif func_above_stat_map[MISSING_REGULATORS] + func_above_stat_map[EXTRA_REGULATORS] > \
     func_below_stat_map[MISSING_REGULATORS] + func_below_stat_map[EXTRA_REGULATORS]:
-    return function_below
+    return function_below, -variation
 
   elif func_above_stat_map[CHANGED_SIGNS] < func_below_stat_map[CHANGED_SIGNS]:
-    return function_above
+    return function_above, variation
   
   elif func_above_stat_map[CHANGED_SIGNS] > func_below_stat_map[CHANGED_SIGNS]:
-    return function_below
+    return function_below, -variation
 
   elif func_above_stat_map[MISSING_NODE_REGULATORS] + func_above_stat_map[EXTRA_NODE_REGULATORS] < \
     func_below_stat_map[MISSING_NODE_REGULATORS] + func_below_stat_map[EXTRA_NODE_REGULATORS]:
-    return function_above
+    return function_above, variation
   
   elif func_above_stat_map[MISSING_NODE_REGULATORS] + func_above_stat_map[EXTRA_NODE_REGULATORS] > \
     func_below_stat_map[MISSING_NODE_REGULATORS] + func_below_stat_map[EXTRA_NODE_REGULATORS]:
-    return function_below
+    return function_below, -variation
   
-  else: return function_below
+  else: return function_below, -variation
 
 #Inputs:
 # function - The repaired function obtained from clingo.

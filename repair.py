@@ -164,10 +164,10 @@ if cmd_enabled:
         toggle_async, True, True)
       upo = processPreviousObservations(prev_obs)
       
-      functions = generateFunctions(func, model_path, incst_path, upo,
+      functions, node_variation = generateFunctions(func, model_path, incst_path, upo,
         toggle_stable_state, toggle_sync, toggle_async, True, True)
 
-      printRepairedLP(func, functions)
+      printRepairedLP(func, functions, node_variation)
       
       printFuncRepairEnd(func)
 

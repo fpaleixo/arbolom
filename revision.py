@@ -1,4 +1,4 @@
-import os, argparse, logging, time
+import os, argparse, logging, time, re
 from genericpath import isdir
 from aux_scripts.consistency_functions import *
 from aux_scripts.conversion_functions import *
@@ -138,8 +138,7 @@ def parseArgs():
   return
 
 
-
-#-----Revision Functions-----
+#---Model reading-related functions---
 def readModels():
   logger = logging.getLogger("readModels")
   logger.setLevel(logging.INFO)
@@ -174,134 +173,59 @@ def readModels():
   
   return output_model_list
 
+def getModelCompounds(model):
+  return re.findall('compound\((.+?)\).',model)
 
-def checkConsistency(model, obsv):
-  logger = logging.getLogger("checkConsistency")
-  logger.setLevel(logging.INFO)
 
-  total_functions = model.count("compound(")
+#-----Benchmarking Functions-----
+def initRevisionStatsMap(model):
+  revision_stats_map = {}
+  all_compounds = sorted(getModelCompounds(model))
 
-  atoms = consistencyCheck(model,obsv,
-    toggle_stable_state,toggle_sync,toggle_async)
+  for compound in all_compounds:
+    revision_stats_map[compound] = {}
+    revision_stats_map[compound][FINAL_STATE] = "consistent"
+    revision_stats_map[compound][NODE_VARIATION] = 0
+    revision_stats_map[compound][MISSING_REGULATORS] = 0
+    revision_stats_map[compound][EXTRA_REGULATORS] = 0
+    revision_stats_map[compound][CHANGED_SIGNS] = 0
+    revision_stats_map[compound][MISSING_NODE_REGULATORS] = 0
+    revision_stats_map[compound][EXTRA_NODE_REGULATORS] = 0
 
-  inconsistencies = isConsistent(atoms, toggle_stable_state, 
-    toggle_sync, toggle_async, print_consistent=not benchmark_enabled)
+  return revision_stats_map
 
-  logger.debug("inconsistencies: \n" + str(inconsistencies))
-  return total_functions, inconsistencies 
+def fillBenchmarkArray(benchmark_array, model, final_state, 
+  revision_time, consistency_time, repair_time, model_revision_stats):
 
-def initRepairStatsMap():
-  repair_stats_map = {}
-  repair_stats_map[NUM_TOTAL_FUNCTIONS] = 0
-  repair_stats_map[NUM_INCONSISTENT_FUNCTIONS] = 0
-  repair_stats_map[NUM_FUNC_EXTRA_REGULATORS] = 0
-  repair_stats_map[AVG_EXTRA_REGULATORS] = 0
-  repair_stats_map[NUM_FUNC_MISSING_REGULATORS] = 0
-  repair_stats_map[AVG_MISSING_REGULATORS] = 0
-  repair_stats_map[NUM_FUNC_CHANGED_SIGN] = 0
-  repair_stats_map[AVG_CHANGED_SIGN] = 0
-  repair_stats_map[NUM_FUNC_ALTERED_NUMBER] = 0
-  repair_stats_map[AVG_ALTERED_NUMBER] = 0
-  repair_stats_map[NUM_FUNC_ALTERED_FORMAT] = 0
-  repair_stats_map[AVG_ALTERED_FORMAT] = 0
-  return repair_stats_map
+  for func in model_revision_stats:
+    benchmark_array.append(
+      (model[1], 
+      final_state, revision_time,
+      consistency_time, repair_time,
+      func, model_revision_stats[func][FINAL_STATE],
+      model_revision_stats[func][NODE_VARIATION],
+      model_revision_stats[func][MISSING_REGULATORS], model_revision_stats[func][EXTRA_REGULATORS],
+      model_revision_stats[func][CHANGED_SIGNS],
+      model_revision_stats[func][MISSING_NODE_REGULATORS],
+      model_revision_stats[func][EXTRA_NODE_REGULATORS]
+      )
+    )
 
-def processFunctionRepairStats(functions, repair_stats):
-
-  counted_extra_reg = False
-  counted_missing_reg = False
-  counted_sign_change = False
-  counted_altered_num = False
-  counted_altered_form = False
+def processFunctionRepairStats(func, func_state, node_variation, functions, revision_stats):
+  revision_stats[func][FINAL_STATE] = func_state
+  revision_stats[func][NODE_VARIATION] = node_variation
 
   for atom in functions:
-            
       if "missing_regulator" in atom:
-        if not counted_missing_reg:
-          repair_stats[NUM_FUNC_MISSING_REGULATORS] += 1
-          counted_missing_reg = True
-        repair_stats[AVG_MISSING_REGULATORS] += 1
-        
+        revision_stats[func][MISSING_REGULATORS] += 1 
       elif "extra_regulator" in atom:
-        if not counted_extra_reg:
-          repair_stats[NUM_FUNC_EXTRA_REGULATORS] += 1
-          counted_extra_reg = True
-        repair_stats[AVG_EXTRA_REGULATORS] += 1
-
+        revision_stats[func][EXTRA_REGULATORS] += 1 
       elif "sign_changed" in atom:
-        if not counted_sign_change:
-          repair_stats[NUM_FUNC_CHANGED_SIGN] += 1
-          counted_sign_change = True
-        repair_stats[AVG_CHANGED_SIGN] += 1
-
-      elif "node_number_changes" in atom:
-        node_no_variation = atom.split(')')[0].split('(')[1]
-        if int(node_no_variation) > 0:
-          if not counted_altered_num:
-            repair_stats[NUM_FUNC_ALTERED_NUMBER] += 1
-            counted_altered_num = True
-          repair_stats[AVG_ALTERED_NUMBER] += int(node_no_variation)
-       
-      elif "missing_node_regulator" in atom or "extra_node_regulator" in atom:
-        if not counted_altered_form:
-          repair_stats[NUM_FUNC_ALTERED_FORMAT] += 1
-          counted_altered_form = True
-        repair_stats[AVG_ALTERED_FORMAT] += 1
-
-def calculateAverages(repair_stats):
-  if repair_stats[AVG_MISSING_REGULATORS] != 0:
-    repair_stats[AVG_MISSING_REGULATORS] = \
-      round(repair_stats[AVG_MISSING_REGULATORS] / float(repair_stats[NUM_FUNC_MISSING_REGULATORS]),1)
-
-  if repair_stats[AVG_EXTRA_REGULATORS] != 0:
-    repair_stats[AVG_EXTRA_REGULATORS] = \
-      round(repair_stats[AVG_EXTRA_REGULATORS] / float(repair_stats[NUM_FUNC_EXTRA_REGULATORS]),1)
-  
-  if repair_stats[AVG_CHANGED_SIGN] != 0:
-    repair_stats[AVG_CHANGED_SIGN] = \
-      round(repair_stats[AVG_CHANGED_SIGN] / float(repair_stats[NUM_FUNC_CHANGED_SIGN]),1)
-
-  if repair_stats[AVG_ALTERED_NUMBER] != 0:
-    repair_stats[AVG_ALTERED_NUMBER] = \
-      round(repair_stats[AVG_ALTERED_NUMBER] / float(repair_stats[NUM_FUNC_ALTERED_NUMBER]),1)
-
-  if repair_stats[AVG_ALTERED_FORMAT] != 0:
-    repair_stats[AVG_ALTERED_FORMAT] = \
-      round(repair_stats[AVG_ALTERED_FORMAT] / float(repair_stats[NUM_FUNC_ALTERED_FORMAT]),1)
-
-
-def repair(model, inconsistencies, repair_stats):
-  timed_out_functions = ""
-  unrepaired_functions = ""
-  
-  incst_funcs = generateInconsistentFunctions(model, inconsistencies)
-  i_f_array = processInconsistentFunctions(incst_funcs)
-
-  repair_stats[NUM_INCONSISTENT_FUNCTIONS] = len(i_f_array)
-
-  if i_f_array:
-    for func in i_f_array:
-      if not benchmark_enabled: printFuncRepairStart(func)
-
-      prev_obs = generatePreviousObservations(func, inconsistencies, toggle_sync,
-        toggle_async)
-      upo = processPreviousObservations(prev_obs)
-      
-      functions = generateFunctions(func, model, inconsistencies, upo,
-        toggle_stable_state, toggle_sync, toggle_async)
-
-      processFunctionRepairStats(functions, repair_stats)
-
-      if functions == "timed_out": timed_out_functions += func + " "
-      if functions == "no_solution": unrepaired_functions += func + " "
-
-      if not benchmark_enabled: printRepairedLP(func, functions)
-      if not benchmark_enabled: printFuncRepairEnd(func)
-
-  calculateAverages(repair_stats)
-
-  return timed_out_functions, unrepaired_functions
-
+        revision_stats[func][CHANGED_SIGNS] += 1 
+      elif "missing_node_regulator" in atom: 
+        revision_stats[func][MISSING_NODE_REGULATORS] += 1 
+      elif "extra_node_regulator" in atom:
+        revision_stats[func][EXTRA_NODE_REGULATORS] += 1 
 
 def saveBenchmark(array):
   logger = logging.getLogger("saveBenchmark")
@@ -347,56 +271,110 @@ def saveBenchmark(array):
 
 
 
+#-----Revision Functions-----
+def checkConsistency(model, obsv):
+  logger = logging.getLogger("checkConsistency")
+  logger.setLevel(logging.INFO)
+
+  atoms = consistencyCheck(model,obsv,
+    toggle_stable_state,toggle_sync,toggle_async)
+
+  inconsistencies = isConsistent(atoms, toggle_stable_state, 
+    toggle_sync, toggle_async, print_consistent=not benchmark_enabled)
+
+  logger.debug("inconsistencies: \n" + str(inconsistencies))
+  return inconsistencies 
+
+def repair(model, inconsistencies, revision_stats): 
+  incst_funcs = generateInconsistentFunctions(model, inconsistencies)
+  i_f_array = processInconsistentFunctions(incst_funcs)
+  final_state = "repaired"
+
+  timed_out_functions = []
+  unrepairable_functions = []
+
+  if i_f_array:
+    for func in i_f_array:
+      func_state = "repaired"
+      if not benchmark_enabled: printFuncRepairStart(func)
+
+      prev_obs = generatePreviousObservations(func, inconsistencies, 
+        toggle_sync, toggle_async)
+      upo = processPreviousObservations(prev_obs)
+      
+      functions, node_variation = generateFunctions(func, model, inconsistencies, upo,
+        toggle_stable_state, toggle_sync, toggle_async)
+
+      if functions == "timed_out": 
+        timed_out_functions.append(func)
+        func_state = "inconsistent (timed out)"
+        node_variation = 0
+
+      elif functions == "no_solution": 
+        unrepairable_functions.append(func)
+        func_state = "inconsistent (no solution)"
+        node_variation = 0
+
+      processFunctionRepairStats(func, func_state, node_variation, functions, revision_stats)
+
+      if not benchmark_enabled: printRepairedLP(func, functions, node_variation)
+      if not benchmark_enabled: printFuncRepairEnd(func)
+    
+  if timed_out_functions and unrepairable_functions:
+    final_state = "still inconsistent (timed out functions and functions without existing solutions)"
+  elif timed_out_functions:
+    final_state = "still inconsistent (timed out functions)"
+  elif unrepairable_functions:
+    final_state = "still inconsistent (functions without existing solutions)"
+
+  return final_state
+
+
 
 #-----Main-----
 parseArgs()
-
 # First, obtain the model in .lp model. If the obtained file has .bnet
 # extension, it must be converted to .lp.
 models = readModels()
-benchmark_array = [("Model","Final State","Time Taken","Unrepairable Functions",
-NUM_TOTAL_FUNCTIONS, NUM_INCONSISTENT_FUNCTIONS, 
-NUM_FUNC_EXTRA_REGULATORS, AVG_EXTRA_REGULATORS,
-NUM_FUNC_MISSING_REGULATORS, AVG_MISSING_REGULATORS,
-NUM_FUNC_CHANGED_SIGN, AVG_CHANGED_SIGN,
-NUM_FUNC_ALTERED_NUMBER, AVG_ALTERED_NUMBER,
-NUM_FUNC_ALTERED_FORMAT, AVG_ALTERED_FORMAT)]
+benchmark_array = [(BCHMRK_MODEL_NAME, 
+  BCHMRK_MODEL_STATE, BCHMRK_MODEL_REVISION_TIME,
+  BCHMRK_MODEL_CONSISTENCY_TIME, BCHMRK_MODEL_REPAIR_TIME,
+  BCHMRK_COMPOUND_NAME, BCHMRK_COMPOUND_STATE,
+  BCHMRK_COMPOUND_NODE_VARIATION,
+  BCHMRK_COMPOUND_MISSING_REGULATORS, BCHMRK_COMPOUND_EXTRA_REGULATORS,
+  BCHMRK_COMPOUND_CHANGED_SIGNS,
+  BCHMRK_COMPOUND_MISSING_NODE_REGULATORS,
+  BCHMRK_COMPOUND_EXTRA_NODE_REGULATORS)]
 
 for model in models:
-  revision_start_time = time.time()
   final_state = "consistent"
-  timed_out_functions = ""
-  unrepaired_functions = ""
-  repair_stats = initRepairStatsMap()
+  revision_start_time = time.time()
+  model_revision_stats = initRevisionStatsMap(model[0])
 
-  if bulk_enabled and not benchmark_enabled: print("Currently repairing model ", model[1])
+  if bulk_enabled and not benchmark_enabled: print("Currently revising model ", model[1])
 
-  total_functions, inconsistencies = checkConsistency(model[0], obsv_path)
-  repair_stats[NUM_TOTAL_FUNCTIONS] = total_functions
-  
+  consistency_start_time = time.time()
+  inconsistencies = checkConsistency(model[0], obsv_path)
+  consistency_end_time = time.time()
+
   # Second, check the consistency of the .lp model using the provided observations
   # and time step. If the model is consistent, print a message saying so.
   if inconsistencies:
     if not benchmark_enabled: print("Inconsistent model! \nRepairing...")
 
     # Third, if it is not, proceed with the repairs and print out the necessary ones.
-    timed_out_functions, unrepaired_functions = repair(model[0], inconsistencies, repair_stats)
-
-    if timed_out_functions and unrepaired_functions: final_state = "still inconsistent (timed out functions and functions without existing solutions)"
-    elif timed_out_functions: final_state = "still inconsistent (timed out functions)"
-    elif unrepaired_functions: "still inconsistent (functions without existing solutions)"
-    else: final_state = "repaired"
-
-    if not benchmark_enabled and not unrepaired_functions: print(f"Applying the above repairs to model {model[1]} will render it consistent!\n")
+    repair_start_time = time.time()
+    final_state = repair(model[0], inconsistencies, model_revision_stats)
+    repair_end_time = time.time()
+    
+    if not benchmark_enabled and final_state == "repaired": print(f"Applying the above repairs to model {model[1]} will render it consistent!\n")
 
   revision_end_time = time.time()
-  benchmark_array.append((model[1],final_state,str(revision_end_time-revision_start_time),timed_out_functions + " " + unrepaired_functions,
-    repair_stats[NUM_TOTAL_FUNCTIONS], repair_stats[NUM_INCONSISTENT_FUNCTIONS],
-    repair_stats[NUM_FUNC_EXTRA_REGULATORS], repair_stats[AVG_EXTRA_REGULATORS],
-    repair_stats[NUM_FUNC_MISSING_REGULATORS], repair_stats[AVG_MISSING_REGULATORS],
-    repair_stats[NUM_FUNC_CHANGED_SIGN], repair_stats[AVG_CHANGED_SIGN],
-    repair_stats[NUM_FUNC_ALTERED_NUMBER], repair_stats[AVG_ALTERED_NUMBER],
-    repair_stats[NUM_FUNC_ALTERED_FORMAT], repair_stats[AVG_ALTERED_FORMAT]))
+  if benchmark_enabled:
+    fillBenchmarkArray(benchmark_array, model, final_state,
+      revision_end_time - revision_start_time, 
+      consistency_end_time - consistency_start_time,
+      repair_end_time - repair_start_time, model_revision_stats)
 
 if benchmark_enabled:
   saveBenchmark(benchmark_array)

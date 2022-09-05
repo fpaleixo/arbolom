@@ -16,7 +16,7 @@ def printIFTVEnd():
 
 #Inputs: The inconsistent function, and the resulting answer set obtained from clingo
 #Purpose: Prints the repairs in LP format
-def printRepairedLP(inconsistent_func, result):
+def printRepairedLP(inconsistent_func, result, node_number_variation):
   activators = ""
   inhibitors = ""
 
@@ -27,7 +27,6 @@ def printRepairedLP(inconsistent_func, result):
   missing_regulator_no = 0
   extra_regulator_no = 0
   sign_change_no = 0
-  node_number_change_no = 0
   missing_node_regulator_no = 0
   extra_node_regulator_no = 0
 
@@ -56,9 +55,6 @@ def printRepairedLP(inconsistent_func, result):
 
       elif "sign_changed" in atom:
         sign_change_no += 1
-
-      elif "node_number_changes" in atom:
-        node_number_change_no = arguments[0]
 
       elif "missing_node_regulator" in atom:
         missing_node_regulator_no += 1
@@ -96,15 +92,15 @@ def printRepairedLP(inconsistent_func, result):
     print(result)
 
     printChanges(missing_regulator_no, extra_regulator_no, sign_change_no,
-      node_number_change_no, missing_node_regulator_no, extra_node_regulator_no)
+      node_number_variation, missing_node_regulator_no, extra_node_regulator_no)
 
 def printChanges(missing_regulator_no, extra_regulator_no, sign_change_no,
       node_number_change_no, missing_node_regulator_no, extra_node_regulator_no):
   print("\033[1;32mNumber of repairs of each type: \033[0;37;40m")
+  print("Node number variation (final node number - original node number) - ", node_number_change_no)
   print("Removed regulators - ", missing_regulator_no)
   print("Added regulators - ", extra_regulator_no)
   print("Changed regulator signs - ", sign_change_no)
-  print("Node number variation (|original node number - final node number|) - ", node_number_change_no)
   print("Total regulators removed from nodes - ", missing_node_regulator_no)
   print("Total regulators added to nodes - ", extra_node_regulator_no)
 
