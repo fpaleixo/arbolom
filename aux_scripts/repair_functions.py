@@ -1,4 +1,4 @@
-import time, clingo, re
+import time, clingo
 from aux_scripts.repair_constants import CHANGED_SIGNS, EXTRA_NODE_REGULATORS, EXTRA_REGULATORS, MISSING_NODE_REGULATORS, MISSING_REGULATORS
 from aux_scripts.repair_prints import printStatistics
 
@@ -10,9 +10,9 @@ previous_observations_sync_path = "encodings/repairs/auxiliary/previous_observat
 previous_observations_async_path = "encodings/repairs/auxiliary/previous_observations_async.lp"
 
 #Paths of the encodings that generating functions
-repair_encoding_stable_path = "encodings/repairs/repairs_stable.lp"
+repair_encoding_stable_path = "encodings/repairs/reworked/repairs_stable.lp"
 repair_encoding_sync_path = "encodings/repairs/reworked/repairs_sync.lp"
-repair_encoding_async_path = "encodings/repairs/repairs_async.lp"
+repair_encoding_async_path = "encodings/repairs/reworked/repairs_async.lp"
 
 #Timeout for function repair
 repair_timeout = 300

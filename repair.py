@@ -12,7 +12,7 @@ from aux_scripts.repair_prints import *
 #INCONSISTENCIES -> Path of file containing inconsistencies obtained from the consistency checking phase.
 
 
-#-----Testing shortcuts (to be removed at a later date)----
+#-----Testing shortcuts----
 '''
 #3 variables
 python .\repair.py -f simple_models/lp/corrupted/3/3-corrupted-f.lp -i simple_models/lp/corrupted/3/inconsistencies/3-corrupted-f-stable_inconsistency.lp -stable
