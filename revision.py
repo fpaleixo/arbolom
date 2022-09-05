@@ -139,6 +139,10 @@ def parseArgs():
 
 
 #---Model reading-related functions---
+#Purpose: reads models from the specified model_path (either in .bnet or .lp
+# format), and returns them in a list. Each element of the list is a tuple,
+#with the model in string format in the first position and the model's path
+#in the second position
 def readModels():
   logger = logging.getLogger("readModels")
   logger.setLevel(logging.INFO)
@@ -178,6 +182,9 @@ def getModelCompounds(model):
 
 
 #-----Benchmarking Functions-----
+#Input: model - the model being revised
+#Purpose: Initializes and returns the map containing the statistics of each 
+# function's changes after being repaired
 def initRevisionStatsMap(model):
   revision_stats_map = {}
   all_compounds = sorted(getModelCompounds(model))
@@ -194,12 +201,23 @@ def initRevisionStatsMap(model):
 
   return revision_stats_map
 
-def fillBenchmarkArray(benchmark_array, model, final_state, 
+#Inputs: 
+# -benchmark_array - the array containing the benchmark results
+# -model_name - the full path of the model being revised
+# -final_state - the final state of the revised model
+# -revision_time - the time taken to fully revise the model
+# -consistency_time - the time spent on consistency checking
+# -repair_time - the time spent on repairs
+# -model_revision_stats - the map containing the changes done to each repaired
+#   function
+#Purpose: Fills the benchmark array with the results obtained from the model's
+# revision
+def fillBenchmarkArray(benchmark_array, model_name, final_state, 
   revision_time, consistency_time, repair_time, model_revision_stats):
 
   for func in model_revision_stats:
     benchmark_array.append(
-      (model[1], 
+      (model_name, 
       final_state, revision_time,
       consistency_time, repair_time,
       func, model_revision_stats[func][FINAL_STATE],
@@ -211,11 +229,22 @@ def fillBenchmarkArray(benchmark_array, model, final_state,
       )
     )
 
-def processFunctionRepairStats(func, func_state, node_variation, functions, revision_stats):
+#Inputs: 
+# -func - the name of the compound whose function is being repaired
+# -func_state - the final state of the function after repairs
+# -node_variation - how much the final node number varied in comparison to the
+#   original number
+# -repairs - the atoms obtained from function repair
+# -revision_stats - the map containing 
+# -repair_time - the time spent on repairs
+# -model_revision_stats - the map containing the changes done to each repaired
+#   function
+#Purpose: updates the map with the results from function repair
+def processFunctionRepairStats(func, func_state, node_variation, repairs, revision_stats):
   revision_stats[func][FINAL_STATE] = func_state
   revision_stats[func][NODE_VARIATION] = node_variation
 
-  for atom in functions:
+  for atom in repairs:
       if "missing_regulator" in atom:
         revision_stats[func][MISSING_REGULATORS] += 1 
       elif "extra_regulator" in atom:
@@ -227,6 +256,9 @@ def processFunctionRepairStats(func, func_state, node_variation, functions, revi
       elif "extra_node_regulator" in atom:
         revision_stats[func][EXTRA_NODE_REGULATORS] += 1 
 
+#Input: array - the array containing the lines with benchmark results
+#  to write on the output file
+#Purpose: Saves the results from benchmarking in the specified save_path
 def saveBenchmark(array):
   logger = logging.getLogger("saveBenchmark")
   logger.setLevel(logging.INFO)
@@ -272,6 +304,10 @@ def saveBenchmark(array):
 
 
 #-----Revision Functions-----
+#Inputs: 
+# -model - the model whose consistency is being checked
+# -obsv - the observations from the original model
+#Purpose: returns the inconsistencies found in the model
 def checkConsistency(model, obsv):
   logger = logging.getLogger("checkConsistency")
   logger.setLevel(logging.INFO)
@@ -285,6 +321,12 @@ def checkConsistency(model, obsv):
   logger.debug("inconsistencies: \n" + str(inconsistencies))
   return inconsistencies 
 
+#Inputs: 
+# -model - the model being repaired
+# -inconsistencies - the inconsistencies obtained from consistency checking
+# -revision_stats - the map containing the changes done to each repaired
+# function
+#Purpose: attempts to repair the model and returns its final state
 def repair(model, inconsistencies, revision_stats): 
   incst_funcs = generateInconsistentFunctions(model, inconsistencies)
   i_f_array = processInconsistentFunctions(incst_funcs)
@@ -348,6 +390,10 @@ benchmark_array = [(BCHMRK_MODEL_NAME,
 
 for model in models:
   final_state = "consistent"
+  total_revision_time = 0
+  total_consistency_time = 0
+  total_repair_time = 0
+
   revision_start_time = time.time()
   model_revision_stats = initRevisionStatsMap(model[0])
 
@@ -356,6 +402,8 @@ for model in models:
   consistency_start_time = time.time()
   inconsistencies = checkConsistency(model[0], obsv_path)
   consistency_end_time = time.time()
+
+  total_consistency_time = consistency_end_time - consistency_start_time
 
   # Second, check the consistency of the .lp model using the provided observations
   # and time step. If the model is consistent, print a message saying so.
@@ -366,15 +414,19 @@ for model in models:
     repair_start_time = time.time()
     final_state = repair(model[0], inconsistencies, model_revision_stats)
     repair_end_time = time.time()
+
+    total_repair_time = repair_end_time - repair_start_time
     
     if not benchmark_enabled and final_state == "repaired": print(f"Applying the above repairs to model {model[1]} will render it consistent!\n")
 
   revision_end_time = time.time()
+  total_revision_time = revision_end_time - revision_start_time
+
   if benchmark_enabled:
-    fillBenchmarkArray(benchmark_array, model, final_state,
-      revision_end_time - revision_start_time, 
-      consistency_end_time - consistency_start_time,
-      repair_end_time - repair_start_time, model_revision_stats)
+    fillBenchmarkArray(benchmark_array, model[1], final_state,
+      total_revision_time, 
+      total_consistency_time,
+      total_repair_time, model_revision_stats)
 
 if benchmark_enabled:
   saveBenchmark(benchmark_array)
