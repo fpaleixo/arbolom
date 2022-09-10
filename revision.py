@@ -180,6 +180,13 @@ def readModels():
 def getModelCompounds(model):
   return re.findall('compound\((.+?)\).',model)
 
+def getCompoundRegulatorNumber(model, compound):
+  return len(re.findall(fr'regulates\((.+?), ?{compound}, ?(0|1)\).',model))
+
+def getCompoundTermNumber(model, compound):
+  return re.search(fr'function\({compound},(.+?)\).',model).group(1)
+
+
 
 #-----Benchmarking Functions-----
 #Input: model - the model being revised
@@ -190,8 +197,14 @@ def initRevisionStatsMap(model):
   all_compounds = sorted(getModelCompounds(model))
 
   for compound in all_compounds:
+    regulator_number = getCompoundRegulatorNumber(model, compound)
+    node_number = getCompoundTermNumber(model, compound)
+
     revision_stats_map[compound] = {}
     revision_stats_map[compound][FINAL_STATE] = "consistent"
+    revision_stats_map[compound][ORIGINAL_REGULATOR_NUMBER] = regulator_number
+    revision_stats_map[compound][ORIGINAL_NODE_NUMBER] = node_number
+    revision_stats_map[compound][REPAIR_TIME] = 0
     revision_stats_map[compound][NODE_VARIATION] = 0
     revision_stats_map[compound][MISSING_REGULATORS] = 0
     revision_stats_map[compound][EXTRA_REGULATORS] = 0
@@ -221,6 +234,9 @@ def fillBenchmarkArray(benchmark_array, model_name, final_state,
       final_state, revision_time,
       consistency_time, repair_time,
       func, model_revision_stats[func][FINAL_STATE],
+      model_revision_stats[func][ORIGINAL_REGULATOR_NUMBER],
+      model_revision_stats[func][ORIGINAL_NODE_NUMBER],
+      model_revision_stats[func][REPAIR_TIME],
       model_revision_stats[func][NODE_VARIATION],
       model_revision_stats[func][MISSING_REGULATORS], model_revision_stats[func][EXTRA_REGULATORS],
       model_revision_stats[func][CHANGED_SIGNS],
@@ -240,9 +256,10 @@ def fillBenchmarkArray(benchmark_array, model_name, final_state,
 # -model_revision_stats - the map containing the changes done to each repaired
 #   function
 #Purpose: updates the map with the results from function repair
-def processFunctionRepairStats(func, func_state, node_variation, repairs, revision_stats):
+def processFunctionRepairStats(func, func_state, node_variation, repairs, repair_time, revision_stats):
   revision_stats[func][FINAL_STATE] = func_state
   revision_stats[func][NODE_VARIATION] = node_variation
+  revision_stats[func][REPAIR_TIME] = repair_time
 
   for atom in repairs:
       if "missing_regulator" in atom:
@@ -344,8 +361,10 @@ def repair(model, inconsistencies, revision_stats):
         toggle_sync, toggle_async)
       upo = processPreviousObservations(prev_obs)
       
+      compound_repair_start = time.time()
       functions, node_variation = generateFunctions(func, model, inconsistencies, upo,
         toggle_stable_state, toggle_sync, toggle_async)
+      compound_repair_end = time.time()
 
       if functions == "timed_out": 
         timed_out_functions.append(func)
@@ -357,7 +376,7 @@ def repair(model, inconsistencies, revision_stats):
         func_state = "inconsistent (no solution)"
         node_variation = 0
 
-      processFunctionRepairStats(func, func_state, node_variation, functions, revision_stats)
+      processFunctionRepairStats(func, func_state, node_variation, functions, compound_repair_end - compound_repair_start, revision_stats)
 
       if not benchmark_enabled: printRepairedLP(func, functions, node_variation)
       if not benchmark_enabled: printFuncRepairEnd(func)
@@ -382,6 +401,9 @@ benchmark_array = [(BCHMRK_MODEL_NAME,
   BCHMRK_MODEL_STATE, BCHMRK_MODEL_REVISION_TIME,
   BCHMRK_MODEL_CONSISTENCY_TIME, BCHMRK_MODEL_REPAIR_TIME,
   BCHMRK_COMPOUND_NAME, BCHMRK_COMPOUND_STATE,
+  BCHMARK_ORIGINAL_REGULATOR_NO,
+  BCHMARK_ORIGINAL_NODE_NO,
+  BCHMARK_COMPOUND_REPAIR_TIME,
   BCHMRK_COMPOUND_NODE_VARIATION,
   BCHMRK_COMPOUND_MISSING_REGULATORS, BCHMRK_COMPOUND_EXTRA_REGULATORS,
   BCHMRK_COMPOUND_CHANGED_SIGNS,

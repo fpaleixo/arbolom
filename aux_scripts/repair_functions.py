@@ -15,7 +15,7 @@ repair_encoding_sync_path = "encodings/repairs/reworked/repairs_sync.lp"
 repair_encoding_async_path = "encodings/repairs/reworked/repairs_async.lp"
 
 #Timeout for function repair
-repair_timeout = 300
+repair_timeout = 3600
 
 
 #-----Functions that solve LPs with clingo-----
