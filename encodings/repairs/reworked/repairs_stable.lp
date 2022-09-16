@@ -23,11 +23,6 @@ inhibitor(C) :- fixed_inhibitor(C).
 1 {activator(C); inhibitor(C)} 1 :- compound(C), 
   not fixed_activator(C), not fixed_inhibitor(C).
 
-%Keep track of which original regulators C had their sign changed
-%(used in minimization #3)
-sign_changed(C) :- regulates(C,compound,0), inhibitor(C).
-sign_changed(C) :- regulates(C,compound,1), activator(C).
-
 %*--Creating nodes--*%
 %Original node IDs must always be available 
 %(so that we are able to make as little changes to the format of the original 

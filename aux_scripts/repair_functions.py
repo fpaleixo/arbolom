@@ -157,14 +157,14 @@ def generateFunctions(func, model, incst, upo, toggle_stable_state, toggle_sync,
       if high_node_number <= max_node_limit:
         if enable_prints: print(f"Trying to find a solution with {starting_node_number + current_variation} nodes...(max is {max_node_limit})")
         function_above = generateFunctionsClingo(high_node_number, timeout_start, func, model, incst, upo_program, toggle_stable_state, toggle_sync, toggle_async, path_mode, enable_prints)
-        if function_above == "timed_out": return function, 0
+        if function_above == "timed_out": return function_above, 0
       
       low_node_number = starting_node_number - current_variation
       function_below = None
       if low_node_number > 0:
         if enable_prints: print(f"Trying to find a solution with {starting_node_number - current_variation} nodes...(minimum is 1)")
         function_below = generateFunctionsClingo(low_node_number, timeout_start, func, model, incst, upo_program, toggle_stable_state, toggle_sync, toggle_async, path_mode, enable_prints)
-        if function_below == "timed_out": return function, 0
+        if function_below == "timed_out": return function_below, 0
 
       function, final_variation = compareAndGetBestFunction(function_above, function_below, current_variation)
 
