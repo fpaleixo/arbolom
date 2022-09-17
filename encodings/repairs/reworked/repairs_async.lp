@@ -102,9 +102,6 @@ missing_node_regulator(ID,R) :- term(compound, ID, R), node_ID(ID), not node_reg
 %extra regulator
 extra_node_regulator(ID,R) :- node_regulator(ID, R), term(compound, ID, _), not term(compound, ID, R).
 
-%Mark the nodes that have been carried over from the original function
-kept_node(ID) :- term(compound, ID, _), node_ID(ID).
-
 
 %Test
 %We're only interested in generating nodes that can be used to explain the observations,
@@ -127,6 +124,14 @@ kept_node(ID) :- term(compound, ID, _), node_ID(ID).
 %6-We must always have node_number nodes in our solution
 :- node_number != #count{N : node_regulator(N,R)}.
 
+%7-If we are searching for functions with a fewer or equal number of nodes 
+%than the original, then all the IDs we use must be IDs of the original nodes
+:- node_number <= TERM_NO, function(compound, TERM_NO), node_ID(N), N > TERM_NO.
+
+%8-If we are searching for functions with a greater number of nodes 
+%than the original, then all of the original IDs must be present
+:- node_number > TERM_NO, function(compound, TERM_NO), term(compound,N,_), not node_ID(N).
+
 
 %Display
 regulator_activator(C) :- node_regulator(N,C), activator(C).
@@ -146,13 +151,12 @@ regulator_inhibitor(C) :- node_regulator(N,C), inhibitor(C).
 
 %Optimize
 %1-Optimize for the minimum changes to regulators (highest priority)
-#minimize{1@4,C : missing_regulator(C)}.
-#minimize{1@4,C : extra_regulator(C)}.
+#minimize{1@3,C : missing_regulator(C)}.
+#minimize{1@3,C : extra_regulator(C)}.
 
 %2-Optimize for the minimum changes to regulator signs 
-#minimize{1@3,C : sign_changed(C)}.
+#minimize{1@2,C : sign_changed(C)}.
 
 %3-Optimize for minimum changes to original node format
-#maximize{1@2,N : kept_node(N)}.
 #minimize{1@1,N,C : missing_node_regulator(N,C)}.
 #minimize{1@1,N,C : extra_node_regulator(N,C)}.
