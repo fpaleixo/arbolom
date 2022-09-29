@@ -37,11 +37,6 @@ The files used for benchmarking can be found [here](https://drive.google.com/dri
 - There is a folder with the observations obtained from the original models (the time-series observations were generated using the `gen_observations.py` script);
 - There is one last folder containing results obtained from the benchmarks.
 
-Results from the benchmarks can also be seen [here](https://github.com/fpaleixo/arbolom/blob/main/benchmark_results/benchmark_results.pdf).
-
-## Dissertation
-The full document can be found [here](https://drive.google.com/file/d/1yZACpuRfHjQhUT-3nFDBANZrtGHtZ_XP/view?usp=sharing) (still being written!).
-
 ## Task Progress
 
 [![Task 1 - Create simple models](https://img.shields.io/badge/Task_1-Create_simple_models-green?style=for-the-badge&logo=Adobe+Acrobat+Reader)](https://github.com/fpaleixo/arbolom/tree/main/simple_models) 
@@ -51,7 +46,7 @@ The full document can be found [here](https://drive.google.com/file/d/1yZACpuRfH
 [![Task 5 - Encodings for model consistency](https://img.shields.io/badge/Task_5-Encodings_for_model_consistency-green?style=for-the-badge&logo=dev.to)](https://github.com/fpaleixo/arbolom/tree/main/encodings)
 ![Task 6 - Define repair strategy](https://img.shields.io/badge/Task_6-Define_repair_strategy-green?style=for-the-badge&logo=Adobe+Acrobat+Reader)
 [![Task 7 - Encodings to repair models](https://img.shields.io/badge/Task_7-Encodings_to_repair_models_(and_respective_optimizations)-green?style=for-the-badge&logo=dev.to)](https://github.com/fpaleixo/arbolom/tree/main/encodings)
-![Task 8 - Benchmarking and writing the document](https://img.shields.io/badge/Task_8-Benchmarking_and_writing_the_document-yellow?style=for-the-badge&logo=dev.to)
+![Task 8 - Benchmarking and writing the document](https://img.shields.io/badge/Task_8-Benchmarking_and_writing_the_document-green?style=for-the-badge&logo=dev.to)
 
 ### Timestamps (relative*)
 
@@ -69,7 +64,7 @@ Task 6: Week 5-6 (05/04 to 11/04)
 
 Task 7: Week 6-21 (11/04 to 01/08)
 
-Task 8: Week 20-*ongoing* (29/07 to 30/09)
+Task 8: Week 20-29 (29/07 to 30/09)
 
 \* *for reference only - dates are not absolutely exact and deliverables usually suffer tweaks/changes after these  periods*
 
