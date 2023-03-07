@@ -56,15 +56,6 @@ experiment_negative_node(E,N) :- node_regulator(N,C), curated_observation(E,C,1)
 %Nodes that aren't negative in experiment E must be positive
 experiment_positive_node(E,N) :- not experiment_negative_node(E,N), node_ID(N), curated_observation(E,_,_).
 
-%*--Verifying whether the rule that no node can contain another node has been broken (BCF)--*%
-%Calculate the number of regulators per candidate node
-node_regulator_number(N,N_VARNO) :- N_VARNO = #count{ C : node_regulator(N,C) }, node_ID(N).
-
-%If the number of variables in one node is equal to the number of variables that it has in common with another node,
-%then the first node is fully contained within the second node, and so the BCF has been broken
-bcf_broken :- node_ID(N1), node_ID(N2), N1 != N2, node_regulator_number(N1,N1_VARNO),
-  COMMON_VARNO = #count{C : node_regulator(N1,C), node_regulator(N2,C)}, COMMON_VARNO = N1_VARNO.
-
 %*--Identifying missing/extra regulators (minimization #1)--*%
 %An original_regulator C is a regulator that is present in the original inconsistent function
 original_regulator(C) :- regulates(C,compound,_).
@@ -107,21 +98,15 @@ extra_node_regulator(ID,R) :- node_regulator(ID, R), term(compound, ID, _), not 
 :- node_ID(N1), node_ID(N2), N1 < N2, not distinct_nodes(N1,N2).
 
 %4-The BCF cannot be broken (nodes cannot contain other nodes)
-:- bcf_broken.
+:- N_VARNO = #count{ C : node_regulator(N,C) }, 
+  COMMON_VARNO = #count{C : node_regulator(N1,C), node_regulator(N2,C)},   
+  node_ID(N1), node_ID(N2), N1 != N2, COMMON_VARNO = N1_VARNO.
 
 %5-Fixed regulators must be present in the final solution
 :- fixed_regulator(C), not node_regulator(_,C).
 
 %6-We must always have node_number nodes in our solution
 :- node_number != #count{N : node_regulator(N,R)}.
-
-%7-If we are searching for functions with a fewer or equal number of nodes 
-%than the original, then all the IDs we use must be IDs of the original nodes
-:- node_number <= TERM_NO, function(compound, TERM_NO), node_ID(N), N > TERM_NO.
-
-%8-If we are searching for functions with a greater number of nodes 
-%than the original, then all of the original IDs must be present
-:- node_number > TERM_NO, function(compound, TERM_NO), term(compound,N,_), not node_ID(N).
 
 
 %Display
