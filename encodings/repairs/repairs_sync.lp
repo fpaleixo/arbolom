@@ -99,7 +99,7 @@ extra_node_regulator(ID,R) :- node_regulator(ID, R), term(compound, ID, _), not 
 :- node_ID(N1), node_ID(N2), N1 < N2, not distinct_nodes(N1,N2).
 
 %4-The BCF cannot be broken (nodes cannot contain other nodes)
-:- N_VARNO = #count{ C : node_regulator(N,C) }, 
+:- N1_VARNO = #count{ C : node_regulator(N1,C) }, 
   COMMON_VARNO = #count{C : node_regulator(N1,C), node_regulator(N2,C)},   
   node_ID(N1), node_ID(N2), N1 != N2, COMMON_VARNO = N1_VARNO.
   
