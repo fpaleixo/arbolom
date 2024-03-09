@@ -31,7 +31,7 @@ Generally, the models will be used in the following fashion:
 Note: Alternatively, instead of using `revision.py`, `consistency_checking.py` can also be used on the inconsistent .lp model, alongside the observations generated from the original model. This script will tell you if the model is consistent with the given observations or not. In case it is not, the inconsistencies generated can then be given to `repair.py`, which will repair the inconsistent model (`revision.py` simply streamlines this process, doing it all at once).
 
 ## Benchmarking
-The files used for benchmarking can be found [here](https://drive.google.com/drive/folders/1DeJDOSd3RLMIvrcW1WNfT1u0_lEQsP__?usp=sharing). The folder is organised as follows:
+The files used for benchmarking can be found [here](https://drive.google.com/drive/folders/1larx4vTX602bdXbAS1NtjSpwm8muxYHM?usp=sharing). The folder is organised as follows:
 - There is one folder containing the original models;
 - There is another folder containing all the applied corruption configurations to the original models;
 - There is a folder with the observations obtained from the original models (the time-series observations were generated using the `gen_observations.py` script);
